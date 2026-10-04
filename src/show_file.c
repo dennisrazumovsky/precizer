@@ -331,7 +331,7 @@ void show_file(
 
 			} else if(file->db_record_updated == true){
 
-				slog_show(EVERY|UNDECOR,false,first_iteration,summary,"update & rehash");
+				slog_show(EVERY|UNDECOR,false,first_iteration,summary,"rehash");
 
 				print_changes(EVERY,file);
 

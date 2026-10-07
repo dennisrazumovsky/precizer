@@ -19,8 +19,18 @@
 Use tabs for indentation. Spaces may be used for alignment when needed, for example when a line with all function arguments would otherwise be too long, or inside function documentation blocks and multiline comments.
 
 # Change Policy
+
+## Request Interpretation
+
+- A question alone is not an instruction, approval of a solution, or authorization to change code or documentation
+- Questions about possible solutions are requests for explanation or continued exploration and comparison of alternatives. Discussed alternatives may conflict, so they must not be combined or implemented automatically
+- Changes to code or documentation require an explicit instruction, unambiguous approval of a specific change, or a clarification that directly requests the change
+- Without such authorization, only an explanation, analysis, or comparison is provided, and code and documentation remain unchanged
+
+## Approval and Implementation
+
 - Provide a numbered implementation plan for approval before making any code changes, and do not modify code until the plan is explicitly approved
-- If a change only affects function documentation or comments, including adding, updating, or refreshing them, no plan approval is required and the work should begin immediately
+- For an authorized change that only affects function documentation or comments, including adding, updating, or refreshing them, no separate plan approval is required and the work should begin immediately
 - This exception does not apply to `README.md` or `README.ru.md`
 - Perform file renames and deletions using git commands only (`git mv` and `git rm`)
 - If a build or test fails after a change, stop making further changes immediately, explain the cause, and propose possible solutions. Do not modify code or tests merely to work around the failure without explicit user approval. After a successful implementation, carefully review the changes and repeat the verification-and-correction cycle until the result is reliable and maintainable

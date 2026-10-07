@@ -538,13 +538,13 @@ Return db_delete_missing_metadata(void)
 
 			if(drop_ignored == true)
 			{
-				slog(EVERY|UNDECOR|REMEMBER,"drop ignored %s\n",runtime_relative_path);
+				slog(EVERY|UNDECOR|REMEMBER,"dropped as ignored %s\n",runtime_relative_path);
 
 			} else if(inaccessible == true){
-				slog(EVERY|UNDECOR|REMEMBER,"drop due to inaccessible %s\n",runtime_relative_path);
+				slog(EVERY|UNDECOR|REMEMBER,"dropped as inaccessible %s\n",runtime_relative_path);
 
 			} else if(file_not_found == true){
-				slog(EVERY|UNDECOR,"no longer exists %s\n",runtime_relative_path);
+				slog(EVERY|UNDECOR,"dropped as missing %s\n",runtime_relative_path);
 			}
 		}
 	}

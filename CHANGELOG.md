@@ -2,6 +2,10 @@
 
 All notable changes will be documented in this file
 
+# Release 0.17.6 2026-10-06
+
+Improve file status output
+
 # Release 0.17.5 2026-10-02
 
 Speed up checks for deleted files by batching database deletions in a single transaction

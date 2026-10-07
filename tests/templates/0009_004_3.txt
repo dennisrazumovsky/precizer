@@ -46,12 +46,12 @@ TESTING:The paths written against the database and the paths passed as arguments
 TESTING:Update mode enabled for DB database0009_4\.db
 TESTING:File traversal started for [^\r\n]+
 TESTING:(?:\x1B\[[0-9;]*m)*Changes reported during this scan against the DB database0009_4\.db:(?:\x1B\[[0-9;]*m)*
-update as empty, changed: [^\r\n]*lsize was:[^\r\n]*ctime was:[^\r\n]*mtime was:[^\r\n]* alpha_m0n9k2_zz\.txt
-ignore & do not add skip_a1r9v-0pq\.bak
-ignore & do not add skip_m0n9k2_zz\.log
-ignore & do not add tmp_77xy__aa\.bak
-update included, changed: [^\r\n]*lsize was:[^\r\n]*ctime was:[^\r\n]*mtime was:[^\r\n]* tmp_qwe_90210\.log
-update included, changed: [^\r\n]*lsize was:[^\r\n]*ctime was:[^\r\n]*mtime was:[^\r\n]* tmp_z1-9vv\.bak
+updated as empty, changed: [^\r\n]*lsize was:[^\r\n]*ctime was:[^\r\n]*mtime was:[^\r\n]* alpha_m0n9k2_zz\.txt
+ignored & not added skip_a1r9v-0pq\.bak
+ignored & not added skip_m0n9k2_zz\.log
+ignored & not added tmp_77xy__aa\.bak
+updated as included, changed: [^\r\n]*lsize was:[^\r\n]*ctime was:[^\r\n]*mtime was:[^\r\n]* tmp_qwe_90210\.log
+updated as included, changed: [^\r\n]*lsize was:[^\r\n]*ctime was:[^\r\n]*mtime was:[^\r\n]* tmp_z1-9vv\.bak
 TESTING:File traversal complete
 TESTING:Searching for files that no longer exist on the file system…
 TESTING:Missing file search finished

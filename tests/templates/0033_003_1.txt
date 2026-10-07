@@ -45,8 +45,8 @@ TESTING:The global return status and exit flag has been set to HALTED
 TESTING:Interrupting the application\. Please wait while the database will be closed smoothly…
 TESTING:File traversal started for [^\r\n]+
 TESTING:(?:\x1B\[[0-9;]*m)*Items reported during this traversal against the DB 0033_interrupt_resume\.db:(?:\x1B\[[0-9;]*m)*
-new hugetestfile
-TESTING:SHA512 checksum for the file hugetestfile has been gracefully interrupted at byte: [^\r\n]+
+added hugetestfile
+TESTING:hashing gracefully interrupted at [^\r\n]+ hugetestfile
 TESTING:The database connection has been closed
 TESTING:Total runtime: [^,\r\n]+
 TESTING:Total traversal size: \d+[^\r\n]*

@@ -35,33 +35,33 @@ TESTING:Database comparison mode is not enabled. Skipping comparison
 TESTING:The brand new database has just been created. No need to verify the paths stored in the database against those passed as command-line arguments
 TESTING:File traversal started for [^\r\n]+
 TESTING:(?:\x1B\[[0-9;]*m)*Items reported during this traversal against the DB database4\.db:(?:\x1B\[[0-9;]*m)*
-new 1/1/2/3/4/ddd\.txt
-new 1/1/2/3/ccc\.txt
-new 1/1/2/bbb\.txt
-new 1/1/aaa\.txt
-new 1/2/3/4/5/eee\.txt
-new 1/2/3/4/ddd\.txt
-new 1/2/3/ccc\.txt
-new 1/2/bbb\.txt
-new 1/aaa\.txt
-new 2/1/2/3/4/ddd\.txt
-new 2/1/2/3/ccc\.txt
-new 2/1/2/bbb\.txt
-new 2/1/aaa\.txt
-new 2/2/3/4/5/eee\.txt
-new 2/2/3/4/ddd\.txt
-new 2/2/3/ccc\.txt
-new 2/2/bbb\.txt
-new 2/aaa\.txt
-new 3/1/2/3/4/ddd\.txt
-new 3/1/2/3/ccc\.txt
-new 3/1/2/bbb\.txt
-new 3/1/aaa\.txt
-new 3/2/3/4/5/eee\.txt
-new 3/2/3/4/ddd\.txt
-new 3/2/3/ccc\.txt
-new 3/2/bbb\.txt
-new 3/aaa\.txt
+added 1/1/2/3/4/ddd\.txt
+added 1/1/2/3/ccc\.txt
+added 1/1/2/bbb\.txt
+added 1/1/aaa\.txt
+added 1/2/3/4/5/eee\.txt
+added 1/2/3/4/ddd\.txt
+added 1/2/3/ccc\.txt
+added 1/2/bbb\.txt
+added 1/aaa\.txt
+added 2/1/2/3/4/ddd\.txt
+added 2/1/2/3/ccc\.txt
+added 2/1/2/bbb\.txt
+added 2/1/aaa\.txt
+added 2/2/3/4/5/eee\.txt
+added 2/2/3/4/ddd\.txt
+added 2/2/3/ccc\.txt
+added 2/2/bbb\.txt
+added 2/aaa\.txt
+added 3/1/2/3/4/ddd\.txt
+added 3/1/2/3/ccc\.txt
+added 3/1/2/bbb\.txt
+added 3/1/aaa\.txt
+added 3/2/3/4/5/eee\.txt
+added 3/2/3/4/ddd\.txt
+added 3/2/3/ccc\.txt
+added 3/2/bbb\.txt
+added 3/aaa\.txt
 TESTING:File traversal complete
 TESTING:The database connection has been closed
 TESTING:Start vacuuming the primary database…

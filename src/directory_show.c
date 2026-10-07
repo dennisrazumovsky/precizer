@@ -23,10 +23,10 @@ void directory_show(
 
 	if(ignore == true)
 	{
-		slog_show(EVERY|UNDECOR,true,first_iteration,summary,"ignore directory %s\n",runtime_relative_path);
+		slog_show(EVERY|UNDECOR,true,first_iteration,summary,"ignored directory %s\n",runtime_relative_path);
 
 	} else if(include == true){
 
-		slog_show(EVERY|UNDECOR,true,first_iteration,summary,"include directory %s\n",runtime_relative_path);
+		slog_show(EVERY|UNDECOR,true,first_iteration,summary,"included directory %s\n",runtime_relative_path);
 	}
 }

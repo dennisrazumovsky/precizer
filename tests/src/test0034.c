@@ -58,7 +58,7 @@ static Return test0034_1(void)
 
 	ASSERT(NULL == strstr(m_text(result),"changed: lsize"));
 	ASSERT(NULL != strstr(m_text(result),"changed: asize"));
-	ASSERT(NULL != strstr(m_text(result),"rehash"));
+	ASSERT(NULL != strstr(m_text(result),"rehashed"));
 	ASSERT(NULL != strstr(m_text(result),"path1/AAA/BCB/CCC/a.txt"));
 
 	ASSERT(SUCCESS == delete_path("0034_lsize_vs_asize_flags.db"));

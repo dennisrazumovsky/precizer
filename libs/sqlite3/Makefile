@@ -1,6 +1,9 @@
 # Name of the library
 LIBNAME=libsqlite3
 
+# SQLite amalgamation version used by the update target
+SQLITE_VERSION ?= 3540000
+
 # Defaults to a local .builds when running `make` from this directory.
 # When the umbrella project drives the build, BUILDDIR is overridden via the
 # library dispatcher Makefile to point at the project-wide .builds
@@ -213,7 +216,7 @@ PRTB_LDFLAGS ?= $(USE_LLD) $(PRTB_OPT_LDFLAGS) -Wl,-z,defs
 endif
 
 .PHONY: all purge clean debug production prod distribution portable sanitize gcc-analyzer compile-commands
-.PHONY: coverage memtest tests test tests-sanitize tests-debug tests-coverage format print-%
+.PHONY: coverage memtest tests test tests-sanitize tests-debug tests-coverage format update print-%
 
 define SQLITE_WARN_ONCE
 $(if $(SQLITE_WARNING_PRINTED),,\
@@ -223,6 +226,16 @@ endef
 
 # Default build
 all: debug production portable
+
+update:
+	@echo Downloading...
+	@wget "https://sqlite.org/2026/sqlite-amalgamation-$(SQLITE_VERSION).zip" \
+		-O "sqlite-amalgamation-$(SQLITE_VERSION).zip"
+	@echo Extracting...
+# Extract the source and header into src without subdirectories, overwriting existing files
+	@unzip -joqq "sqlite-amalgamation-$(SQLITE_VERSION).zip" \
+		"sqlite-amalgamation-$(SQLITE_VERSION)/sqlite3.c" \
+		"sqlite-amalgamation-$(SQLITE_VERSION)/sqlite3.h" -d "$(SRC_DIR)"
 
 #
 # GCC Static Analysis

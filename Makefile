@@ -76,7 +76,7 @@ ifeq ($(UNAME_S),Darwin)
 CFLAGS += -DEVIL_EMPIRE_OS
 endif
 
-# Detect whether we're using GCC (covers names like arm-linux-gnu-gcc)
+# Detect whether the compiler is GCC (covers names like arm-linux-gnu-gcc)
 GCC := $(findstring gcc,$(notdir $(firstword $(CC))))
 
 EXE = precizer
@@ -206,7 +206,7 @@ SRC_DIR = src
 SRCS = $(wildcard $(SRC_DIR)/*.c)
 HDRS = $(wildcard $(SRC_DIR)/*.h) $(foreach d,$(LIBS),$(wildcard libs/$d/src/*.h))
 
-# Exclude a file
+# Object names corresponding to the source files
 OBJS = $(SRCS:.c=.o)
 PREPROC = $(SRCS:.c=.i) # Preprocessed files http://www.viva64.com/en/t/0076/
 PREPROC += $(SRCS:.c=.i.h)
@@ -1297,7 +1297,7 @@ massif: debug
 	valgrind --tool=massif --stacks=yes --num-callers=20 $(DBG_DIR)/$(EXE) $(ARGS)
 	ms_print ./massif.out.*
 
-# Run clang static analyzer and view analysis results in a web browser when the build command completes
+# Run the Clang static analyzer and open its results in a web browser
 clang-analyzer: CC = $(CLANG)
 clang-analyzer:
 	@echo "Using compiler: $(CLANG), analyzer: $(SCAN_BUILD)"

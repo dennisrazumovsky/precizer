@@ -48,7 +48,7 @@ static char doc[] =
         "See the project README for additional technical details.";
 
 /* Positional-argument description for argp */
-static char args_doc[] = "PATH";
+static char args_doc[] = "[PATH...]";
 
 static bool information_mode_requested = false;
 
@@ -117,6 +117,7 @@ static struct argp_option options[] = {
 	{"force",'f',0,0,"Use this option only in case when the PATHs that were written into the database as a result of the last scanning really need to be renewed. Warning! If this option will be used in incorrect way, information about files and their checksums against the database would be lost.",0},
 	{"update",'u',0,0,"Updates the database to reflect file system changes (new, modified and deleted files). Must be used with the same initial PATH that was used when creating the database, as existing records will be replaced with data from the specified location. This option modifies database consistency. Use with caution, especially in automated scripts, as incorrect usage may lead to loss of file checksums and metadata.",0 },
 	{"database",'d',"FILE",0,"Database filename. Defaults to ${HOST}.db, where HOST is the local hostname.",0 },
+	{"path",'P',"PATH",0,"Filesystem root to scan. May be repeated and combined with positional PATH arguments.",0},
 	{"check-level",'l',"FULL|QUICK",0,"Select database validation level: 'quick' for basic structure check, 'full' (default) for comprehensive integrity verification.",0 },
 	{ 0,0,0,0,"Compare databases options:",1},
 	{"compare",'c',0,0,"Compare two databases from different sources. Requires two additional arguments specifying paths to database files, e.g.:\n" BOLD APP_NAME " --compare database1.db database2.db" RESET "\n"
@@ -359,7 +360,19 @@ static error_t parse_opt(
 			argp_state_help(state,state->out_stream,ARGP_HELP_USAGE);
 			break;
 		case ARGP_KEY_NO_ARGS:
+			/* Help, usage, and version requests do not require paths */
 			if(information_mode_requested == true)
+			{
+				break;
+			}
+
+			/* Argp sends this event after parsing options if no positional
+			   arguments were processed. For example, --path=/mnt/data stores
+			   a root in Config.roots without supplying a positional argument.
+			   Scanning can therefore proceed when roots are already present.
+			   Comparison still requires two positional database paths; --path
+			   supplies scan roots and cannot satisfy that requirement */
+			if(config->compare == false && config->roots.length != 0)
 			{
 				break;
 			}
@@ -371,32 +384,48 @@ static error_t parse_opt(
 				break;
 			}
 
+			/* Options were supplied, but the paths required for this mode are missing */
 			argp_usage(state);
 			return(EX_USAGE);
 			break;
+		case 'P':
 		case ARGP_KEY_ARG:
 		{
 			Return status;
 
 			/*
-			 * This event receives one positional command-line argument.
+			 * This branch receives a --path value or one positional argument.
+			 * Both cases share the empty-path check and append to Config.roots
+			 * when handling scan roots.
 			 * Argp normally processes options before positional arguments, so
-			 * `--compare` has already selected the intended mode by this point.
+			 * `--compare` has selected the intended mode when a positional
+			 * argument arrives.
 			 *
 			 * In compare mode, positional arguments are database file paths.
-			 * In normal scan mode, positional arguments are filesystem roots
-			 * that will be traversed later
+			 * Named paths and positional arguments in scan mode are filesystem
+			 * roots. Named roots are cleared before comparison
 			 */
-			if(config->compare == true)
+			if(key == ARGP_KEY_ARG && config->compare == true)
 			{
 				status = m_string_array_append(conf(db_file_paths),char,arg);
 			} else {
+				if(arg[0] == '\0')
+				{
+					argp_failure(state,0,0,"ERROR: Filesystem root path must not be empty. See --help for more information");
+					return(EINVAL);
+				}
+
 				status = m_string_array_append(conf(roots),char,arg);
 			}
 
 			if((TRIUMPH & status) == 0)
 			{
-				argp_failure(state,0,ENOMEM,"ERROR: Memory allocation for positional argument failed");
+				if(key == 'P')
+				{
+					argp_failure(state,0,ENOMEM,"ERROR: Memory allocation for --path failed");
+				} else {
+					argp_failure(state,0,ENOMEM,"ERROR: Memory allocation for positional argument failed");
+				}
 				return(ENOMEM);
 			}
 			break;
@@ -832,7 +861,7 @@ static void parse_arguments_show_verbose_diagnostics(void)
 /**
  * @brief Parse command-line arguments and finalize parse-related configuration state
  *
- * In normal scan mode, positional arguments become traversal roots. In
+ * In normal scan mode, --path values and positional arguments become roots. In
  * `--compare` mode, the two positional arguments become database paths and
  * their file names are used in user-facing messages
  *
@@ -867,8 +896,14 @@ Return parse_arguments(
 		provide(INFO | HALTED);
 	}
 
+	/* Discard scan roots before comparison path handling and diagnostics */
+	if((SUCCESS & status) && config->compare == true)
+	{
+		run(m_array_del(conf(roots)));
+	}
+
 	/*
-	 * Normal scan mode stores positional arguments as traversal roots.
+	 * Normal scan mode stores named and positional paths as traversal roots.
 	 * Normalize those roots after argp has finished collecting them, so later
 	 * code can compare paths without treating `dir` and `dir/` as different
 	 * user input

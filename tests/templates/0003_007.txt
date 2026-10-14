@@ -53,7 +53,7 @@ TESTING:The database connection has been closed
 TESTING:Dry Run mode is enabled\. The primary database doesn't require vacuuming
 TESTING:(?:\x1B\[[0-9;]*m)*Nothing has changed in the primary database since the program was launched \(no files were added, updated, or deleted\)(?:\x1B\[[0-9;]*m)*
 TESTING:Total runtime: [^,\r\n]+
-TESTING:Total traversal size: \d+.*
+TESTING:Total traversal size: \d+[^\r\n]*
 TESTING:Total items: \d+
 TESTING:Directories: \d+
 TESTING:Files: \d+

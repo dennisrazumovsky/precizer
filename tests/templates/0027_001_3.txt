@@ -43,7 +43,7 @@ TESTING:Database comparison mode is not enabled. Skipping comparison
 TESTING:The database lock\.db has already been created previously
 TESTING:The paths written against the database and the paths passed as arguments are completely identical
 TESTING:File system traversal initiated to calculate file count and storage usage
-TESTING:Total traversal size: \d+.*
+TESTING:Total traversal size: \d+[^\r\n]*
 TESTING:Total items: \d+
 TESTING:Directories: \d+
 TESTING:Files: \d+
@@ -63,7 +63,7 @@ TESTING:(?:\x1B\[[0-9;]*m)*Warnings and errors encountered:(?:\x1B\[[0-9;]*m)*
 (?:\x1B\[[0-9;]*m)*checksum locked, data corruption detected(?:\x1B\[[0-9;]*m)* diff2/path1/AAA/BCB/CCC/b\.txt
 TESTING:The database connection has been closed
 TESTING:Total runtime: [^,\r\n]+
-TESTING:Total traversal size: \d+.*
+TESTING:Total traversal size: \d+[^\r\n]*
 TESTING:Total items: \d+
 TESTING:Directories: \d+
 TESTING:Files: \d+

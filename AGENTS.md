@@ -80,7 +80,9 @@ Use tabs for indentation. Spaces may be used for alignment when needed, for exam
 - Add/adjust tests in `tests/src/` (pattern: `testXXXX.c`).
 - When creating new tests, look first for suitable shared helpers in `tests/src/helpers_db_utils.c` and `tests/src/helpers_file_utils.c`. Add local `static` helpers only when the shared helpers do not already provide the needed behavior
 - Update expected outputs in `tests/templates/` when behavior changes.
-- For output-oriented tests of the main application, prefer full golden templates in `tests/templates/` over inline partial regular expressions, and compare the complete output whenever practical
+- Output-oriented tests must use complete golden templates in `tests/templates/` for each checked nonempty stream. Matching selected lines or fragments is insufficient. Comparisons must cover the stream from beginning to end, including its expected line endings, and reject unexpected leading, trailing, or intermediate output
+- Golden regular expressions may accommodate variable values such as timestamps, paths, and sizes, but must preserve the expected output structure. Use whole-stream boundaries such as `\A` and `\z`, or `\Z` with explicit handling of the final newline. Line anchors `^` and `$` alone are insufficient. Do not use unrestricted wildcards to skip output: `match_pattern()` enables `PCRE2_DOTALL`, so `.*` can hide extra lines. Constrain variable fields to their intended content, using expressions such as `[^\r\n]+` for single-line values
+- Required empty stdout and stderr must be checked explicitly, using `STDOUT_MUST_BE_EMPTY` and `STDERR_MUST_BE_EMPTY` with `run_and_match_templates()`. A NULL template skips that stream and must not be treated as an empty-output check or complete output coverage
 - Add fixture data under `tests/fixtures/` only when needed for reproducible cases.
 
 ## Commit & Pull Request Guidelines

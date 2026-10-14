@@ -53,7 +53,7 @@ TESTING:The database connection has been closed
 TESTING:No changes were made. The primary database doesn't require vacuuming
 TESTING:(?:\x1B\[[0-9;]*m)*The database file database0009_5\.db has NOT been modified since the program was launched(?:\x1B\[[0-9;]*m)*
 TESTING:Total runtime: [^,\r\n]+
-TESTING:Total traversal size: \d+.*
+TESTING:Total traversal size: \d+[^\r\n]*
 TESTING:Total items: \d+
 TESTING:Directories: \d+
 TESTING:Files: \d+

@@ -56,7 +56,7 @@ ERROR:Internal error\. The database file database1\.db has NOT changed, but acco
 TESTING:Returned db_check_changes:\d+ status: WARNING
 TESTING:Returned status_of_changes:\d+ status: WARNING
 TESTING:Total runtime: [^,\r\n]+
-TESTING:Total traversal size: \d+.*
+TESTING:Total traversal size: \d+[^\r\n]*
 TESTING:Total items: \d+
 TESTING:Directories: \d+
 TESTING:Files: \d+

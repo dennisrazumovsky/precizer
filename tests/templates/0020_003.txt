@@ -26,7 +26,7 @@ TESTING:Final value for config->sqlite_open_flag: SQLITE_OPEN_READWRITE\|SQLITE_
 TESTING:Final value for config->db_initialize_tables: true
 TESTING:DB mode determined
 TESTING:The primary database file was just created and doesn't require verification
-ERROR:Can't open database write_protected_directory/database1\.db .* unable to open database file
+ERROR:Can't open database write_protected_directory/database1\.db [^\r\n]* unable to open database file
 TESTING:Database initialization process completed
 TESTING:Returned db_init:\d+ status: FAILURE
 ERROR:The precizer process terminated unexpectedly due to an error

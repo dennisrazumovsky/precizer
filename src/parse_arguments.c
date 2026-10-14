@@ -446,10 +446,10 @@ static error_t parse_opt(
 			{
 				if(config->db_file_paths.length < 2)
 				{
-					argp_failure(state,0,0,"ERROR: Too few arguments\n--compare require two arguments with paths to database files. See --help for more information");
+					argp_failure(state,0,0,"ERROR: Too few arguments. --compare require two arguments with paths to database files. See --help for more information");
 					return(EX_USAGE);
 				} else if(config->db_file_paths.length > 2){
-					argp_failure(state,0,0,"ERROR: Too many arguments\n--compare require just two arguments with paths to database files. See --help for more information");
+					argp_failure(state,0,0,"ERROR: Too many arguments. --compare require just two arguments with paths to database files. See --help for more information");
 					return(EX_USAGE);
 				}
 			}

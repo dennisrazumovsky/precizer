@@ -184,6 +184,15 @@ static error_t parse_opt(
 	char *ptr = NULL;
 	long int argument_value = -1;
 
+	/* Reject argp-marked -- before accepting operands or checking required paths.
+	   Error and cleanup events must not repeat the diagnostic */
+	if(state->quoted != 0 &&
+	   (key == ARGP_KEY_ARG || key == ARGP_KEY_NO_ARGS || key == ARGP_KEY_END))
+	{
+		argp_failure(state,0,0,"ERROR: Unsupported use of --");
+		return(EX_USAGE);
+	}
+
 	switch(key)
 	{
 		case 'd':

@@ -125,7 +125,7 @@ Return test0003_4(void)
 /**
  * @brief Require named and positional roots to produce the same traversal output
  *
- * @return Return status for both named value spellings and the option terminator
+ * @return Return status for long and short named options and positional roots
  */
 static Return test0003_5(void)
 {
@@ -135,7 +135,6 @@ static Return test0003_5(void)
 		{"--dry-run --database=dry_run_regular.db --path=tests/fixtures/diffs/diff1/",COMPLETED,"templates/0013_001_1.txt",STDERR_MUST_BE_EMPTY},
 		{"--dry-run --database=dry_run_regular.db --path tests/fixtures/diffs/diff1/",COMPLETED,"templates/0013_001_1.txt",STDERR_MUST_BE_EMPTY},
 		{"--dry-run --database=dry_run_regular.db -P tests/fixtures/diffs/diff1/",COMPLETED,"templates/0013_001_1.txt",STDERR_MUST_BE_EMPTY},
-		{"--dry-run --database=dry_run_regular.db --path=tests/fixtures/diffs/diff1 --",COMPLETED,"templates/0013_001_1.txt",STDERR_MUST_BE_EMPTY},
 		{0}
 	};
 
@@ -189,7 +188,11 @@ static Return test0003_7(void)
 	INITTEST;
 	const struct argument_test_case cases[] = {
 		{"--dry-run",FAILURE,"templates/0028_006_14.txt","templates/0003_002.txt"},
-		{"--",FAILURE,"templates/0028_006_14.txt","templates/0003_002.txt"},
+		{"--",FAILURE,"templates/0028_006_14.txt","templates/0003_024.txt"},
+		{"-- tests/fixtures/diffs/diff1",FAILURE,"templates/0028_006_14.txt","templates/0003_024.txt"},
+		{"--path=tests/fixtures/diffs/diff1 --",FAILURE,"templates/0028_006_14.txt","templates/0003_024.txt"},
+		{"--compare --",FAILURE,"templates/0028_006_14.txt","templates/0003_024.txt"},
+		{"--version --",FAILURE,"templates/0028_006_14.txt","templates/0003_024.txt"},
 		{"--path",FAILURE,"templates/0040_003.txt","templates/0003_008.txt"},
 		{"--path=",FAILURE,"templates/0040_003.txt","templates/0003_010.txt"},
 		{"--dry-run ''",FAILURE,"templates/0040_003.txt","templates/0003_010.txt"},
@@ -214,7 +217,7 @@ Return test0003(void)
 	TEST(test0003_2,"Running the application with no arguments at all");
 	TEST(test0003_3,"Information modes without PATH return success");
 	TEST(test0003_4,"Information modes ignore PATH and stop early");
-	TEST(test0003_5,"Named roots match positional traversal and accept an option terminator");
+	TEST(test0003_5,"Named roots match positional traversal");
 	TEST(test0003_6,"Repeated and positional roots are combined without removing duplicates");
 	TEST(test0003_7,"Missing or empty roots and missing compare operands are rejected");
 

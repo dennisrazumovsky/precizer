@@ -39,41 +39,28 @@ static Return test0013_1(void)
 }
 
 /**
- * In dry-run mode with checksums, files are hashed but DB is still not modified
+ * @brief Check output from both dry-run modes and verify that neither creates a database
+ *
+ * @return Return status for output comparisons and database absence checks
  */
 static Return test0013_2(void)
 {
 	INITTEST;
 
-	m_create(char,result,MEMORY_STRING);
-	m_create(char,pattern,MEMORY_STRING);
 	m_create(char,path,MEMORY_STRING);
 	bool file_exists = false;
 
 	ASSERT(SUCCESS == set_environment_variable("TESTING","true"));
 
-	const char *arguments = "--dry-run --database=dry_run_regular.db tests/fixtures/diffs/diff1";
-	ASSERT(SUCCESS == runit(arguments,result,NULL,COMPLETED,ALLOW_BOTH));
+	const struct argument_test_case cases[] = {
+		{"--dry-run --database=dry_run_regular.db tests/fixtures/diffs/diff1",COMPLETED,"templates/0013_001_1.txt","templates/empty_regex_pattern.txt"},
+		{"--dry-run=with-checksums --database=dry_run_with_checksums.db tests/fixtures/diffs/diff1",COMPLETED,"templates/0013_001_2.txt","templates/empty_regex_pattern.txt"},
+		{0}
+	};
 
-	const char *filename = "templates/0013_001_1.txt";
-	ASSERT(SUCCESS == get_file_content(filename,pattern));
-	ASSERT(SUCCESS == match_pattern(result,pattern,filename));
+	ASSERT(SUCCESS == run_and_match_templates(cases,NULL,NULL));
 
-	m_del(pattern);
-	m_del(result);
-
-	arguments = "--dry-run=with-checksums --database=dry_run_with_checksums.db tests/fixtures/diffs/diff1";
-	ASSERT(SUCCESS == runit(arguments,result,NULL,COMPLETED,ALLOW_BOTH));
-
-	filename = "templates/0013_001_2.txt";
-	ASSERT(SUCCESS == get_file_content(filename,pattern));
-	ASSERT(SUCCESS == match_pattern(result,pattern,filename));
-
-	m_del(pattern);
-	m_del(result);
-	m_del(path);
-
-	/* Dry-run should not create either DB file. */
+	/* Dry-run should not create either DB file */
 	ASSERT(SUCCESS == construct_path("dry_run_regular.db",path));
 	ASSERT(SUCCESS == check_file_exists(&file_exists,m_text(path)));
 	ASSERT(file_exists == false);
@@ -89,28 +76,22 @@ static Return test0013_2(void)
 }
 
 /**
- * Invalid dry-run mode should fail with error in stderr
+ * @brief Reject an invalid dry-run mode with the expected stderr diagnostic
+ *
+ * @return Return status for the expected exit code and stderr comparison
  */
 static Return test0013_3(void)
 {
 	INITTEST;
 
-	m_create(char,result,MEMORY_STRING);
-	m_create(char,pattern,MEMORY_STRING);
-
 	ASSERT(SUCCESS == set_environment_variable("TESTING","true"));
 
-	const char *arguments = "--dry-run=bad-mode --database=dry_run_invalid.db tests/fixtures/diffs/diff1";
+	const struct argument_test_case cases[] = {
+		{"--dry-run=bad-mode --database=dry_run_invalid.db tests/fixtures/diffs/diff1",FAILURE,NULL,"templates/0013_001_3.txt"},
+		{0}
+	};
 
-	ASSERT(SUCCESS == runit(arguments,NULL,result,FAILURE,STDERR_ALLOW));
-
-	const char *filename = "templates/0013_001_3.txt";
-
-	ASSERT(SUCCESS == get_file_content(filename,pattern));
-	ASSERT(SUCCESS == match_pattern(result,pattern,filename));
-
-	m_del(pattern);
-	m_del(result);
+	ASSERT(SUCCESS == run_and_match_templates(cases,NULL,NULL));
 
 	RETURN_STATUS;
 }

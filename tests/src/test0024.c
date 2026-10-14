@@ -9,11 +9,6 @@ Return test0024_1(void)
 {
 	INITTEST;
 
-	m_create(char,pattern,MEMORY_STRING);
-
-	// Create memory for the result
-	m_create(char,result,MEMORY_STRING);
-
 	/*
 	 * Checking how paths are handled when the directory name starts
 	 * with an apostrophe
@@ -25,13 +20,12 @@ Return test0024_1(void)
 
 	ASSERT(SUCCESS == set_environment_variable("TESTING","true"));
 
-	ASSERT(SUCCESS == runit(arguments,result,NULL,COMPLETED,ALLOW_BOTH));
-	ASSERT(SUCCESS == get_file_content(filename,pattern));
-	ASSERT(SUCCESS == match_pattern(result,pattern,filename));
+	const struct argument_test_case cases[] = {
+		{arguments,COMPLETED,filename,"templates/empty_regex_pattern.txt"},
+		{0}
+	};
 
-	// Clean to use it iteratively
-	m_del(pattern);
-	m_del(result);
+	ASSERT(SUCCESS == run_and_match_templates(cases,NULL,NULL));
 
 	// Clean up test results
 	ASSERT(SUCCESS == delete_path("database1.db"));
@@ -48,11 +42,6 @@ Return test0024_2(void)
 {
 	INITTEST;
 
-	m_create(char,pattern,MEMORY_STRING);
-
-	// Create memory for the result
-	m_create(char,result,MEMORY_STRING);
-
 	/*
 	 * Checking how paths are handled when the directory name ends
 	 * with an apostrophe
@@ -63,13 +52,12 @@ Return test0024_2(void)
 
 	ASSERT(SUCCESS == set_environment_variable("TESTING","true"));
 
-	ASSERT(SUCCESS == runit(arguments,result,NULL,COMPLETED,ALLOW_BOTH));
-	ASSERT(SUCCESS == get_file_content(filename,pattern));
-	ASSERT(SUCCESS == match_pattern(result,pattern,filename));
+	const struct argument_test_case cases[] = {
+		{arguments,COMPLETED,filename,"templates/empty_regex_pattern.txt"},
+		{0}
+	};
 
-	// Clean to use it iteratively
-	m_del(pattern);
-	m_del(result);
+	ASSERT(SUCCESS == run_and_match_templates(cases,NULL,NULL));
 
 	// Clean up test results
 	ASSERT(SUCCESS == delete_path("database1.db"));

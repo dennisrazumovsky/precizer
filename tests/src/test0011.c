@@ -180,43 +180,27 @@ static Return test0011_3(void)
 {
 	INITTEST;
 
-	// Create memory for the result
-	m_create(char,result,MEMORY_STRING);
-
 	ASSERT(SUCCESS == set_environment_variable("TESTING","false"));
 
 	const char *arguments = "--silent --update --check-level=QUICK --progress --database=database1.db "
 	        "tests/fixtures/diffs/diff1";
 
-	ASSERT(SUCCESS == runit(arguments,result,NULL,COMPLETED,ALLOW_BOTH));
-
 	// Verify that silent mode produced no stdout after command execution
-	ASSERT(result->length == 0);
+	const struct argument_test_case silent_cases[] = {
+		{arguments,COMPLETED,"templates/empty_regex_pattern.txt","templates/empty_regex_pattern.txt"},
+		{0}
+	};
 
-#if 0
-	// Verify that silent mode produced no stdout after command execution
-	if(result->length != 0)
-	{
-		echo(STDERR,"ERROR: In silent mode stdout must be empty\n");
-		echo(STDERR,YELLOW "Output:\n>>" RESET "%s" YELLOW "<<\n" RESET,m_text(result));
-		status = FAILURE;
-	}
-#endif
-
-	call(m_del(result));
-
-	m_create(char,pattern,MEMORY_STRING);
+	ASSERT(SUCCESS == run_and_match_templates(silent_cases,NULL,NULL));
 
 	ASSERT(SUCCESS == set_environment_variable("TESTING","true"));
 
-	const char *filename = "templates/0011_003.txt";
+	const struct argument_test_case testing_cases[] = {
+		{arguments,COMPLETED,"templates/0011_003.txt","templates/empty_regex_pattern.txt"},
+		{0}
+	};
 
-	ASSERT(SUCCESS == runit(arguments,result,NULL,COMPLETED,ALLOW_BOTH));
-	ASSERT(SUCCESS == get_file_content(filename,pattern));
-	ASSERT(SUCCESS == match_pattern(result,pattern,filename));
-
-	m_del(pattern);
-	m_del(result);
+	ASSERT(SUCCESS == run_and_match_templates(testing_cases,NULL,NULL));
 
 	RETURN_STATUS;
 }
@@ -231,26 +215,19 @@ static Return test0011_4(void)
 {
 	INITTEST;
 
-	// Create memory for the result
-	m_create(char,result,MEMORY_STRING);
-
-	m_create(char,pattern,MEMORY_STRING);
-
-	const char *filename = "templates/0011_004_1.txt";
-
 	ASSERT(SUCCESS == set_environment_variable("TESTING","false"));
 
 	const char *arguments = "--verbose --update --check-level=QUICK --progress --database=database1.db "
 	        "tests/fixtures/diffs/diff1";
 
-	ASSERT(SUCCESS == runit(arguments,result,NULL,COMPLETED,ALLOW_BOTH));
-	ASSERT(SUCCESS == get_file_content(filename,pattern));
-	ASSERT(SUCCESS == match_pattern(result,pattern,filename));
+	const struct argument_test_case cases[] = {
+		{arguments,COMPLETED,"templates/0011_004_1.txt","templates/empty_regex_pattern.txt"},
+		{0}
+	};
+
+	ASSERT(SUCCESS == run_and_match_templates(cases,NULL,NULL));
 
 	// Clean up test results
-	m_del(pattern);
-	m_del(result);
-
 	ASSERT(SUCCESS == delete_path("database1.db"));
 	ASSERT(SUCCESS == restore_mutable_fixture("tests/fixtures/diffs/diff1"));
 
@@ -270,27 +247,22 @@ static Return test0011_5(void)
 
 	ASSERT(SUCCESS == set_environment_variable("TESTING","true"));
 
-	const char *arguments = "--maxdepth=0 tests/fixtures/4";
-
-	const char *filename = "templates/0011_005_1.txt";
-
 	const char *template = "%DB_NAME%";
 
 	const char *replacement = getenv("DBNAME");  // Database name
 
 	ASSERT(replacement != NULL);
 
-	ASSERT(SUCCESS == match_app_output(arguments,filename,template,replacement,COMPLETED));
+	const struct argument_test_case cases[] = {
+		{"--maxdepth=0 tests/fixtures/4",COMPLETED,"templates/0011_005_1.txt","templates/empty_regex_pattern.txt"},
+		/* At the second stage, the --maxdepth=0 option is not used.
+		   Therefore, all files that were not previously included
+		   will be added to the database */
+		{"--update --check-level=QUICK tests/fixtures/4",COMPLETED,"templates/0011_005_2.txt","templates/empty_regex_pattern.txt"},
+		{0}
+	};
 
-	/* At the second stage, the --maxdepth=0 option is not used.
-	   Therefore, all files that were not previously included
-	   will be added to the database. */
-
-	arguments = "--update --check-level=QUICK tests/fixtures/4";
-
-	filename = "templates/0011_005_2.txt";
-
-	ASSERT(SUCCESS == match_app_output(arguments,filename,template,replacement,COMPLETED));
+	ASSERT(SUCCESS == run_and_match_templates(cases,template,replacement));
 
 	ASSERT(SUCCESS == delete_path(replacement));
 
@@ -310,23 +282,19 @@ static Return test0011_6(void)
 
 	ASSERT(SUCCESS == set_environment_variable("TESTING","false"));
 
-	const char *arguments = "--ignore=\"^diff1/1/.*\" tests/fixtures/diffs";
-
-	const char *filename = "templates/0011_006_1.txt";
-
 	const char *template = "%DB_NAME%";
 
 	const char *replacement = getenv("DBNAME");  // Database name
 
 	ASSERT(replacement != NULL);
 
-	ASSERT(SUCCESS == match_app_output(arguments,filename,template,replacement,COMPLETED));
+	const struct argument_test_case cases[] = {
+		{"--ignore=\"^diff1/1/.*\" tests/fixtures/diffs",COMPLETED,"templates/0011_006_1.txt","templates/empty_regex_pattern.txt"},
+		{"--update --check-level=QUICK tests/fixtures/diffs",COMPLETED,"templates/0011_006_2.txt","templates/empty_regex_pattern.txt"},
+		{0}
+	};
 
-	filename = "templates/0011_006_2.txt";
-
-	arguments = "--update --check-level=QUICK tests/fixtures/diffs";
-
-	ASSERT(SUCCESS == match_app_output(arguments,filename,template,replacement,COMPLETED));
+	ASSERT(SUCCESS == run_and_match_templates(cases,template,replacement));
 
 	RETURN_STATUS;
 }
@@ -356,7 +324,12 @@ static Return test0011_7(void)
 
 	ASSERT(replacement != NULL);
 
-	ASSERT(SUCCESS == match_app_output(arguments,filename,template,replacement,COMPLETED));
+	const struct argument_test_case cases[] = {
+		{arguments,COMPLETED,filename,"templates/empty_regex_pattern.txt"},
+		{0}
+	};
+
+	ASSERT(SUCCESS == run_and_match_templates(cases,template,replacement));
 
 	ASSERT(SUCCESS == delete_path(replacement));
 
@@ -399,12 +372,14 @@ static Return test0011_8(void)
 
 	ASSERT(replacement != NULL);
 
-	ASSERT(SUCCESS == match_app_output(arguments,filename,template,replacement,COMPLETED));
+	const struct argument_test_case update_cases[] = {
+		{arguments,COMPLETED,filename,"templates/empty_regex_pattern.txt"},
+		{0}
+	};
+
+	ASSERT(SUCCESS == run_and_match_templates(update_cases,template,replacement));
 
 	ASSERT(SUCCESS == delete_path(replacement));
-
-	m_create(char,result,MEMORY_STRING);
-	m_create(char,pattern,MEMORY_STRING);
 
 	arguments = "--progress --database=database1.db tests/fixtures/diffs/diff1";
 
@@ -423,12 +398,12 @@ static Return test0011_8(void)
 
 	filename = "templates/0011_008_2.txt";
 
-	ASSERT(SUCCESS == runit(arguments,result,NULL,COMPLETED,ALLOW_BOTH));
-	ASSERT(SUCCESS == get_file_content(filename,pattern));
-	ASSERT(SUCCESS == match_pattern(result,pattern,filename));
+	const struct argument_test_case compare_cases[] = {
+		{arguments,COMPLETED,filename,"templates/empty_regex_pattern.txt"},
+		{0}
+	};
 
-	m_del(pattern);
-	m_del(result);
+	ASSERT(SUCCESS == run_and_match_templates(compare_cases,NULL,NULL));
 
 	ASSERT(SUCCESS == delete_path("database1.db"));
 	ASSERT(SUCCESS == delete_path("database2.db"));

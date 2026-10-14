@@ -9,51 +9,20 @@ Return test0018_1(void)
 {
 	INITTEST;
 
-	/* File system traversal with a maximum depth of 3 */
-	m_create(char,result,MEMORY_STRING);
-
-	m_create(char,pattern,MEMORY_STRING);
-
-	const char *filename = "templates/0018_001_1.txt";
-
 	ASSERT(SUCCESS == set_environment_variable("TESTING","true"));
 
-	const char *arguments = "--maxdepth=3 --database=database3.db "
-	        "$TMPDIR/tests/fixtures/levels";
-
-	ASSERT(SUCCESS == runit(arguments,result,NULL,COMPLETED,ALLOW_BOTH));
-
-	ASSERT(SUCCESS == get_file_content(filename,pattern));
-
-	// Match the result against the pattern
-	ASSERT(SUCCESS == match_pattern(result,pattern,filename));
-
-	// Clean to use it iteratively
-	m_del(pattern);
-	m_del(result);
-
-	#if 0
-	echo(STDOUT,"%s\n",m_text(result));
-	#endif
-
-	/* File system traversal with unlimited depth */
-	filename = "templates/0018_001_2.txt";
-
-	ASSERT(SUCCESS == set_environment_variable("TESTING","true"));
-
-	arguments = "--database=database4.db "
-	        "$TMPDIR/tests/fixtures/levels";
-
-	ASSERT(SUCCESS == runit(arguments,result,NULL,COMPLETED,ALLOW_BOTH));
-
-	ASSERT(SUCCESS == get_file_content(filename,pattern));
+	const struct argument_test_case cases[] = {
+		/* File system traversal with a maximum depth of 3 */
+		{"--maxdepth=3 --database=database3.db "
+		 "$TMPDIR/tests/fixtures/levels",COMPLETED,"templates/0018_001_1.txt","templates/empty_regex_pattern.txt"},
+		/* File system traversal with unlimited depth */
+		{"--database=database4.db "
+		 "$TMPDIR/tests/fixtures/levels",COMPLETED,"templates/0018_001_2.txt","templates/empty_regex_pattern.txt"},
+		{0}
+	};
 
 	// Match the result against the pattern
-	ASSERT(SUCCESS == match_pattern(result,pattern,filename));
-
-	// Clean to use it iteratively
-	m_del(pattern);
-	m_del(result);
+	ASSERT(SUCCESS == run_and_match_templates(cases,NULL,NULL));
 
 	// Clean up test results
 	ASSERT(SUCCESS == delete_path("database4.db"));
@@ -70,28 +39,17 @@ Return test0018_2(void)
 {
 	INITTEST;
 
-	/* File system traversal with a maximum depth of 3 */
-	m_create(char,result,MEMORY_STRING);
-	m_create(char,pattern,MEMORY_STRING);
-
-	/* File system traversal with unlimited depth */
-	const char *filename = "templates/0018_002.txt";
-
 	ASSERT(SUCCESS == set_environment_variable("TESTING","true"));
 
-	const char *arguments = "--update --check-level=QUICK --database=database3.db "
-	        "$TMPDIR/tests/fixtures/levels";
-
-	ASSERT(SUCCESS == runit(arguments,result,NULL,COMPLETED,ALLOW_BOTH));
-
-	ASSERT(SUCCESS == get_file_content(filename,pattern));
+	/* File system traversal with unlimited depth */
+	const struct argument_test_case cases[] = {
+		{"--update --check-level=QUICK --database=database3.db "
+		 "$TMPDIR/tests/fixtures/levels",COMPLETED,"templates/0018_002.txt","templates/empty_regex_pattern.txt"},
+		{0}
+	};
 
 	// Match the result against the pattern
-	ASSERT(SUCCESS == match_pattern(result,pattern,filename));
-
-	// Clean to use it iteratively
-	m_del(pattern);
-	m_del(result);
+	ASSERT(SUCCESS == run_and_match_templates(cases,NULL,NULL));
 
 	// Clean up test results
 	ASSERT(SUCCESS == delete_path("database3.db"));
@@ -199,22 +157,14 @@ static Return test0018_5(void)
 {
 	INITTEST;
 
-	m_create(char,result,MEMORY_STRING);
-	m_create(char,pattern,MEMORY_STRING);
-
 	ASSERT(SUCCESS == set_environment_variable("TESTING","true"));
 
-	const char *arguments = "--maxdepth= tests/fixtures/diffs/diff1";
+	const struct argument_test_case cases[] = {
+		{"--maxdepth= tests/fixtures/diffs/diff1",FAILURE,NULL,"templates/0018_005.txt"},
+		{0}
+	};
 
-	ASSERT(SUCCESS == runit(arguments,NULL,result,FAILURE,STDERR_ALLOW));
-
-	const char *filename = "templates/0018_005.txt";
-
-	ASSERT(SUCCESS == get_file_content(filename,pattern));
-	ASSERT(SUCCESS == match_pattern(result,pattern,filename));
-
-	m_del(pattern);
-	m_del(result);
+	ASSERT(SUCCESS == run_and_match_templates(cases,NULL,NULL));
 
 	RETURN_STATUS;
 }

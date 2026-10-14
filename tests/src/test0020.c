@@ -9,27 +9,18 @@ Return test0020_1(void)
 {
 	INITTEST;
 
-	m_create(char,result,MEMORY_STRING);
-
-	m_create(char,pattern,MEMORY_STRING);
-
-	const char *filename = "templates/0020_001.txt";
-
 	ASSERT(SUCCESS == set_environment_variable("TESTING","true"));
 
 	const char *arguments = "--update --database=nonexistent_directory/database1.db "
 	        "tests/fixtures/diffs/diff1";
 
-	ASSERT(SUCCESS == runit(arguments,result,NULL,FAILURE,ALLOW_BOTH));
-
-	ASSERT(SUCCESS == get_file_content(filename,pattern));
+	const struct argument_test_case cases[] = {
+		{arguments,FAILURE,"templates/0020_001.txt","templates/empty_regex_pattern.txt"},
+		{0}
+	};
 
 	// Match the result against the pattern
-	ASSERT(SUCCESS == match_pattern(result,pattern,filename));
-
-	// Clean to use it iteratively
-	m_del(pattern);
-	m_del(result);
+	ASSERT(SUCCESS == run_and_match_templates(cases,NULL,NULL));
 
 	RETURN_STATUS;
 }
@@ -43,27 +34,18 @@ Return test0020_2(void)
 {
 	INITTEST;
 
-	m_create(char,result,MEMORY_STRING);
-
-	m_create(char,pattern,MEMORY_STRING);
-
-	const char *filename = "templates/0020_002.txt";
-
 	ASSERT(SUCCESS == set_environment_variable("TESTING","true"));
 
 	const char *arguments = "--update --database=nonexistent_database1.db "
 	        "tests/fixtures/diffs/diff1";
 
-	ASSERT(SUCCESS == runit(arguments,result,NULL,FAILURE,ALLOW_BOTH));
-
-	ASSERT(SUCCESS == get_file_content(filename,pattern));
+	const struct argument_test_case cases[] = {
+		{arguments,FAILURE,"templates/0020_002.txt","templates/empty_regex_pattern.txt"},
+		{0}
+	};
 
 	// Match the result against the pattern
-	ASSERT(SUCCESS == match_pattern(result,pattern,filename));
-
-	// Clean to use it iteratively
-	m_del(pattern);
-	m_del(result);
+	ASSERT(SUCCESS == run_and_match_templates(cases,NULL,NULL));
 
 	RETURN_STATUS;
 }
@@ -77,30 +59,21 @@ Return test0020_3(void)
 {
 	INITTEST;
 
-	m_create(char,result,MEMORY_STRING);
-
-	m_create(char,pattern,MEMORY_STRING);
-
 	ASSERT(SUCCESS == create_directory("write_protected_directory"));
 	ASSERT(SUCCESS == change_mode("write_protected_directory",0000));
-
-	const char *filename = "templates/0020_003.txt";
 
 	ASSERT(SUCCESS == set_environment_variable("TESTING","true"));
 
 	const char *arguments = "--database=write_protected_directory/database1.db "
 	        "tests/fixtures/diffs/diff1";
 
-	ASSERT(SUCCESS == runit(arguments,result,NULL,FAILURE,ALLOW_BOTH));
-
-	ASSERT(SUCCESS == get_file_content(filename,pattern));
+	const struct argument_test_case cases[] = {
+		{arguments,FAILURE,"templates/0020_003.txt","templates/empty_regex_pattern.txt"},
+		{0}
+	};
 
 	// Match the result against the pattern
-	ASSERT(SUCCESS == match_pattern(result,pattern,filename));
-
-	// Clean to use it iteratively
-	m_del(pattern);
-	m_del(result);
+	ASSERT(SUCCESS == run_and_match_templates(cases,NULL,NULL));
 
 	ASSERT(SUCCESS == change_mode("write_protected_directory",0777));
 	ASSERT(SUCCESS == delete_path("write_protected_directory"));
@@ -117,10 +90,6 @@ Return test0020_4(void)
 {
 	INITTEST;
 
-	m_create(char,result,MEMORY_STRING);
-
-	m_create(char,pattern,MEMORY_STRING);
-
 	ASSERT(SUCCESS == set_environment_variable("TESTING","true"));
 
 	const char *arguments = "--database=write_protected_database1.db "
@@ -134,20 +103,15 @@ Return test0020_4(void)
 
 	ASSERT(SUCCESS == change_mode("write_protected_database1.db",0000));
 
-	const char *filename = "templates/0020_004.txt";
-
 	arguments = "--compare write_protected_database1.db database2.db";
 
-	ASSERT(SUCCESS == runit(arguments,result,NULL,FAILURE,ALLOW_BOTH));
-
-	ASSERT(SUCCESS == get_file_content(filename,pattern));
+	const struct argument_test_case cases[] = {
+		{arguments,FAILURE,"templates/0020_004.txt","templates/empty_regex_pattern.txt"},
+		{0}
+	};
 
 	// Match the result against the pattern
-	ASSERT(SUCCESS == match_pattern(result,pattern,filename));
-
-	// Clean to use it iteratively
-	m_del(pattern);
-	m_del(result);
+	ASSERT(SUCCESS == run_and_match_templates(cases,NULL,NULL));
 
 	ASSERT(SUCCESS == delete_path("database2.db"));
 
@@ -163,27 +127,18 @@ Return test0020_5(void)
 {
 	INITTEST;
 
-	m_create(char,result,MEMORY_STRING);
-
-	m_create(char,pattern,MEMORY_STRING);
-
 	ASSERT(SUCCESS == set_environment_variable("TESTING","true"));
-
-	const char *filename = "templates/0020_005.txt";
 
 	const char *arguments = "--update --database=write_protected_database1.db "
 	        "tests/fixtures/diffs/diff1";
 
-	ASSERT(SUCCESS == runit(arguments,result,NULL,FAILURE,ALLOW_BOTH));
-
-	ASSERT(SUCCESS == get_file_content(filename,pattern));
+	const struct argument_test_case cases[] = {
+		{arguments,FAILURE,"templates/0020_005.txt","templates/empty_regex_pattern.txt"},
+		{0}
+	};
 
 	// Match the result against the pattern
-	ASSERT(SUCCESS == match_pattern(result,pattern,filename));
-
-	// Clean to use it iteratively
-	m_del(pattern);
-	m_del(result);
+	ASSERT(SUCCESS == run_and_match_templates(cases,NULL,NULL));
 
 	ASSERT(SUCCESS == change_mode("write_protected_database1.db",0666));
 	ASSERT(SUCCESS == delete_path("write_protected_database1.db"));
@@ -200,30 +155,21 @@ Return test0020_6(void)
 {
 	INITTEST;
 
-	m_create(char,result,MEMORY_STRING);
-
-	m_create(char,pattern,MEMORY_STRING);
-
-	const char *filename = "templates/0020_006.txt";
-
 	ASSERT(SUCCESS == set_environment_variable("TESTING","true"));
 
 	const char *arguments = "--database=database1.db tests/fixtures/diffs/diff1";
 
-	ASSERT(SUCCESS == runit(arguments,result,NULL,COMPLETED,ALLOW_BOTH));
+	ASSERT(SUCCESS == runit(arguments,NULL,NULL,COMPLETED,ALLOW_BOTH));
 
 	arguments = "--check-level=QUICK --update --database=database1.db tests/fixtures/diffs/diff2";
 
-	ASSERT(SUCCESS == runit(arguments,result,NULL,WARNING,ALLOW_BOTH));
-
-	ASSERT(SUCCESS == get_file_content(filename,pattern));
+	const struct argument_test_case cases[] = {
+		{arguments,WARNING,"templates/0020_006.txt","templates/empty_regex_pattern.txt"},
+		{0}
+	};
 
 	// Match the result against the pattern
-	ASSERT(SUCCESS == match_pattern(result,pattern,filename));
-
-	// Clean to use it iteratively
-	m_del(pattern);
-	m_del(result);
+	ASSERT(SUCCESS == run_and_match_templates(cases,NULL,NULL));
 
 	RETURN_STATUS;
 }
@@ -236,12 +182,6 @@ Return test0020_6(void)
 Return test0020_7(void)
 {
 	INITTEST;
-
-	m_create(char,result,MEMORY_STRING);
-
-	m_create(char,pattern,MEMORY_STRING);
-
-	const char *filename = "templates/0020_007.txt";
 
 	ASSERT(SUCCESS == set_environment_variable("TESTING","true"));
 
@@ -258,16 +198,13 @@ Return test0020_7(void)
 	const char *arguments = "--check-level=QUICK --update --force --database=database1.db "
 	        "tests/fixtures/diffs/diff2";
 
-	ASSERT(SUCCESS == runit(arguments,result,NULL,COMPLETED,ALLOW_BOTH));
-
-	ASSERT(SUCCESS == get_file_content(filename,pattern));
+	const struct argument_test_case cases[] = {
+		{arguments,COMPLETED,"templates/0020_007.txt","templates/empty_regex_pattern.txt"},
+		{0}
+	};
 
 	// Match the result against the pattern
-	ASSERT(SUCCESS == match_pattern(result,pattern,filename));
-
-	// Clean to use it iteratively
-	m_del(pattern);
-	m_del(result);
+	ASSERT(SUCCESS == run_and_match_templates(cases,NULL,NULL));
 
 	ASSERT(SUCCESS == delete_path("database1.db"));
 

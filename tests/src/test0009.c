@@ -10,21 +10,18 @@ Return test0009_1(void)
 	INITTEST;
 	const char *db_filename = "database0009.db";
 
-	m_create(char,result,MEMORY_STRING);
-	m_create(char,pattern,MEMORY_STRING);
-
 	ASSERT(SUCCESS == set_environment_variable("TESTING","false"));
 
 	const char *arguments = "--database=database0009.db "
-		"--ignore=\"^(?:skip_|tmp_).*\\.(?:log|bak)$\" "
-		"tests/fixtures/ignore_include_cases/chaotic_filenames";
+	        "--ignore=\"^(?:skip_|tmp_).*\\.(?:log|bak)$\" "
+	        "tests/fixtures/ignore_include_cases/chaotic_filenames";
 
-	ASSERT(SUCCESS == runit(arguments,result,NULL,COMPLETED,ALLOW_BOTH));
+	const struct argument_test_case non_testing_cases[] = {
+		{arguments,COMPLETED,"templates/0009_001_1.txt","templates/empty_regex_pattern.txt"},
+		{0}
+	};
 
-	const char *filename = "templates/0009_001_1.txt";
-
-	ASSERT(SUCCESS == get_file_content(filename,pattern));
-	ASSERT(SUCCESS == match_pattern(result,pattern,filename));
+	ASSERT(SUCCESS == run_and_match_templates(non_testing_cases,NULL,NULL));
 
 	const char *expected_paths[] =
 	{
@@ -42,17 +39,14 @@ Return test0009_1(void)
 
 	ASSERT(SUCCESS == set_environment_variable("TESTING","true"));
 
-	ASSERT(SUCCESS == runit(arguments,result,NULL,COMPLETED,ALLOW_BOTH));
+	const struct argument_test_case testing_cases[] = {
+		{arguments,COMPLETED,"templates/0009_001_2.txt","templates/empty_regex_pattern.txt"},
+		{0}
+	};
 
-	filename = "templates/0009_001_2.txt";
-
-	ASSERT(SUCCESS == get_file_content(filename,pattern));
-	ASSERT(SUCCESS == match_pattern(result,pattern,filename));
+	ASSERT(SUCCESS == run_and_match_templates(testing_cases,NULL,NULL));
 
 	ASSERT(SUCCESS == delete_path(db_filename));
-
-	m_del(pattern);
-	m_del(result);
 
 	RETURN_STATUS;
 }
@@ -67,22 +61,19 @@ static Return test0009_2(void)
 	INITTEST;
 	const char *db_filename = "database0009_2.db";
 
-	m_create(char,result,MEMORY_STRING);
-	m_create(char,pattern,MEMORY_STRING);
-
 	ASSERT(SUCCESS == set_environment_variable("TESTING","false"));
 
 	const char *arguments = "--database=database0009_2.db "
-		"--ignore=\"^(?:skip_|tmp_|zeta_|omega_).+\" "
-		"--include=\"^(?:skip_4xv7__m2\\.log|tmp_qwe_90210\\.log|zeta_z1-9vv\\.dat)$\" "
-		"tests/fixtures/ignore_include_cases/chaotic_filenames";
+	        "--ignore=\"^(?:skip_|tmp_|zeta_|omega_).+\" "
+	        "--include=\"^(?:skip_4xv7__m2\\.log|tmp_qwe_90210\\.log|zeta_z1-9vv\\.dat)$\" "
+	        "tests/fixtures/ignore_include_cases/chaotic_filenames";
 
-	ASSERT(SUCCESS == runit(arguments,result,NULL,COMPLETED,ALLOW_BOTH));
+	const struct argument_test_case cases[] = {
+		{arguments,COMPLETED,"templates/0009_002.txt","templates/empty_regex_pattern.txt"},
+		{0}
+	};
 
-	const char *filename = "templates/0009_002.txt";
-
-	ASSERT(SUCCESS == get_file_content(filename,pattern));
-	ASSERT(SUCCESS == match_pattern(result,pattern,filename));
+	ASSERT(SUCCESS == run_and_match_templates(cases,NULL,NULL));
 
 	const char *expected_paths[] =
 	{
@@ -99,9 +90,6 @@ static Return test0009_2(void)
 
 	ASSERT(SUCCESS == delete_path(db_filename));
 
-	m_del(pattern);
-	m_del(result);
-
 	RETURN_STATUS;
 }
 
@@ -115,22 +103,19 @@ static Return test0009_3(void)
 	INITTEST;
 	const char *db_filename = "database0009_3.db";
 
-	m_create(char,result,MEMORY_STRING);
-	m_create(char,pattern,MEMORY_STRING);
-
 	ASSERT(SUCCESS == set_environment_variable("TESTING","false"));
 
 	const char *arguments = "--database=database0009_3.db "
-		"--ignore=\"^chaotic_filenames(?:/|$)\" "
-		"--include=\"^chaotic_filenames/(?:alpha_m0n9k2_zz\\.txt|hold_a1r9v-0pq\\.bak|keep_4xv7__m2\\.log|omega_77xy__aa\\.bin|xqwe_90210\\.md|zeta_z1-9vv\\.dat)$\" "
-		"tests/fixtures/ignore_include_cases";
+	        "--ignore=\"^chaotic_filenames(?:/|$)\" "
+	        "--include=\"^chaotic_filenames/(?:alpha_m0n9k2_zz\\.txt|hold_a1r9v-0pq\\.bak|keep_4xv7__m2\\.log|omega_77xy__aa\\.bin|xqwe_90210\\.md|zeta_z1-9vv\\.dat)$\" "
+	        "tests/fixtures/ignore_include_cases";
 
-	ASSERT(SUCCESS == runit(arguments,result,NULL,COMPLETED,ALLOW_BOTH));
+	const struct argument_test_case cases[] = {
+		{arguments,COMPLETED,"templates/0009_003.txt","templates/empty_regex_pattern.txt"},
+		{0}
+	};
 
-	const char *filename = "templates/0009_003.txt";
-
-	ASSERT(SUCCESS == get_file_content(filename,pattern));
-	ASSERT(SUCCESS == match_pattern(result,pattern,filename));
+	ASSERT(SUCCESS == run_and_match_templates(cases,NULL,NULL));
 
 	const char *expected_paths[] =
 	{
@@ -146,9 +131,6 @@ static Return test0009_3(void)
 
 	ASSERT(SUCCESS == delete_path(db_filename));
 
-	m_del(pattern);
-	m_del(result);
-
 	RETURN_STATUS;
 }
 
@@ -160,17 +142,15 @@ static Return test0009_4(void)
 	INITTEST;
 
 	const char *db_filename = "database0009_4.db";
-	m_create(char,result,MEMORY_STRING);
-	m_create(char,pattern,MEMORY_STRING);
 
 	ASSERT(SUCCESS == prepare_mutable_fixture("tests/fixtures/ignore_include_cases/chaotic_filenames"));
 
 	ASSERT(SUCCESS == set_environment_variable("TESTING","true"));
 
 	const char *arguments_create = "--database=database0009_4.db "
-		"--ignore=\"^(?:skip_|tmp_).+\" "
-		"--include=\"^(?:skip_4xv7__m2\\.log|tmp_qwe_90210\\.log|tmp_z1-9vv\\.bak)$\" "
-		"tests/fixtures/ignore_include_cases/chaotic_filenames";
+	        "--ignore=\"^(?:skip_|tmp_).+\" "
+	        "--include=\"^(?:skip_4xv7__m2\\.log|tmp_qwe_90210\\.log|tmp_z1-9vv\\.bak)$\" "
+	        "tests/fixtures/ignore_include_cases/chaotic_filenames";
 
 	/*
 	 * Create the baseline DB using the same ignore/include rules as the later update passes
@@ -178,25 +158,27 @@ static Return test0009_4(void)
 	 * Update mode processes the current filtered set and does not retroactively delete rows that were inserted earlier
 	 * If this first pass omitted filters, all 12 paths would be stored and the update-included scenario would validate a different logic branch
 	 */
-	ASSERT(SUCCESS == runit(arguments_create,result,NULL,COMPLETED,ALLOW_BOTH));
+	const struct argument_test_case create_cases[] = {
+		{arguments_create,COMPLETED,"templates/0009_004_1.txt","templates/empty_regex_pattern.txt"},
+		{0}
+	};
 
-	const char *filename = "templates/0009_004_1.txt";
-	ASSERT(SUCCESS == get_file_content(filename,pattern));
-	ASSERT(SUCCESS == match_pattern(result,pattern,filename));
+	ASSERT(SUCCESS == run_and_match_templates(create_cases,NULL,NULL));
 
 	ASSERT(SUCCESS == add_string_to(" ","tests/fixtures/ignore_include_cases/chaotic_filenames/skip_4xv7__m2.log"));
 
 	const char *arguments_update = "--update --check-level=QUICK --database=database0009_4.db "
-		"--ignore=\"^(?:skip_|tmp_).+\" "
-		"--include=\"^(?:skip_4xv7__m2\\.log|tmp_qwe_90210\\.log|tmp_z1-9vv\\.bak)$\" "
-		"tests/fixtures/ignore_include_cases/chaotic_filenames";
+	        "--ignore=\"^(?:skip_|tmp_).+\" "
+	        "--include=\"^(?:skip_4xv7__m2\\.log|tmp_qwe_90210\\.log|tmp_z1-9vv\\.bak)$\" "
+	        "tests/fixtures/ignore_include_cases/chaotic_filenames";
 
 	// Update mode pass where only one included file has changed
-	ASSERT(SUCCESS == runit(arguments_update,result,NULL,COMPLETED,ALLOW_BOTH));
+	const struct argument_test_case update_cases[] = {
+		{arguments_update,COMPLETED,"templates/0009_004_2.txt","templates/empty_regex_pattern.txt"},
+		{0}
+	};
 
-	filename = "templates/0009_004_2.txt";
-	ASSERT(SUCCESS == get_file_content(filename,pattern));
-	ASSERT(SUCCESS == match_pattern(result,pattern,filename));
+	ASSERT(SUCCESS == run_and_match_templates(update_cases,NULL,NULL));
 
 	ASSERT(SUCCESS == add_string_to(" ","tests/fixtures/ignore_include_cases/chaotic_filenames/tmp_qwe_90210.log"));
 	ASSERT(SUCCESS == add_string_to(" ","tests/fixtures/ignore_include_cases/chaotic_filenames/tmp_z1-9vv.bak"));
@@ -204,16 +186,17 @@ static Return test0009_4(void)
 	ASSERT(SUCCESS == truncate_file_to_zero_size("tests/fixtures/ignore_include_cases/chaotic_filenames/alpha_m0n9k2_zz.txt"));
 
 	const char *arguments_update_watch = "--watch-timestamps --update --check-level=QUICK --database=database0009_4.db "
-		"--ignore=\"^(?:skip_|tmp_).+\" "
-		"--include=\"^(?:skip_4xv7__m2\\.log|tmp_qwe_90210\\.log|tmp_z1-9vv\\.bak)$\" "
-		"tests/fixtures/ignore_include_cases/chaotic_filenames";
+	        "--ignore=\"^(?:skip_|tmp_).+\" "
+	        "--include=\"^(?:skip_4xv7__m2\\.log|tmp_qwe_90210\\.log|tmp_z1-9vv\\.bak)$\" "
+	        "tests/fixtures/ignore_include_cases/chaotic_filenames";
 
 	// Update mode with watch-timestamps enabled where one non-included file becomes empty and two included files are updated
-	ASSERT(SUCCESS == runit(arguments_update_watch,result,NULL,COMPLETED,ALLOW_BOTH));
+	const struct argument_test_case watch_timestamps_cases[] = {
+		{arguments_update_watch,COMPLETED,"templates/0009_004_3.txt","templates/empty_regex_pattern.txt"},
+		{0}
+	};
 
-	filename = "templates/0009_004_3.txt";
-	ASSERT(SUCCESS == get_file_content(filename,pattern));
-	ASSERT(SUCCESS == match_pattern(result,pattern,filename));
+	ASSERT(SUCCESS == run_and_match_templates(watch_timestamps_cases,NULL,NULL));
 
 	const char *expected_paths[] =
 	{
@@ -232,9 +215,6 @@ static Return test0009_4(void)
 	ASSERT(SUCCESS == delete_path(db_filename));
 
 	ASSERT(SUCCESS == restore_mutable_fixture("tests/fixtures/ignore_include_cases/chaotic_filenames"));
-
-	m_del(pattern);
-	m_del(result);
 
 	RETURN_STATUS;
 }
@@ -255,8 +235,6 @@ static Return test0009_5(void)
 	const char *ignored_relative_path = "path2/AAA/ZAW/D/e/f/b_file.txt";
 	const char *arguments = NULL;
 	bool ignored_row_exists = false;
-	m_create(char,result,MEMORY_STRING);
-	m_create(char,pattern,MEMORY_STRING);
 
 	ASSERT(SUCCESS == prepare_mutable_fixture("tests/fixtures/diffs/diff1"));
 	ASSERT(SUCCESS == set_environment_variable("TESTING","true"));
@@ -267,21 +245,20 @@ static Return test0009_5(void)
 	ASSERT(SUCCESS == delete_path("tests/fixtures/diffs/diff1/path2/AAA/ZAW/D/e/f/b_file.txt"));
 
 	arguments = "--update --check-level=QUICK --ignore=\"^path2/AAA/ZAW/.*\" "
-		"--database=database0009_5.db tests/fixtures/diffs/diff1";
-	ASSERT(SUCCESS == runit(arguments,result,NULL,COMPLETED,ALLOW_BOTH));
+	        "--database=database0009_5.db tests/fixtures/diffs/diff1";
 
-	const char *filename = "templates/0009_005.txt";
-	ASSERT(SUCCESS == get_file_content(filename,pattern));
-	ASSERT(SUCCESS == match_pattern(result,pattern,filename));
+	const struct argument_test_case cases[] = {
+		{arguments,COMPLETED,"templates/0009_005.txt","templates/empty_regex_pattern.txt"},
+		{0}
+	};
+
+	ASSERT(SUCCESS == run_and_match_templates(cases,NULL,NULL));
 
 	ASSERT(SUCCESS == db_relative_path_exists(db_file_name,ignored_relative_path,&ignored_row_exists));
 	ASSERT(ignored_row_exists == true);
 
 	ASSERT(SUCCESS == delete_path(db_file_name));
 	ASSERT(SUCCESS == restore_mutable_fixture("tests/fixtures/diffs/diff1"));
-
-	m_del(pattern);
-	m_del(result);
 
 	RETURN_STATUS;
 }
@@ -301,8 +278,6 @@ static Return test0009_6(void)
 	const char *included_relative_path = "path2/AAA/ZAW/D/e/f/b_file.txt";
 	const char *arguments = NULL;
 	bool included_row_exists = true;
-	m_create(char,result,MEMORY_STRING);
-	m_create(char,pattern,MEMORY_STRING);
 
 	ASSERT(SUCCESS == prepare_mutable_fixture("tests/fixtures/diffs/diff1"));
 	ASSERT(SUCCESS == set_environment_variable("TESTING","true"));
@@ -313,22 +288,21 @@ static Return test0009_6(void)
 	ASSERT(SUCCESS == delete_path("tests/fixtures/diffs/diff1/path2/AAA/ZAW/D/e/f/b_file.txt"));
 
 	arguments = "--update --check-level=QUICK --ignore=\"^path2/AAA/ZAW/.*\" "
-		"--include=\"^path2/AAA/ZAW/D/e/f/b_file\\.txt$\" "
-		"--database=database0009_6.db tests/fixtures/diffs/diff1";
-	ASSERT(SUCCESS == runit(arguments,result,NULL,COMPLETED,ALLOW_BOTH));
+	        "--include=\"^path2/AAA/ZAW/D/e/f/b_file\\.txt$\" "
+	        "--database=database0009_6.db tests/fixtures/diffs/diff1";
 
-	const char *filename = "templates/0009_006.txt";
-	ASSERT(SUCCESS == get_file_content(filename,pattern));
-	ASSERT(SUCCESS == match_pattern(result,pattern,filename));
+	const struct argument_test_case cases[] = {
+		{arguments,COMPLETED,"templates/0009_006.txt","templates/empty_regex_pattern.txt"},
+		{0}
+	};
+
+	ASSERT(SUCCESS == run_and_match_templates(cases,NULL,NULL));
 
 	ASSERT(SUCCESS == db_relative_path_exists(db_file_name,included_relative_path,&included_row_exists));
 	ASSERT(included_row_exists == false);
 
 	ASSERT(SUCCESS == delete_path(db_file_name));
 	ASSERT(SUCCESS == restore_mutable_fixture("tests/fixtures/diffs/diff1"));
-
-	m_del(pattern);
-	m_del(result);
 
 	RETURN_STATUS;
 }
@@ -347,8 +321,6 @@ static Return test0009_7(void)
 	const char *ignored_relative_path = "path2/AAA/ZAW/D/e/f/b_file.txt";
 	const char *arguments = NULL;
 	bool ignored_row_exists = true;
-	m_create(char,result,MEMORY_STRING);
-	m_create(char,pattern,MEMORY_STRING);
 
 	ASSERT(SUCCESS == prepare_mutable_fixture("tests/fixtures/diffs/diff1"));
 	ASSERT(SUCCESS == set_environment_variable("TESTING","true"));
@@ -359,22 +331,21 @@ static Return test0009_7(void)
 	ASSERT(SUCCESS == delete_path("tests/fixtures/diffs/diff1/path2/AAA/ZAW/D/e/f/b_file.txt"));
 
 	arguments = "--update --check-level=QUICK --db-drop-ignored "
-		"--ignore=\"^path2/AAA/ZAW/D/e/f/b_file\\.txt$\" "
-		"--database=database0009_7.db tests/fixtures/diffs/diff1";
-	ASSERT(SUCCESS == runit(arguments,result,NULL,COMPLETED,ALLOW_BOTH));
+	        "--ignore=\"^path2/AAA/ZAW/D/e/f/b_file\\.txt$\" "
+	        "--database=database0009_7.db tests/fixtures/diffs/diff1";
 
-	const char *filename = "templates/0009_007.txt";
-	ASSERT(SUCCESS == get_file_content(filename,pattern));
-	ASSERT(SUCCESS == match_pattern(result,pattern,filename));
+	const struct argument_test_case cases[] = {
+		{arguments,COMPLETED,"templates/0009_007.txt","templates/empty_regex_pattern.txt"},
+		{0}
+	};
+
+	ASSERT(SUCCESS == run_and_match_templates(cases,NULL,NULL));
 
 	ASSERT(SUCCESS == db_relative_path_exists(db_file_name,ignored_relative_path,&ignored_row_exists));
 	ASSERT(ignored_row_exists == false);
 
 	ASSERT(SUCCESS == delete_path(db_file_name));
 	ASSERT(SUCCESS == restore_mutable_fixture("tests/fixtures/diffs/diff1"));
-
-	m_del(pattern);
-	m_del(result);
 
 	RETURN_STATUS;
 }
@@ -393,8 +364,6 @@ static Return test0009_8(void)
 	const char *ignored_relative_path = "path2/AAA/ZAW/D/e/f/b_file.txt";
 	const char *arguments = NULL;
 	bool ignored_row_exists = true;
-	m_create(char,result,MEMORY_STRING);
-	m_create(char,pattern,MEMORY_STRING);
 
 	ASSERT(SUCCESS == prepare_mutable_fixture("tests/fixtures/diffs/diff1"));
 	ASSERT(SUCCESS == set_environment_variable("TESTING","true"));
@@ -403,22 +372,21 @@ static Return test0009_8(void)
 	ASSERT(SUCCESS == runit(arguments,NULL,NULL,COMPLETED,ALLOW_BOTH));
 
 	arguments = "--update --check-level=QUICK --db-drop-ignored "
-		"--ignore=\"^path2/AAA/ZAW/D/e/f/b_file\\.txt$\" "
-		"--database=database0009_8.db tests/fixtures/diffs/diff1";
-	ASSERT(SUCCESS == runit(arguments,result,NULL,COMPLETED,ALLOW_BOTH));
+	        "--ignore=\"^path2/AAA/ZAW/D/e/f/b_file\\.txt$\" "
+	        "--database=database0009_8.db tests/fixtures/diffs/diff1";
 
-	const char *filename = "templates/0009_008.txt";
-	ASSERT(SUCCESS == get_file_content(filename,pattern));
-	ASSERT(SUCCESS == match_pattern(result,pattern,filename));
+	const struct argument_test_case cases[] = {
+		{arguments,COMPLETED,"templates/0009_008.txt","templates/empty_regex_pattern.txt"},
+		{0}
+	};
+
+	ASSERT(SUCCESS == run_and_match_templates(cases,NULL,NULL));
 
 	ASSERT(SUCCESS == db_relative_path_exists(db_file_name,ignored_relative_path,&ignored_row_exists));
 	ASSERT(ignored_row_exists == false);
 
 	ASSERT(SUCCESS == delete_path(db_file_name));
 	ASSERT(SUCCESS == restore_mutable_fixture("tests/fixtures/diffs/diff1"));
-
-	m_del(pattern);
-	m_del(result);
 
 	RETURN_STATUS;
 }

@@ -258,7 +258,12 @@ Return test0015_5(void)
 
 	ASSERT(replacement != NULL);
 
-	ASSERT(SUCCESS == match_app_output(arguments,filename,template,replacement,COMPLETED));
+	const struct argument_test_case cases[] = {
+		{arguments,COMPLETED,filename,"templates/empty_regex_pattern.txt"},
+		{0}
+	};
+
+	ASSERT(SUCCESS == run_and_match_templates(cases,template,replacement));
 
 	RETURN_STATUS;
 }
@@ -285,7 +290,12 @@ Return test0015_6(void)
 
 	ASSERT(replacement != NULL);
 
-	ASSERT(SUCCESS == match_app_output(arguments,filename,template,replacement,WARNING));
+	const struct argument_test_case cases[] = {
+		{arguments,WARNING,filename,"templates/empty_regex_pattern.txt"},
+		{0}
+	};
+
+	ASSERT(SUCCESS == run_and_match_templates(cases,template,replacement));
 
 	RETURN_STATUS;
 }
@@ -311,7 +321,12 @@ Return test0015_7(void)
 
 	ASSERT(replacement != NULL);
 
-	ASSERT(SUCCESS == match_app_output(arguments,filename,template,replacement,COMPLETED));
+	const struct argument_test_case cases[] = {
+		{arguments,COMPLETED,filename,"templates/empty_regex_pattern.txt"},
+		{0}
+	};
+
+	ASSERT(SUCCESS == run_and_match_templates(cases,template,replacement));
 
 	// Clean up test results
 	ASSERT(SUCCESS == delete_path("0015_database_v0.db"));
@@ -413,7 +428,12 @@ Return test0015_10(void)
 
 	ASSERT(replacement != NULL);
 
-	ASSERT(SUCCESS == match_app_output(arguments,filename,template,replacement,COMPLETED));
+	const struct argument_test_case cases[] = {
+		{arguments,COMPLETED,filename,"templates/empty_regex_pattern.txt"},
+		{0}
+	};
+
+	ASSERT(SUCCESS == run_and_match_templates(cases,template,replacement));
 
 	// Clean up test results
 	ASSERT(SUCCESS == delete_path("0015_database_v1.db"));
@@ -481,7 +501,12 @@ Return test0015_12(void)
 
 	ASSERT(replacement != NULL);
 
-	ASSERT(SUCCESS == match_app_output(arguments,filename,template,replacement,COMPLETED));
+	const struct argument_test_case cases[] = {
+		{arguments,COMPLETED,filename,"templates/empty_regex_pattern.txt"},
+		{0}
+	};
+
+	ASSERT(SUCCESS == run_and_match_templates(cases,template,replacement));
 
 	// Clean up test results
 	ASSERT(SUCCESS == delete_path(replacement));

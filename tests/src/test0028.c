@@ -206,7 +206,6 @@ static Return test0028_1(void)
 
 	// Create memory for the result
 	m_create(char,result,MEMORY_STRING);
-	m_create(char,pattern,MEMORY_STRING);
 
 	// Preparation for tests
 	ASSERT(SUCCESS == prepare_mutable_fixture("tests/fixtures/diffs/diff1"));
@@ -233,14 +232,12 @@ static Return test0028_1(void)
 
 	arguments = "--check-level=QUICK --compare database1.db database2.db";
 
-	ASSERT(SUCCESS == runit(arguments,result,NULL,COMPLETED,ALLOW_BOTH));
+	const struct argument_test_case cases[] = {
+		{arguments,COMPLETED,"templates/0028_001.txt","templates/empty_regex_pattern.txt"},
+		{0}
+	};
 
-	const char *filename = "templates/0028_001.txt";
-
-	ASSERT(SUCCESS == get_file_content(filename,pattern));
-	ASSERT(SUCCESS == match_pattern(result,pattern,filename));
-
-	m_del(pattern);
+	ASSERT(SUCCESS == run_and_match_templates(cases,NULL,NULL));
 	m_del(result);
 
 	// Clean up test results
@@ -260,7 +257,6 @@ static Return test0028_2(void)
 
 	// Create memory for the result
 	m_create(char,result,MEMORY_STRING);
-	m_create(char,pattern,MEMORY_STRING);
 
 	// Preparation for tests
 	ASSERT(SUCCESS == prepare_mutable_fixture("tests/fixtures/diffs/diff1"));
@@ -285,14 +281,12 @@ static Return test0028_2(void)
 
 	arguments = "--check-level=QUICK --compare database1.db database2.db";
 
-	ASSERT(SUCCESS == runit(arguments,result,NULL,COMPLETED,ALLOW_BOTH));
+	const struct argument_test_case cases[] = {
+		{arguments,COMPLETED,"templates/0028_002_1.txt","templates/empty_regex_pattern.txt"},
+		{0}
+	};
 
-	const char *filename = "templates/0028_002_1.txt";
-
-	ASSERT(SUCCESS == get_file_content(filename,pattern));
-	ASSERT(SUCCESS == match_pattern(result,pattern,filename));
-
-	m_del(pattern);
+	ASSERT(SUCCESS == run_and_match_templates(cases,NULL,NULL));
 	m_del(result);
 
 	// Clean up test results
@@ -312,7 +306,6 @@ static Return test0028_3(void)
 
 	// Create memory for the result
 	m_create(char,result,MEMORY_STRING);
-	m_create(char,pattern,MEMORY_STRING);
 
 	// Preparation for tests
 	ASSERT(SUCCESS == prepare_mutable_fixture("tests/fixtures/diffs/diff1"));
@@ -337,14 +330,12 @@ static Return test0028_3(void)
 
 	arguments = "--check-level=QUICK --compare database1.db database2.db";
 
-	ASSERT(SUCCESS == runit(arguments,result,NULL,COMPLETED,ALLOW_BOTH));
+	const struct argument_test_case cases[] = {
+		{arguments,COMPLETED,"templates/0028_003_1.txt","templates/empty_regex_pattern.txt"},
+		{0}
+	};
 
-	const char *filename = "templates/0028_003_1.txt";
-
-	ASSERT(SUCCESS == get_file_content(filename,pattern));
-	ASSERT(SUCCESS == match_pattern(result,pattern,filename));
-
-	m_del(pattern);
+	ASSERT(SUCCESS == run_and_match_templates(cases,NULL,NULL));
 	m_del(result);
 
 	// Clean up test results
@@ -364,7 +355,6 @@ static Return test0028_4(void)
 
 	// Create memory for the result
 	m_create(char,result,MEMORY_STRING);
-	m_create(char,pattern,MEMORY_STRING);
 
 	// Preparation for tests
 	ASSERT(SUCCESS == prepare_mutable_fixture("tests/fixtures/diffs/diff1"));
@@ -389,14 +379,12 @@ static Return test0028_4(void)
 
 	arguments = "--check-level=QUICK --compare database1.db database2.db";
 
-	ASSERT(SUCCESS == runit(arguments,result,NULL,COMPLETED,ALLOW_BOTH));
+	const struct argument_test_case cases[] = {
+		{arguments,COMPLETED,"templates/0028_004.txt","templates/empty_regex_pattern.txt"},
+		{0}
+	};
 
-	const char *filename = "templates/0028_004.txt";
-
-	ASSERT(SUCCESS == get_file_content(filename,pattern));
-	ASSERT(SUCCESS == match_pattern(result,pattern,filename));
-
-	m_del(pattern);
+	ASSERT(SUCCESS == run_and_match_templates(cases,NULL,NULL));
 	m_del(result);
 
 	// Clean up test results
@@ -414,10 +402,6 @@ static Return test0028_5(void)
 {
 	INITTEST;
 
-	// Create memory for the result
-	m_create(char,result,MEMORY_STRING);
-	m_create(char,pattern,MEMORY_STRING);
-
 	const char *arguments = "--database=database1.db tests/fixtures/diffs/diff1";
 
 	ASSERT(SUCCESS == runit(arguments,NULL,NULL,COMPLETED,ALLOW_BOTH));
@@ -430,15 +414,12 @@ static Return test0028_5(void)
 
 	arguments = "--check-level=QUICK --compare database1.db database2.db";
 
-	ASSERT(SUCCESS == runit(arguments,result,NULL,COMPLETED,ALLOW_BOTH));
+	const struct argument_test_case cases[] = {
+		{arguments,COMPLETED,"templates/0028_005.txt","templates/empty_regex_pattern.txt"},
+		{0}
+	};
 
-	const char *filename = "templates/0028_005.txt";
-
-	ASSERT(SUCCESS == get_file_content(filename,pattern));
-	ASSERT(SUCCESS == match_pattern(result,pattern,filename));
-
-	m_del(pattern);
-	m_del(result);
+	ASSERT(SUCCESS == run_and_match_templates(cases,NULL,NULL));
 
 	// Clean up test results
 	ASSERT(SUCCESS == delete_path("database1.db"));
@@ -456,47 +437,43 @@ static Return test0028_6(void)
 
 	SLOWTEST;
 
-	struct compare_filter_case {
-		const char *arguments;
-		int expected_return_code;
-		const char *stdout_pattern_file;
-		const char *stderr_pattern_file;
-	};
-
-	const struct compare_filter_case equal_cases[] = {
+	const struct argument_test_case equal_cases[] = {
 		// Valid combinations with --compare for equal databases
-		{"--check-level=QUICK --compare database1.db database2.db",COMPLETED,"templates/0028_005.txt",NULL},
-		{"--check-level=QUICK --compare --compare-filter=checksum-mismatch database1.db database2.db",COMPLETED,"templates/0028_006_1.txt",NULL},
-		{"--check-level=QUICK --compare database1.db database2.db --compare-filter=checksum-mismatch",COMPLETED,"templates/0028_006_1.txt",NULL},
-		{"--check-level=QUICK --compare --compare-filter=first-source database1.db database2.db",COMPLETED,"templates/0028_006_2.txt",NULL},
-		{"--check-level=QUICK --compare --compare-filter=second-source database1.db database2.db",COMPLETED,"templates/0028_006_3.txt",NULL},
-		{"--check-level=QUICK --compare --compare-filter=first-source --compare-filter=second-source database1.db database2.db",COMPLETED,"templates/0028_006_4.txt",NULL},
-		{"--check-level=QUICK --compare --compare-filter=checksum-mismatch --compare-filter=first-source database1.db database2.db",COMPLETED,"templates/0028_006_5.txt",NULL},
-		{"--check-level=QUICK --compare --compare-filter=checksum-mismatch --compare-filter=second-source database1.db database2.db",COMPLETED,"templates/0028_006_6.txt",NULL},
-		{"--check-level=QUICK --compare --compare-filter=checksum-mismatch --compare-filter=first-source --compare-filter=second-source database1.db database2.db",COMPLETED,"templates/0028_006_19.txt",NULL}
+		{"--check-level=QUICK --compare database1.db database2.db",COMPLETED,"templates/0028_005.txt","templates/empty_regex_pattern.txt"},
+		{"--check-level=QUICK --compare --compare-filter=checksum-mismatch database1.db database2.db",COMPLETED,"templates/0028_006_1.txt","templates/empty_regex_pattern.txt"},
+		{"--check-level=QUICK --compare database1.db database2.db --compare-filter=checksum-mismatch",COMPLETED,"templates/0028_006_1.txt","templates/empty_regex_pattern.txt"},
+		{"--check-level=QUICK --compare --compare-filter=first-source database1.db database2.db",COMPLETED,"templates/0028_006_2.txt","templates/empty_regex_pattern.txt"},
+		{"--check-level=QUICK --compare --compare-filter=second-source database1.db database2.db",COMPLETED,"templates/0028_006_3.txt","templates/empty_regex_pattern.txt"},
+		{"--check-level=QUICK --compare --compare-filter=first-source --compare-filter=second-source database1.db database2.db",COMPLETED,"templates/0028_006_4.txt","templates/empty_regex_pattern.txt"},
+		{"--check-level=QUICK --compare --compare-filter=checksum-mismatch --compare-filter=first-source database1.db database2.db",COMPLETED,"templates/0028_006_5.txt","templates/empty_regex_pattern.txt"},
+		{"--check-level=QUICK --compare --compare-filter=checksum-mismatch --compare-filter=second-source database1.db database2.db",COMPLETED,"templates/0028_006_6.txt","templates/empty_regex_pattern.txt"},
+		{"--check-level=QUICK --compare --compare-filter=checksum-mismatch --compare-filter=first-source --compare-filter=second-source database1.db database2.db",COMPLETED,"templates/0028_006_19.txt","templates/empty_regex_pattern.txt"},
+		{0}
 	};
 
-	const struct compare_filter_case one_sided_cases[] = {
+	const struct argument_test_case one_sided_cases[] = {
 		// Regression: one-sided filter must not claim full identity if opposite side has differences
-		{"--check-level=QUICK --compare --compare-filter=first-source database1.db database2.db",COMPLETED,"templates/0028_006_7.txt",NULL},
-		{"--check-level=QUICK --compare --compare-filter=second-source database1.db database2.db",COMPLETED,"templates/0028_006_8.txt",NULL},
-		{"--check-level=QUICK --compare database2.db database1.db --compare-filter=first-source",COMPLETED,"templates/0028_006_17.txt",NULL},
-		{"--check-level=QUICK --compare database2.db database1.db --compare-filter=second-source",COMPLETED,"templates/0028_006_18.txt",NULL}
+		{"--check-level=QUICK --compare --compare-filter=first-source database1.db database2.db",COMPLETED,"templates/0028_006_7.txt","templates/empty_regex_pattern.txt"},
+		{"--check-level=QUICK --compare --compare-filter=second-source database1.db database2.db",COMPLETED,"templates/0028_006_8.txt","templates/empty_regex_pattern.txt"},
+		{"--check-level=QUICK --compare database2.db database1.db --compare-filter=first-source",COMPLETED,"templates/0028_006_17.txt","templates/empty_regex_pattern.txt"},
+		{"--check-level=QUICK --compare database2.db database1.db --compare-filter=second-source",COMPLETED,"templates/0028_006_18.txt","templates/empty_regex_pattern.txt"},
+		{0}
 	};
 
-	const struct compare_filter_case differences_cases[] = {
+	const struct argument_test_case differences_cases[] = {
 		// Valid combinations with --compare for databases with all difference categories
-		{"--check-level=QUICK --compare database1.db database2.db",COMPLETED,"templates/0028_001.txt",NULL},
-		{"--check-level=QUICK --compare --compare-filter=checksum-mismatch database1.db database2.db",COMPLETED,"templates/0028_006_21.txt",NULL},
-		{"--check-level=QUICK --compare --compare-filter=first-source database1.db database2.db",COMPLETED,"templates/0028_006_9.txt",NULL},
-		{"--check-level=QUICK --compare --compare-filter=second-source database1.db database2.db",COMPLETED,"templates/0028_006_10.txt",NULL},
-		{"--check-level=QUICK --compare --compare-filter=checksum-mismatch --compare-filter=first-source database1.db database2.db",COMPLETED,"templates/0028_006_11.txt",NULL},
-		{"--check-level=QUICK --compare --compare-filter=checksum-mismatch --compare-filter=second-source database1.db database2.db",COMPLETED,"templates/0028_006_12.txt",NULL},
-		{"--check-level=QUICK --compare --compare-filter=first-source --compare-filter=second-source database1.db database2.db",COMPLETED,"templates/0028_006_13.txt",NULL},
-		{"--check-level=QUICK --compare --compare-filter=checksum-mismatch --compare-filter=first-source --compare-filter=second-source database1.db database2.db",COMPLETED,"templates/0028_006_20.txt",NULL}
+		{"--check-level=QUICK --compare database1.db database2.db",COMPLETED,"templates/0028_001.txt","templates/empty_regex_pattern.txt"},
+		{"--check-level=QUICK --compare --compare-filter=checksum-mismatch database1.db database2.db",COMPLETED,"templates/0028_006_21.txt","templates/empty_regex_pattern.txt"},
+		{"--check-level=QUICK --compare --compare-filter=first-source database1.db database2.db",COMPLETED,"templates/0028_006_9.txt","templates/empty_regex_pattern.txt"},
+		{"--check-level=QUICK --compare --compare-filter=second-source database1.db database2.db",COMPLETED,"templates/0028_006_10.txt","templates/empty_regex_pattern.txt"},
+		{"--check-level=QUICK --compare --compare-filter=checksum-mismatch --compare-filter=first-source database1.db database2.db",COMPLETED,"templates/0028_006_11.txt","templates/empty_regex_pattern.txt"},
+		{"--check-level=QUICK --compare --compare-filter=checksum-mismatch --compare-filter=second-source database1.db database2.db",COMPLETED,"templates/0028_006_12.txt","templates/empty_regex_pattern.txt"},
+		{"--check-level=QUICK --compare --compare-filter=first-source --compare-filter=second-source database1.db database2.db",COMPLETED,"templates/0028_006_13.txt","templates/empty_regex_pattern.txt"},
+		{"--check-level=QUICK --compare --compare-filter=checksum-mismatch --compare-filter=first-source --compare-filter=second-source database1.db database2.db",COMPLETED,"templates/0028_006_20.txt","templates/empty_regex_pattern.txt"},
+		{0}
 	};
 
-	const struct compare_filter_case invalid_cases[] = {
+	const struct argument_test_case invalid_cases[] = {
 		// Invalid combinations: --compare-filter=value without --compare
 		{"--compare-filter=checksum-mismatch database1.db database2.db",FAILURE,"templates/0028_006_14.txt","templates/0028_006_15.txt"},
 		{"--compare-filter=first-source database1.db database2.db",FAILURE,"templates/0028_006_14.txt","templates/0028_006_15.txt"},
@@ -508,61 +485,34 @@ static Return test0028_6(void)
 
 		// Invalid combinations: --compare-filter without argument
 		{"--compare database1.db database2.db --compare-filter",FAILURE,NULL,"templates/0028_006_16.txt"},
-		{"--compare-filter",FAILURE,NULL,"templates/0028_006_16.txt"}
+		{"--compare-filter",FAILURE,NULL,"templates/0028_006_16.txt"},
+		{0}
 	};
 
 	ASSERT(SUCCESS & prepare_compare_filter_equal_fixture());
 	ASSERT(SUCCESS == set_environment_variable("TESTING","true"));
 
-	for(size_t i = 0; (i < sizeof(equal_cases) / sizeof(equal_cases[0])) && (SUCCESS == status); i++)
-	{
-		ASSERT(SUCCESS & assert_compare_output(
-			equal_cases[i].arguments,
-			equal_cases[i].expected_return_code,
-			equal_cases[i].stdout_pattern_file,
-			equal_cases[i].stderr_pattern_file));
-	}
+	ASSERT(SUCCESS == run_and_match_templates(equal_cases,NULL,NULL));
 
 	ASSERT(SUCCESS & cleanup_compare_filter_equal_fixture());
 
 	ASSERT(SUCCESS & prepare_compare_filter_one_sided_fixture());
 	ASSERT(SUCCESS == set_environment_variable("TESTING","true"));
 
-	for(size_t i = 0; (i < sizeof(one_sided_cases) / sizeof(one_sided_cases[0])) && (SUCCESS == status); i++)
-	{
-		ASSERT(SUCCESS & assert_compare_output(
-			one_sided_cases[i].arguments,
-			one_sided_cases[i].expected_return_code,
-			one_sided_cases[i].stdout_pattern_file,
-			one_sided_cases[i].stderr_pattern_file));
-	}
+	ASSERT(SUCCESS == run_and_match_templates(one_sided_cases,NULL,NULL));
 
 	ASSERT(SUCCESS & cleanup_compare_filter_differences_fixture());
 
 	ASSERT(SUCCESS & prepare_compare_filter_differences_fixture());
 	ASSERT(SUCCESS == set_environment_variable("TESTING","true"));
 
-	for(size_t i = 0; (i < sizeof(differences_cases) / sizeof(differences_cases[0])) && (SUCCESS == status); i++)
-	{
-		ASSERT(SUCCESS & assert_compare_output(
-			differences_cases[i].arguments,
-			differences_cases[i].expected_return_code,
-			differences_cases[i].stdout_pattern_file,
-			differences_cases[i].stderr_pattern_file));
-	}
+	ASSERT(SUCCESS == run_and_match_templates(differences_cases,NULL,NULL));
 
 	ASSERT(SUCCESS & cleanup_compare_filter_differences_fixture());
 
 	ASSERT(SUCCESS == set_environment_variable("TESTING","true"));
 
-	for(size_t i = 0; (i < sizeof(invalid_cases) / sizeof(invalid_cases[0])) && (SUCCESS == status); i++)
-	{
-		ASSERT(SUCCESS & assert_compare_output(
-			invalid_cases[i].arguments,
-			invalid_cases[i].expected_return_code,
-			invalid_cases[i].stdout_pattern_file,
-			invalid_cases[i].stderr_pattern_file));
-	}
+	ASSERT(SUCCESS == run_and_match_templates(invalid_cases,NULL,NULL));
 
 	RETURN_STATUS;
 }
@@ -578,7 +528,12 @@ static Return test0028_7(void)
 
 	const char *arguments = "--compare --compare-filter=invalid-value database1.db database2.db";
 
-	ASSERT(SUCCESS & assert_compare_output(arguments,FAILURE,NULL,"templates/0028_007_1.txt"));
+	const struct argument_test_case cases[] = {
+		{arguments,FAILURE,NULL,"templates/0028_007_1.txt"},
+		{0}
+	};
+
+	ASSERT(SUCCESS == run_and_match_templates(cases,NULL,NULL));
 
 	RETURN_STATUS;
 }
@@ -594,7 +549,12 @@ static Return test0028_8(void)
 	ASSERT(SUCCESS == db_set_sha512_to_null("database2.db","1/AAA/ZAW/D/e/f/b_file.txt"));
 	ASSERT(SUCCESS == set_environment_variable("TESTING","true"));
 
-	ASSERT(SUCCESS & assert_compare_output("--check-level=QUICK --compare database1.db database2.db",COMPLETED,"templates/0028_000.txt",NULL));
+	const struct argument_test_case cases[] = {
+		{"--check-level=QUICK --compare database1.db database2.db",COMPLETED,"templates/0028_000.txt","templates/empty_regex_pattern.txt"},
+		{0}
+	};
+
+	ASSERT(SUCCESS == run_and_match_templates(cases,NULL,NULL));
 
 	ASSERT(SUCCESS & cleanup_compare_filter_equal_fixture());
 
@@ -627,11 +587,12 @@ static Return test0028_9(void)
 	ASSERT(result->length == 0);
 	ASSERT(SUCCESS == set_environment_variable("TESTING","true"));
 
-	ASSERT(SUCCESS & assert_compare_output(
-		"--check-level=QUICK --compare database1.db database2.db",
-		COMPLETED,
-		"templates/0028_000.txt",
-		NULL));
+	const struct argument_test_case cases[] = {
+		{"--check-level=QUICK --compare database1.db database2.db",COMPLETED,"templates/0028_000.txt","templates/empty_regex_pattern.txt"},
+		{0}
+	};
+
+	ASSERT(SUCCESS == run_and_match_templates(cases,NULL,NULL));
 
 	ASSERT(SUCCESS == delete_path("database1.db"));
 	ASSERT(SUCCESS == delete_path("database2.db"));
@@ -653,11 +614,12 @@ static Return test0028_10(void)
 	ASSERT(SUCCESS == move_path("database1.db","database'1.db"));
 	ASSERT(SUCCESS == set_environment_variable("TESTING","true"));
 
-	ASSERT(SUCCESS & assert_compare_output(
-		"--check-level=QUICK --compare database\\'1.db database2.db",
-		COMPLETED,
-		"templates/0028_010_1.txt",
-		NULL));
+	const struct argument_test_case cases[] = {
+		{"--check-level=QUICK --compare database\\'1.db database2.db",COMPLETED,"templates/0028_010_1.txt","templates/empty_regex_pattern.txt"},
+		{0}
+	};
+
+	ASSERT(SUCCESS == run_and_match_templates(cases,NULL,NULL));
 
 	ASSERT(SUCCESS == delete_path("database'1.db"));
 	ASSERT(SUCCESS == delete_path("database2.db"));
@@ -715,23 +677,28 @@ static Return test0028_12(void)
 	ASSERT(SUCCESS & prepare_compare_filter_differences_fixture());
 	ASSERT(SUCCESS == set_environment_variable("TESTING","true"));
 
-	// All three raw differences are filtered out, so the filtered compare scope is fully identical
-	ASSERT(SUCCESS & assert_compare_output("--check-level=QUICK --compare --ignore=\"^1/AAA/ZAW/D/e/f/b_file\\.txt$\" --ignore=\"^2/AAA/BBB/CZC/.*$\" database1.db database2.db",COMPLETED,"templates/0028_012_1.txt",NULL));
+	const struct argument_test_case cases[] = {
+		// All three raw differences are filtered out, so the filtered compare scope is fully identical
+		{"--check-level=QUICK --compare --ignore=\"^1/AAA/ZAW/D/e/f/b_file\\.txt$\" --ignore=\"^2/AAA/BBB/CZC/.*$\" database1.db database2.db",COMPLETED,"templates/0028_012_1.txt","templates/empty_regex_pattern.txt"},
 
-	// Restore only the first-source path a.txt; the hidden checksum mismatch stays outside the reported scope
-	ASSERT(SUCCESS & assert_compare_output("--check-level=QUICK --compare --ignore=\"^1/AAA/ZAW/D/e/f/b_file\\.txt$\" --ignore=\"^2/AAA/BBB/CZC/.*$\" --include=\"^2/AAA/BBB/CZC/a\\.txt$\" database1.db database2.db",COMPLETED,"templates/0028_012_2.txt",NULL));
+		// Restore only the first-source path a.txt; the hidden checksum mismatch stays outside the reported scope
+		{"--check-level=QUICK --compare --ignore=\"^1/AAA/ZAW/D/e/f/b_file\\.txt$\" --ignore=\"^2/AAA/BBB/CZC/.*$\" --include=\"^2/AAA/BBB/CZC/a\\.txt$\" database1.db database2.db",COMPLETED,"templates/0028_012_2.txt","templates/empty_regex_pattern.txt"},
 
-	// Keep only the first-source path a.txt visible by filtering out the checksum mismatch and the opposite-side path
-	ASSERT(SUCCESS & assert_compare_output("--check-level=QUICK --compare --ignore=\"^1/AAA/ZAW/D/e/f/b_file\\.txt$\" --ignore=\"^2/AAA/BBB/CZC/b\\.txt$\" database1.db database2.db",COMPLETED,"templates/0028_012_3.txt",NULL));
+		// Keep only the first-source path a.txt visible by filtering out the checksum mismatch and the opposite-side path
+		{"--check-level=QUICK --compare --ignore=\"^1/AAA/ZAW/D/e/f/b_file\\.txt$\" --ignore=\"^2/AAA/BBB/CZC/b\\.txt$\" database1.db database2.db",COMPLETED,"templates/0028_012_3.txt","templates/empty_regex_pattern.txt"},
 
-	// Hide only a.txt so the remaining reported scope still contains the opposite-side path and the checksum mismatch
-	ASSERT(SUCCESS & assert_compare_output("--check-level=QUICK --compare --ignore=\"^2/AAA/BBB/CZC/a\\.txt$\" database1.db database2.db",COMPLETED,"templates/0028_012_4.txt",NULL));
+		// Hide only a.txt so the remaining reported scope still contains the opposite-side path and the checksum mismatch
+		{"--check-level=QUICK --compare --ignore=\"^2/AAA/BBB/CZC/a\\.txt$\" database1.db database2.db",COMPLETED,"templates/0028_012_4.txt","templates/empty_regex_pattern.txt"},
 
-	// Ignore everything, then restore only b.txt; the checksum mismatch remains intentionally out of scope
-	ASSERT(SUCCESS & assert_compare_output("--check-level=QUICK --compare --ignore=\"^.*$\" --include=\"^2/AAA/BBB/CZC/b\\.txt$\" database1.db database2.db",COMPLETED,"templates/0028_012_5.txt",NULL));
+		// Ignore everything, then restore only b.txt; the checksum mismatch remains intentionally out of scope
+		{"--check-level=QUICK --compare --ignore=\"^.*$\" --include=\"^2/AAA/BBB/CZC/b\\.txt$\" database1.db database2.db",COMPLETED,"templates/0028_012_5.txt","templates/empty_regex_pattern.txt"},
 
-	// Ignore the whole 2/ subtree, then restore both existence-side differences while the 1/ checksum mismatch remains visible
-	ASSERT(SUCCESS & assert_compare_output("--check-level=QUICK --compare --ignore=\"^2/.*$\" --include=\"^2/AAA/BBB/CZC/a\\.txt$\" --include=\"^2/AAA/BBB/CZC/b\\.txt$\" database1.db database2.db",COMPLETED,"templates/0028_012_6.txt",NULL));
+		// Ignore the whole 2/ subtree, then restore both existence-side differences while the 1/ checksum mismatch remains visible
+		{"--check-level=QUICK --compare --ignore=\"^2/.*$\" --include=\"^2/AAA/BBB/CZC/a\\.txt$\" --include=\"^2/AAA/BBB/CZC/b\\.txt$\" database1.db database2.db",COMPLETED,"templates/0028_012_6.txt","templates/empty_regex_pattern.txt"},
+		{0}
+	};
+
+	ASSERT(SUCCESS == run_and_match_templates(cases,NULL,NULL));
 
 	ASSERT(SUCCESS & cleanup_compare_filter_differences_fixture());
 

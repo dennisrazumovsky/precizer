@@ -16,6 +16,19 @@
 #define FILE_WRITE_APPEND  ((unsigned int)1U)
 #define FILE_WRITE_REPLACE ((unsigned int)2U)
 
+/* Arguments and expected results for one application run */
+struct argument_test_case {
+	const char *arguments;
+	int expected_return_code;
+	const char *stdout_template;
+	const char *stderr_template;
+};
+
+Return run_and_match_templates(
+	const struct argument_test_case *cases,
+	const char *template,
+	const char *replacement);
+
 Return open_db_from_tmpdir(
 	const char *db_filename,
 	const int  open_flags,

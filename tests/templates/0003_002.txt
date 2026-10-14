@@ -1,2 +1,2 @@
-\AUsage: precizer \[OPTION\.\.\.\] PATH
+\AUsage: precizer \[OPTION\.\.\.\] \[PATH\.\.\.\]
 Try `precizer --help' or `precizer --usage' for more information\.\Z

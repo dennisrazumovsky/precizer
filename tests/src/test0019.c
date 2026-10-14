@@ -16,11 +16,6 @@ Return test0019(void)
 
 	const char *update_arguments = "--update --check-level=QUICK --database=database1.db tests/fixtures/diffs/diff1";
 
-	m_create(char,pattern,MEMORY_STRING);
-
-	// Create memory for the result
-	m_create(char,result,MEMORY_STRING);
-
 	// Preparation for the test
 	ASSERT(SUCCESS == prepare_mutable_fixture("tests/fixtures/diffs/diff1"));
 
@@ -31,43 +26,34 @@ Return test0019(void)
 
 	const char *arguments = "--database=database1.db tests/fixtures/diffs/diff1";
 
-	const char *filename = "templates/0019_001.txt";
+	const struct argument_test_case initial_cases[] = {
+		{arguments,COMPLETED,"templates/0019_001.txt","templates/empty_regex_pattern.txt"},
+		{0}
+	};
 
-	ASSERT(SUCCESS == runit(arguments,result,NULL,COMPLETED,ALLOW_BOTH));
-	ASSERT(SUCCESS == get_file_content(filename,pattern));
-	ASSERT(SUCCESS == match_pattern(result,pattern,filename));
-
-	// Clean to use it iteratively
-	m_del(pattern);
-	m_del(result);
+	ASSERT(SUCCESS == run_and_match_templates(initial_cases,NULL,NULL));
 
 	ASSERT(SUCCESS == delete_path("tests/fixtures/diffs/diff1/path1/AAA/BCB/CCC/symlink_to_the_file_a.txt"));
 	ASSERT(SUCCESS == delete_path("tests/fixtures/diffs/diff1/path1/AAA/ZAW/A/b/symlink_to_dir_f"));
 	ASSERT(SUCCESS == delete_path("tests/fixtures/diffs/diff1/path1/AAA/ZAW/A/b/broken_symlink"));
 
-	filename = "templates/0019_002.txt";
+	const struct argument_test_case removed_symlinks_cases[] = {
+		{update_arguments,COMPLETED,"templates/0019_002.txt","templates/empty_regex_pattern.txt"},
+		{0}
+	};
 
-	ASSERT(SUCCESS == runit(update_arguments,result,NULL,COMPLETED,ALLOW_BOTH));
-	ASSERT(SUCCESS == get_file_content(filename,pattern));
-	ASSERT(SUCCESS == match_pattern(result,pattern,filename));
-
-	// Clean to use it iteratively
-	m_del(pattern);
-	m_del(result);
+	ASSERT(SUCCESS == run_and_match_templates(removed_symlinks_cases,NULL,NULL));
 
 	ASSERT(SUCCESS == create_symlink("../../../../1/AAA/BCB/CCC/a.txt","tests/fixtures/diffs/diff1/path1/AAA/BCB/CCC/symlink_to_the_file_a.txt"));
 	ASSERT(SUCCESS == create_symlink("../../../../AAA/ZAW/D/e/f","tests/fixtures/diffs/diff1/path1/AAA/ZAW/A/b/symlink_to_dir_f"));
 	ASSERT(SUCCESS == create_symlink("/to/nowhere","tests/fixtures/diffs/diff1/path1/AAA/ZAW/A/b/broken_symlink"));
 
-	filename = "templates/0019_003.txt";
+	const struct argument_test_case restored_symlinks_cases[] = {
+		{update_arguments,COMPLETED,"templates/0019_003.txt","templates/empty_regex_pattern.txt"},
+		{0}
+	};
 
-	ASSERT(SUCCESS == runit(update_arguments,result,NULL,COMPLETED,ALLOW_BOTH));
-	ASSERT(SUCCESS == get_file_content(filename,pattern));
-	ASSERT(SUCCESS == match_pattern(result,pattern,filename));
-
-	// Clean to use it iteratively
-	m_del(pattern);
-	m_del(result);
+	ASSERT(SUCCESS == run_and_match_templates(restored_symlinks_cases,NULL,NULL));
 
 	// Clean up test results
 	ASSERT(SUCCESS == delete_path("database1.db"));

@@ -27,7 +27,7 @@ Return test0019(void)
 	const char *arguments = "--database=database1.db tests/fixtures/diffs/diff1";
 
 	const struct argument_test_case initial_cases[] = {
-		{arguments,COMPLETED,"templates/0019_001.txt","templates/empty_regex_pattern.txt"},
+		{arguments,COMPLETED,"templates/0019_001.txt",STDERR_MUST_BE_EMPTY},
 		{0}
 	};
 
@@ -38,7 +38,7 @@ Return test0019(void)
 	ASSERT(SUCCESS == delete_path("tests/fixtures/diffs/diff1/path1/AAA/ZAW/A/b/broken_symlink"));
 
 	const struct argument_test_case removed_symlinks_cases[] = {
-		{update_arguments,COMPLETED,"templates/0019_002.txt","templates/empty_regex_pattern.txt"},
+		{update_arguments,COMPLETED,"templates/0019_002.txt",STDERR_MUST_BE_EMPTY},
 		{0}
 	};
 
@@ -49,7 +49,7 @@ Return test0019(void)
 	ASSERT(SUCCESS == create_symlink("/to/nowhere","tests/fixtures/diffs/diff1/path1/AAA/ZAW/A/b/broken_symlink"));
 
 	const struct argument_test_case restored_symlinks_cases[] = {
-		{update_arguments,COMPLETED,"templates/0019_003.txt","templates/empty_regex_pattern.txt"},
+		{update_arguments,COMPLETED,"templates/0019_003.txt",STDERR_MUST_BE_EMPTY},
 		{0}
 	};
 

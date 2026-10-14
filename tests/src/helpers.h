@@ -16,6 +16,10 @@
 #define FILE_WRITE_APPEND  ((unsigned int)1U)
 #define FILE_WRITE_REPLACE ((unsigned int)2U)
 
+/* Require the corresponding output stream to contain no bytes */
+#define STDOUT_MUST_BE_EMPTY "\\A\\z"
+#define STDERR_MUST_BE_EMPTY "\\A\\z"
+
 /* Arguments and expected results for one application run */
 struct argument_test_case {
 	const char *arguments;

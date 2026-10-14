@@ -21,7 +21,7 @@ Return test0024_1(void)
 	ASSERT(SUCCESS == set_environment_variable("TESTING","true"));
 
 	const struct argument_test_case cases[] = {
-		{arguments,COMPLETED,filename,"templates/empty_regex_pattern.txt"},
+		{arguments,COMPLETED,filename,STDERR_MUST_BE_EMPTY},
 		{0}
 	};
 
@@ -53,7 +53,7 @@ Return test0024_2(void)
 	ASSERT(SUCCESS == set_environment_variable("TESTING","true"));
 
 	const struct argument_test_case cases[] = {
-		{arguments,COMPLETED,filename,"templates/empty_regex_pattern.txt"},
+		{arguments,COMPLETED,filename,STDERR_MUST_BE_EMPTY},
 		{0}
 	};
 

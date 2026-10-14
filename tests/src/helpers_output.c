@@ -7,15 +7,16 @@
  * NULL. An empty arguments string is a valid scenario that runs the application
  * without arguments. Execution stops at the terminator or the first failure
  *
- * Each non-NULL stdout_template or stderr_template names a file containing
- * the expected PCRE2 pattern. NULL skips comparison of that stream. The shared
- * templates/empty_regex_pattern.txt pattern requires the selected stream to contain no bytes.
- * Optional substitution applies to all scenarios and changes each loaded pattern
- * in memory, leaving the template files unchanged. Environment and fixture setup
- * belong to the caller
+ * Each stdout_template or stderr_template accepts a file path, the corresponding
+ * STDOUT_MUST_BE_EMPTY or STDERR_MUST_BE_EMPTY macro, or NULL. A file supplies
+ * the expected PCRE2 pattern. The macros supply the pattern directly and
+ * require the corresponding stream to contain no bytes. NULL skips
+ * comparison of that stream. Optional substitution applies to all scenarios
+ * and changes each pattern in memory, leaving the template files unchanged.
+ * Environment and fixture setup belong to the caller
  *
  * @param[in] cases Scenario array terminated by a record with NULL arguments
- * @param[in] template Text to replace in the loaded patterns, or NULL to skip substitution
+ * @param[in] template Text to replace in the patterns, or NULL to skip substitution
  * @param[in] replacement Replacement text, required when template is not NULL
  * @return SUCCESS when all scenarios match their expected exit codes and selected output streams
  */
@@ -41,24 +42,38 @@ Return run_and_match_templates(
 
 		if(test_case->stdout_template != NULL)
 		{
-			run(get_file_content(test_case->stdout_template,pattern));
+			const char *filename = test_case->stdout_template;
+			if(strcmp(filename,STDOUT_MUST_BE_EMPTY) == 0)
+			{
+				run(m_copy_string(pattern,STDOUT_MUST_BE_EMPTY));
+				filename = NULL;
+			} else {
+				run(get_file_content(filename,pattern));
+			}
 
 			if(template != NULL)
 			{
 				run(replace_placeholder(pattern,template,replacement));
 			}
-			run(match_pattern(stdout_result,pattern,test_case->stdout_template));
+			run(match_pattern(stdout_result,pattern,filename));
 		}
 
 		if(test_case->stderr_template != NULL)
 		{
-			run(get_file_content(test_case->stderr_template,pattern));
+			const char *filename = test_case->stderr_template;
+			if(strcmp(filename,STDERR_MUST_BE_EMPTY) == 0)
+			{
+				run(m_copy_string(pattern,STDERR_MUST_BE_EMPTY));
+				filename = NULL;
+			} else {
+				run(get_file_content(filename,pattern));
+			}
 
 			if(template != NULL)
 			{
 				run(replace_placeholder(pattern,template,replacement));
 			}
-			run(match_pattern(stderr_result,pattern,test_case->stderr_template));
+			run(match_pattern(stderr_result,pattern,filename));
 		}
 
 		call(m_del(pattern));

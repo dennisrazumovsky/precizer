@@ -187,7 +187,7 @@ static Return test0011_3(void)
 
 	// Verify that silent mode produced no stdout after command execution
 	const struct argument_test_case silent_cases[] = {
-		{arguments,COMPLETED,"templates/empty_regex_pattern.txt","templates/empty_regex_pattern.txt"},
+		{arguments,COMPLETED,STDOUT_MUST_BE_EMPTY,STDERR_MUST_BE_EMPTY},
 		{0}
 	};
 
@@ -196,7 +196,7 @@ static Return test0011_3(void)
 	ASSERT(SUCCESS == set_environment_variable("TESTING","true"));
 
 	const struct argument_test_case testing_cases[] = {
-		{arguments,COMPLETED,"templates/0011_003.txt","templates/empty_regex_pattern.txt"},
+		{arguments,COMPLETED,"templates/0011_003.txt",STDERR_MUST_BE_EMPTY},
 		{0}
 	};
 
@@ -221,7 +221,7 @@ static Return test0011_4(void)
 	        "tests/fixtures/diffs/diff1";
 
 	const struct argument_test_case cases[] = {
-		{arguments,COMPLETED,"templates/0011_004_1.txt","templates/empty_regex_pattern.txt"},
+		{arguments,COMPLETED,"templates/0011_004_1.txt",STDERR_MUST_BE_EMPTY},
 		{0}
 	};
 
@@ -254,11 +254,11 @@ static Return test0011_5(void)
 	ASSERT(replacement != NULL);
 
 	const struct argument_test_case cases[] = {
-		{"--maxdepth=0 tests/fixtures/4",COMPLETED,"templates/0011_005_1.txt","templates/empty_regex_pattern.txt"},
+		{"--maxdepth=0 tests/fixtures/4",COMPLETED,"templates/0011_005_1.txt",STDERR_MUST_BE_EMPTY},
 		/* At the second stage, the --maxdepth=0 option is not used.
 		   Therefore, all files that were not previously included
 		   will be added to the database */
-		{"--update --check-level=QUICK tests/fixtures/4",COMPLETED,"templates/0011_005_2.txt","templates/empty_regex_pattern.txt"},
+		{"--update --check-level=QUICK tests/fixtures/4",COMPLETED,"templates/0011_005_2.txt",STDERR_MUST_BE_EMPTY},
 		{0}
 	};
 
@@ -289,8 +289,8 @@ static Return test0011_6(void)
 	ASSERT(replacement != NULL);
 
 	const struct argument_test_case cases[] = {
-		{"--ignore=\"^diff1/1/.*\" tests/fixtures/diffs",COMPLETED,"templates/0011_006_1.txt","templates/empty_regex_pattern.txt"},
-		{"--update --check-level=QUICK tests/fixtures/diffs",COMPLETED,"templates/0011_006_2.txt","templates/empty_regex_pattern.txt"},
+		{"--ignore=\"^diff1/1/.*\" tests/fixtures/diffs",COMPLETED,"templates/0011_006_1.txt",STDERR_MUST_BE_EMPTY},
+		{"--update --check-level=QUICK tests/fixtures/diffs",COMPLETED,"templates/0011_006_2.txt",STDERR_MUST_BE_EMPTY},
 		{0}
 	};
 
@@ -325,7 +325,7 @@ static Return test0011_7(void)
 	ASSERT(replacement != NULL);
 
 	const struct argument_test_case cases[] = {
-		{arguments,COMPLETED,filename,"templates/empty_regex_pattern.txt"},
+		{arguments,COMPLETED,filename,STDERR_MUST_BE_EMPTY},
 		{0}
 	};
 
@@ -373,7 +373,7 @@ static Return test0011_8(void)
 	ASSERT(replacement != NULL);
 
 	const struct argument_test_case update_cases[] = {
-		{arguments,COMPLETED,filename,"templates/empty_regex_pattern.txt"},
+		{arguments,COMPLETED,filename,STDERR_MUST_BE_EMPTY},
 		{0}
 	};
 
@@ -399,7 +399,7 @@ static Return test0011_8(void)
 	filename = "templates/0011_008_2.txt";
 
 	const struct argument_test_case compare_cases[] = {
-		{arguments,COMPLETED,filename,"templates/empty_regex_pattern.txt"},
+		{arguments,COMPLETED,filename,STDERR_MUST_BE_EMPTY},
 		{0}
 	};
 

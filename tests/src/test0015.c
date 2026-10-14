@@ -259,7 +259,7 @@ Return test0015_5(void)
 	ASSERT(replacement != NULL);
 
 	const struct argument_test_case cases[] = {
-		{arguments,COMPLETED,filename,"templates/empty_regex_pattern.txt"},
+		{arguments,COMPLETED,filename,STDERR_MUST_BE_EMPTY},
 		{0}
 	};
 
@@ -291,7 +291,7 @@ Return test0015_6(void)
 	ASSERT(replacement != NULL);
 
 	const struct argument_test_case cases[] = {
-		{arguments,WARNING,filename,"templates/empty_regex_pattern.txt"},
+		{arguments,WARNING,filename,STDERR_MUST_BE_EMPTY},
 		{0}
 	};
 
@@ -322,7 +322,7 @@ Return test0015_7(void)
 	ASSERT(replacement != NULL);
 
 	const struct argument_test_case cases[] = {
-		{arguments,COMPLETED,filename,"templates/empty_regex_pattern.txt"},
+		{arguments,COMPLETED,filename,STDERR_MUST_BE_EMPTY},
 		{0}
 	};
 
@@ -429,7 +429,7 @@ Return test0015_10(void)
 	ASSERT(replacement != NULL);
 
 	const struct argument_test_case cases[] = {
-		{arguments,COMPLETED,filename,"templates/empty_regex_pattern.txt"},
+		{arguments,COMPLETED,filename,STDERR_MUST_BE_EMPTY},
 		{0}
 	};
 
@@ -502,7 +502,7 @@ Return test0015_12(void)
 	ASSERT(replacement != NULL);
 
 	const struct argument_test_case cases[] = {
-		{arguments,COMPLETED,filename,"templates/empty_regex_pattern.txt"},
+		{arguments,COMPLETED,filename,STDERR_MUST_BE_EMPTY},
 		{0}
 	};
 

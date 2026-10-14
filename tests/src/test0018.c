@@ -14,10 +14,10 @@ Return test0018_1(void)
 	const struct argument_test_case cases[] = {
 		/* File system traversal with a maximum depth of 3 */
 		{"--maxdepth=3 --database=database3.db "
-		 "$TMPDIR/tests/fixtures/levels",COMPLETED,"templates/0018_001_1.txt","templates/empty_regex_pattern.txt"},
+		 "$TMPDIR/tests/fixtures/levels",COMPLETED,"templates/0018_001_1.txt",STDERR_MUST_BE_EMPTY},
 		/* File system traversal with unlimited depth */
 		{"--database=database4.db "
-		 "$TMPDIR/tests/fixtures/levels",COMPLETED,"templates/0018_001_2.txt","templates/empty_regex_pattern.txt"},
+		 "$TMPDIR/tests/fixtures/levels",COMPLETED,"templates/0018_001_2.txt",STDERR_MUST_BE_EMPTY},
 		{0}
 	};
 
@@ -44,7 +44,7 @@ Return test0018_2(void)
 	/* File system traversal with unlimited depth */
 	const struct argument_test_case cases[] = {
 		{"--update --check-level=QUICK --database=database3.db "
-		 "$TMPDIR/tests/fixtures/levels",COMPLETED,"templates/0018_002.txt","templates/empty_regex_pattern.txt"},
+		 "$TMPDIR/tests/fixtures/levels",COMPLETED,"templates/0018_002.txt",STDERR_MUST_BE_EMPTY},
 		{0}
 	};
 

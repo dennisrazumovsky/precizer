@@ -17,7 +17,7 @@ Return test0009_1(void)
 	        "tests/fixtures/ignore_include_cases/chaotic_filenames";
 
 	const struct argument_test_case non_testing_cases[] = {
-		{arguments,COMPLETED,"templates/0009_001_1.txt","templates/empty_regex_pattern.txt"},
+		{arguments,COMPLETED,"templates/0009_001_1.txt",STDERR_MUST_BE_EMPTY},
 		{0}
 	};
 
@@ -40,7 +40,7 @@ Return test0009_1(void)
 	ASSERT(SUCCESS == set_environment_variable("TESTING","true"));
 
 	const struct argument_test_case testing_cases[] = {
-		{arguments,COMPLETED,"templates/0009_001_2.txt","templates/empty_regex_pattern.txt"},
+		{arguments,COMPLETED,"templates/0009_001_2.txt",STDERR_MUST_BE_EMPTY},
 		{0}
 	};
 
@@ -69,7 +69,7 @@ static Return test0009_2(void)
 	        "tests/fixtures/ignore_include_cases/chaotic_filenames";
 
 	const struct argument_test_case cases[] = {
-		{arguments,COMPLETED,"templates/0009_002.txt","templates/empty_regex_pattern.txt"},
+		{arguments,COMPLETED,"templates/0009_002.txt",STDERR_MUST_BE_EMPTY},
 		{0}
 	};
 
@@ -111,7 +111,7 @@ static Return test0009_3(void)
 	        "tests/fixtures/ignore_include_cases";
 
 	const struct argument_test_case cases[] = {
-		{arguments,COMPLETED,"templates/0009_003.txt","templates/empty_regex_pattern.txt"},
+		{arguments,COMPLETED,"templates/0009_003.txt",STDERR_MUST_BE_EMPTY},
 		{0}
 	};
 
@@ -159,7 +159,7 @@ static Return test0009_4(void)
 	 * If this first pass omitted filters, all 12 paths would be stored and the update-included scenario would validate a different logic branch
 	 */
 	const struct argument_test_case create_cases[] = {
-		{arguments_create,COMPLETED,"templates/0009_004_1.txt","templates/empty_regex_pattern.txt"},
+		{arguments_create,COMPLETED,"templates/0009_004_1.txt",STDERR_MUST_BE_EMPTY},
 		{0}
 	};
 
@@ -174,7 +174,7 @@ static Return test0009_4(void)
 
 	// Update mode pass where only one included file has changed
 	const struct argument_test_case update_cases[] = {
-		{arguments_update,COMPLETED,"templates/0009_004_2.txt","templates/empty_regex_pattern.txt"},
+		{arguments_update,COMPLETED,"templates/0009_004_2.txt",STDERR_MUST_BE_EMPTY},
 		{0}
 	};
 
@@ -192,7 +192,7 @@ static Return test0009_4(void)
 
 	// Update mode with watch-timestamps enabled where one non-included file becomes empty and two included files are updated
 	const struct argument_test_case watch_timestamps_cases[] = {
-		{arguments_update_watch,COMPLETED,"templates/0009_004_3.txt","templates/empty_regex_pattern.txt"},
+		{arguments_update_watch,COMPLETED,"templates/0009_004_3.txt",STDERR_MUST_BE_EMPTY},
 		{0}
 	};
 
@@ -248,7 +248,7 @@ static Return test0009_5(void)
 	        "--database=database0009_5.db tests/fixtures/diffs/diff1";
 
 	const struct argument_test_case cases[] = {
-		{arguments,COMPLETED,"templates/0009_005.txt","templates/empty_regex_pattern.txt"},
+		{arguments,COMPLETED,"templates/0009_005.txt",STDERR_MUST_BE_EMPTY},
 		{0}
 	};
 
@@ -292,7 +292,7 @@ static Return test0009_6(void)
 	        "--database=database0009_6.db tests/fixtures/diffs/diff1";
 
 	const struct argument_test_case cases[] = {
-		{arguments,COMPLETED,"templates/0009_006.txt","templates/empty_regex_pattern.txt"},
+		{arguments,COMPLETED,"templates/0009_006.txt",STDERR_MUST_BE_EMPTY},
 		{0}
 	};
 
@@ -335,7 +335,7 @@ static Return test0009_7(void)
 	        "--database=database0009_7.db tests/fixtures/diffs/diff1";
 
 	const struct argument_test_case cases[] = {
-		{arguments,COMPLETED,"templates/0009_007.txt","templates/empty_regex_pattern.txt"},
+		{arguments,COMPLETED,"templates/0009_007.txt",STDERR_MUST_BE_EMPTY},
 		{0}
 	};
 
@@ -376,7 +376,7 @@ static Return test0009_8(void)
 	        "--database=database0009_8.db tests/fixtures/diffs/diff1";
 
 	const struct argument_test_case cases[] = {
-		{arguments,COMPLETED,"templates/0009_008.txt","templates/empty_regex_pattern.txt"},
+		{arguments,COMPLETED,"templates/0009_008.txt",STDERR_MUST_BE_EMPTY},
 		{0}
 	};
 

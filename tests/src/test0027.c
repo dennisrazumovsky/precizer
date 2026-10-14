@@ -17,9 +17,9 @@ static Return test0027_1(void)
 
 	const struct argument_test_case initial_cases[] = {
 		{"--database=lock.db --lock-checksum=\"^diff1/1/.*\" "
-		 "--lock-checksum=\"^diff2/path1/.*\" tests/fixtures/diffs",COMPLETED,"templates/0027_001_1.txt","templates/empty_regex_pattern.txt"},
+		 "--lock-checksum=\"^diff2/path1/.*\" tests/fixtures/diffs",COMPLETED,"templates/0027_001_1.txt",STDERR_MUST_BE_EMPTY},
 		{"--update --check-level=QUICK --database=lock.db --lock-checksum=\"^diff1/1/.*\" "
-		 "--lock-checksum=\"^diff2/path1/.*\" tests/fixtures/diffs",COMPLETED,"templates/0027_001_2.txt","templates/empty_regex_pattern.txt"},
+		 "--lock-checksum=\"^diff2/path1/.*\" tests/fixtures/diffs",COMPLETED,"templates/0027_001_2.txt",STDERR_MUST_BE_EMPTY},
 		{0}
 	};
 
@@ -37,7 +37,7 @@ static Return test0027_1(void)
 	const struct argument_test_case update_cases[] = {
 		{"--progress --update --check-level=QUICK --database=lock.db "
 		 "--lock-checksum=\"^diff1/1/.*\" "
-		 "--lock-checksum=\"^diff2/path1/.*\" tests/fixtures/diffs",WARNING,"templates/0027_001_3.txt","templates/empty_regex_pattern.txt"},
+		 "--lock-checksum=\"^diff2/path1/.*\" tests/fixtures/diffs",WARNING,"templates/0027_001_3.txt",STDERR_MUST_BE_EMPTY},
 		{0}
 	};
 
@@ -48,7 +48,7 @@ static Return test0027_1(void)
 	const struct argument_test_case non_testing_cases[] = {
 		{"--progress --update --check-level=QUICK --database=lock1.db "
 		 "--lock-checksum=\"^diff1/1/.*\" "
-		 "--lock-checksum=\"^diff2/path1/.*\" tests/fixtures/diffs",WARNING,"templates/0027_001_4.txt","templates/empty_regex_pattern.txt"},
+		 "--lock-checksum=\"^diff2/path1/.*\" tests/fixtures/diffs",WARNING,"templates/0027_001_4.txt",STDERR_MUST_BE_EMPTY},
 		{0}
 	};
 

@@ -22,10 +22,10 @@ Return test0003_1(void)
 
 	// Get the output of the application
 	const struct argument_test_case cases[] = {
-		{"--compare $DBNAME database2.db",COMPLETED,"templates/0003_001.txt","templates/empty_regex_pattern.txt"},
+		{"--compare $DBNAME database2.db",COMPLETED,"templates/0003_001.txt",STDERR_MUST_BE_EMPTY},
 		/* Named roots must be discarded before compare validation and diagnostics */
 		{"--path=/definitely/nonexistent/first --compare $DBNAME "
-		 "--path=/definitely/nonexistent/second database2.db",COMPLETED,"templates/0003_001.txt","templates/empty_regex_pattern.txt"},
+		 "--path=/definitely/nonexistent/second database2.db",COMPLETED,"templates/0003_001.txt",STDERR_MUST_BE_EMPTY},
 		{0}
 	};
 	const char *template = "%DB_NAME%";
@@ -74,12 +74,12 @@ Return test0003_3(void)
 {
 	INITTEST;
 	const struct argument_test_case cases[] = {
-		{"--help",COMPLETED,"templates/0003_004.txt","templates/empty_regex_pattern.txt"},
-		{"-h",COMPLETED,"templates/0003_004.txt","templates/empty_regex_pattern.txt"},
-		{"--usage",COMPLETED,"templates/0003_005.txt","templates/empty_regex_pattern.txt"},
-		{"-z",COMPLETED,"templates/0003_005.txt","templates/empty_regex_pattern.txt"},
-		{"--version",COMPLETED,"templates/0003_006.txt","templates/empty_regex_pattern.txt"},
-		{"--version --version",COMPLETED,"templates/0003_006.txt","templates/empty_regex_pattern.txt"},
+		{"--help",COMPLETED,"templates/0003_004.txt",STDERR_MUST_BE_EMPTY},
+		{"-h",COMPLETED,"templates/0003_004.txt",STDERR_MUST_BE_EMPTY},
+		{"--usage",COMPLETED,"templates/0003_005.txt",STDERR_MUST_BE_EMPTY},
+		{"-z",COMPLETED,"templates/0003_005.txt",STDERR_MUST_BE_EMPTY},
+		{"--version",COMPLETED,"templates/0003_006.txt",STDERR_MUST_BE_EMPTY},
+		{"--version --version",COMPLETED,"templates/0003_006.txt",STDERR_MUST_BE_EMPTY},
 		{0}
 	};
 
@@ -99,19 +99,19 @@ Return test0003_4(void)
 {
 	INITTEST;
 	const struct argument_test_case cases[] = {
-		{"--help /definitely/nonexistent/path",COMPLETED,"templates/0003_004.txt","templates/empty_regex_pattern.txt"},
-		{"-h /definitely/nonexistent/path",COMPLETED,"templates/0003_004.txt","templates/empty_regex_pattern.txt"},
-		{"--usage /definitely/nonexistent/path",COMPLETED,"templates/0003_005.txt","templates/empty_regex_pattern.txt"},
-		{"-z /definitely/nonexistent/path",COMPLETED,"templates/0003_005.txt","templates/empty_regex_pattern.txt"},
-		{"--version /definitely/nonexistent/path",COMPLETED,"templates/0003_006.txt","templates/empty_regex_pattern.txt"},
-		{"--compare --help",COMPLETED,"templates/0003_004.txt","templates/empty_regex_pattern.txt"},
-		{"--compare --usage",COMPLETED,"templates/0003_005.txt","templates/empty_regex_pattern.txt"},
-		{"--compare -z",COMPLETED,"templates/0003_005.txt","templates/empty_regex_pattern.txt"},
-		{"--compare --version",COMPLETED,"templates/0003_006.txt","templates/empty_regex_pattern.txt"},
-		{"--help --version",COMPLETED,"templates/0003_004.txt","templates/empty_regex_pattern.txt"},
-		{"--path=/definitely/nonexistent/path --help",COMPLETED,"templates/0003_004.txt","templates/empty_regex_pattern.txt"},
-		{"--path=/definitely/nonexistent/path --usage",COMPLETED,"templates/0003_005.txt","templates/empty_regex_pattern.txt"},
-		{"--path=/definitely/nonexistent/path --version",COMPLETED,"templates/0003_006.txt","templates/empty_regex_pattern.txt"},
+		{"--help /definitely/nonexistent/path",COMPLETED,"templates/0003_004.txt",STDERR_MUST_BE_EMPTY},
+		{"-h /definitely/nonexistent/path",COMPLETED,"templates/0003_004.txt",STDERR_MUST_BE_EMPTY},
+		{"--usage /definitely/nonexistent/path",COMPLETED,"templates/0003_005.txt",STDERR_MUST_BE_EMPTY},
+		{"-z /definitely/nonexistent/path",COMPLETED,"templates/0003_005.txt",STDERR_MUST_BE_EMPTY},
+		{"--version /definitely/nonexistent/path",COMPLETED,"templates/0003_006.txt",STDERR_MUST_BE_EMPTY},
+		{"--compare --help",COMPLETED,"templates/0003_004.txt",STDERR_MUST_BE_EMPTY},
+		{"--compare --usage",COMPLETED,"templates/0003_005.txt",STDERR_MUST_BE_EMPTY},
+		{"--compare -z",COMPLETED,"templates/0003_005.txt",STDERR_MUST_BE_EMPTY},
+		{"--compare --version",COMPLETED,"templates/0003_006.txt",STDERR_MUST_BE_EMPTY},
+		{"--help --version",COMPLETED,"templates/0003_004.txt",STDERR_MUST_BE_EMPTY},
+		{"--path=/definitely/nonexistent/path --help",COMPLETED,"templates/0003_004.txt",STDERR_MUST_BE_EMPTY},
+		{"--path=/definitely/nonexistent/path --usage",COMPLETED,"templates/0003_005.txt",STDERR_MUST_BE_EMPTY},
+		{"--path=/definitely/nonexistent/path --version",COMPLETED,"templates/0003_006.txt",STDERR_MUST_BE_EMPTY},
 		{0}
 	};
 
@@ -131,11 +131,11 @@ static Return test0003_5(void)
 {
 	INITTEST;
 	const struct argument_test_case cases[] = {
-		{"--dry-run --database=dry_run_regular.db tests/fixtures/diffs/diff1",COMPLETED,"templates/0013_001_1.txt","templates/empty_regex_pattern.txt"},
-		{"--dry-run --database=dry_run_regular.db --path=tests/fixtures/diffs/diff1/",COMPLETED,"templates/0013_001_1.txt","templates/empty_regex_pattern.txt"},
-		{"--dry-run --database=dry_run_regular.db --path tests/fixtures/diffs/diff1/",COMPLETED,"templates/0013_001_1.txt","templates/empty_regex_pattern.txt"},
-		{"--dry-run --database=dry_run_regular.db -P tests/fixtures/diffs/diff1/",COMPLETED,"templates/0013_001_1.txt","templates/empty_regex_pattern.txt"},
-		{"--dry-run --database=dry_run_regular.db --path=tests/fixtures/diffs/diff1 --",COMPLETED,"templates/0013_001_1.txt","templates/empty_regex_pattern.txt"},
+		{"--dry-run --database=dry_run_regular.db tests/fixtures/diffs/diff1",COMPLETED,"templates/0013_001_1.txt",STDERR_MUST_BE_EMPTY},
+		{"--dry-run --database=dry_run_regular.db --path=tests/fixtures/diffs/diff1/",COMPLETED,"templates/0013_001_1.txt",STDERR_MUST_BE_EMPTY},
+		{"--dry-run --database=dry_run_regular.db --path tests/fixtures/diffs/diff1/",COMPLETED,"templates/0013_001_1.txt",STDERR_MUST_BE_EMPTY},
+		{"--dry-run --database=dry_run_regular.db -P tests/fixtures/diffs/diff1/",COMPLETED,"templates/0013_001_1.txt",STDERR_MUST_BE_EMPTY},
+		{"--dry-run --database=dry_run_regular.db --path=tests/fixtures/diffs/diff1 --",COMPLETED,"templates/0013_001_1.txt",STDERR_MUST_BE_EMPTY},
 		{0}
 	};
 
@@ -160,12 +160,12 @@ static Return test0003_6(void)
 	const struct argument_test_case cases[] = {
 		{"--dry-run --database=0003_paths.db "
 		 "--path=tests/fixtures/diffs/diff1/1/ --path=tests/fixtures/diffs/diff1/4 "
-		 "--path=tests/fixtures/diffs/diff1/1",COMPLETED,"templates/0003_007.txt","templates/empty_regex_pattern.txt"},
+		 "--path=tests/fixtures/diffs/diff1/1",COMPLETED,"templates/0003_007.txt",STDERR_MUST_BE_EMPTY},
 		{"--dry-run --database=0003_paths.db "
 		 "--path=tests/fixtures/diffs/diff1/1/ --path tests/fixtures/diffs/diff1/4/ "
-		 "tests/fixtures/diffs/diff1/1/",COMPLETED,"templates/0003_007.txt","templates/empty_regex_pattern.txt"},
+		 "tests/fixtures/diffs/diff1/1/",COMPLETED,"templates/0003_007.txt",STDERR_MUST_BE_EMPTY},
 		{"--dry-run --database=0003_paths.db tests/fixtures/diffs/diff1/1/ "
-		 "--path=tests/fixtures/diffs/diff1/1 --path=tests/fixtures/diffs/diff1/4",COMPLETED,"templates/0003_007.txt","templates/empty_regex_pattern.txt"},
+		 "--path=tests/fixtures/diffs/diff1/1 --path=tests/fixtures/diffs/diff1/4",COMPLETED,"templates/0003_007.txt",STDERR_MUST_BE_EMPTY},
 		{0}
 	};
 

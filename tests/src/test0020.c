@@ -15,7 +15,7 @@ Return test0020_1(void)
 	        "tests/fixtures/diffs/diff1";
 
 	const struct argument_test_case cases[] = {
-		{arguments,FAILURE,"templates/0020_001.txt","templates/empty_regex_pattern.txt"},
+		{arguments,FAILURE,"templates/0020_001.txt",STDERR_MUST_BE_EMPTY},
 		{0}
 	};
 
@@ -40,7 +40,7 @@ Return test0020_2(void)
 	        "tests/fixtures/diffs/diff1";
 
 	const struct argument_test_case cases[] = {
-		{arguments,FAILURE,"templates/0020_002.txt","templates/empty_regex_pattern.txt"},
+		{arguments,FAILURE,"templates/0020_002.txt",STDERR_MUST_BE_EMPTY},
 		{0}
 	};
 
@@ -68,7 +68,7 @@ Return test0020_3(void)
 	        "tests/fixtures/diffs/diff1";
 
 	const struct argument_test_case cases[] = {
-		{arguments,FAILURE,"templates/0020_003.txt","templates/empty_regex_pattern.txt"},
+		{arguments,FAILURE,"templates/0020_003.txt",STDERR_MUST_BE_EMPTY},
 		{0}
 	};
 
@@ -106,7 +106,7 @@ Return test0020_4(void)
 	arguments = "--compare write_protected_database1.db database2.db";
 
 	const struct argument_test_case cases[] = {
-		{arguments,FAILURE,"templates/0020_004.txt","templates/empty_regex_pattern.txt"},
+		{arguments,FAILURE,"templates/0020_004.txt",STDERR_MUST_BE_EMPTY},
 		{0}
 	};
 
@@ -133,7 +133,7 @@ Return test0020_5(void)
 	        "tests/fixtures/diffs/diff1";
 
 	const struct argument_test_case cases[] = {
-		{arguments,FAILURE,"templates/0020_005.txt","templates/empty_regex_pattern.txt"},
+		{arguments,FAILURE,"templates/0020_005.txt",STDERR_MUST_BE_EMPTY},
 		{0}
 	};
 
@@ -164,7 +164,7 @@ Return test0020_6(void)
 	arguments = "--check-level=QUICK --update --database=database1.db tests/fixtures/diffs/diff2";
 
 	const struct argument_test_case cases[] = {
-		{arguments,WARNING,"templates/0020_006.txt","templates/empty_regex_pattern.txt"},
+		{arguments,WARNING,"templates/0020_006.txt",STDERR_MUST_BE_EMPTY},
 		{0}
 	};
 
@@ -199,7 +199,7 @@ Return test0020_7(void)
 	        "tests/fixtures/diffs/diff2";
 
 	const struct argument_test_case cases[] = {
-		{arguments,COMPLETED,"templates/0020_007.txt","templates/empty_regex_pattern.txt"},
+		{arguments,COMPLETED,"templates/0020_007.txt",STDERR_MUST_BE_EMPTY},
 		{0}
 	};
 

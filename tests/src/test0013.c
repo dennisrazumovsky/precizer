@@ -53,8 +53,8 @@ static Return test0013_2(void)
 	ASSERT(SUCCESS == set_environment_variable("TESTING","true"));
 
 	const struct argument_test_case cases[] = {
-		{"--dry-run --database=dry_run_regular.db tests/fixtures/diffs/diff1",COMPLETED,"templates/0013_001_1.txt","templates/empty_regex_pattern.txt"},
-		{"--dry-run=with-checksums --database=dry_run_with_checksums.db tests/fixtures/diffs/diff1",COMPLETED,"templates/0013_001_2.txt","templates/empty_regex_pattern.txt"},
+		{"--dry-run --database=dry_run_regular.db tests/fixtures/diffs/diff1",COMPLETED,"templates/0013_001_1.txt",STDERR_MUST_BE_EMPTY},
+		{"--dry-run=with-checksums --database=dry_run_with_checksums.db tests/fixtures/diffs/diff1",COMPLETED,"templates/0013_001_2.txt",STDERR_MUST_BE_EMPTY},
 		{0}
 	};
 

@@ -841,6 +841,10 @@ Return parse_arguments(
 	const int,
 	char **);
 
+void show_testing_diagnostics(void);
+
+void show_verbose_diagnostics(void);
+
 void about(void);
 
 void slog_show_impl(

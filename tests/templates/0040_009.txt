@@ -1,5 +1,5 @@
 \ATESTING:Configuration initialization is finished
-\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2}:\d{3} (?:\.\./)?src/parse_arguments\.c:\d+:parse_arguments:Configuration: rational_logger_mode=VERBOSE
+\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2}:\d{3} (?:\.\./)?src/show_parse_diagnostics\.c:\d+:show_verbose_diagnostics:Configuration: rational_logger_mode=VERBOSE
 roots=tests/fixtures/diffs/diff1/2; database=0040\.db; db_file_name=0040\.db; verbose=yes; maxdepth=-1; silent=no; quiet-ignored=no; force=no; update=no; watch-timestamps=no; rehash-locked=no; progress=no; compare=no, db-drop-ignored=no, db-drop-inaccessible=no, dry-run=yes, one-file-system=no, check-level=FULL, rational_logger_mode=VERBOSE, color=%COLOR_MODE%
 \d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2}:\d{3} (?:\.\./)?src/parse_arguments\.c:\d+:parse_arguments:Argument parsing is finished
 \d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2}:\d{3} (?:\.\./)?src/about\.c:\d+:about:precizer [0-9]+\.[0-9]+\.[0-9]+

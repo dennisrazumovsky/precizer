@@ -2,9 +2,12 @@
 
 All notable changes will be documented in this file
 
-# Release 0.17.6 2026-10-06
+# Release 0.18.0 2026-10-15
 
-Improve file status output
+* The application is significantly faster due to a combination of factors, primarily optimizations to database access
+* Embeded SQLite upgraded to the mainstream version
+* The application now supports configuration files using `key = value` syntax. All CLI option names can be used as keys. Configuration files are an optional addition, not a replacement for the CLI. All CLI commands work exactly as before and will continue to do so. The application remains 100% backward compatible, so existing scripts won't break.
+* Improved file status output
 
 # Release 0.17.5 2026-10-02
 

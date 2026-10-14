@@ -18,7 +18,7 @@ TOOL_CFLAGS ?= $(OPT_CFLAGS)
 OPT_LDFLAGS ?=
 TOOL_LDFLAGS ?= $(OPT_LDFLAGS)
 
-# Detect whether we're using GCC
+# Detect whether the compiler is GCC
 GCC := $(findstring gcc,$(notdir $(firstword $(CC))))
 
 # Warning flags for additional checks

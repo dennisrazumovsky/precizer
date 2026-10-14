@@ -28,7 +28,7 @@ IS_MSYS := $(shell $(CC) $(CPPFLAGS) $(CFLAGS) -dM -E -x c /dev/null 2>/dev/null
 SO = $(LIBNAME).so
 STATLIB = $(LIBNAME).a
 
-# Detect whether we're using GCC
+# Detect whether the compiler is GCC
 GCC := $(findstring gcc,$(notdir $(firstword $(CC))))
 
 ifeq ($(UNAME_S),Darwin)
@@ -69,7 +69,7 @@ SRC_DIR = src
 SRCS = $(wildcard $(SRC_DIR)/*.c)
 HDRS = $(wildcard $(SRC_DIR)/*.h) $(foreach d,$(LIBS),$(wildcard ../$d/src/*.h))
 
-# Exclude a file
+# Object names corresponding to the source files
 OBJS = $(SRCS:$(SRC_DIR)/%.c=%.o)
 
 LIBS = rational
@@ -117,8 +117,7 @@ COV_LDPATH = -L$(COV_LIBDIR)
 COV_SO = $(COV_LIBDIR)/$(SO)
 COV_STAT = $(COV_LIBDIR)/$(STATLIB)
 COV_OBJS = $(addprefix $(COV_OBJDIR)/, $(OBJS))
-# This coverage target intentionally does not add gcov instrumentation.
-# This keeps coverage statistics focused on files whose coverage has strategic value
+# Diff library sources are excluded from gcov instrumentation
 # Callers may replace these defaults through COV_OPT_CFLAGS and
 # COV_OPT_LDFLAGS. Coverage optimization flags follow CFLAGS and LDFLAGS and
 # win conflicts
@@ -413,7 +412,6 @@ $(PRTB_LIBDIR):
 
 purge: clean-compile-commands
 	@test -d $(BUILDDIR) && rm -rf $(BUILDDIR) 2>/dev/null || true
-	@test -f $(EXE) && rm $(EXE) 2>/dev/null || true
 	@echo $(LIBNAME) artifacts cleared
 
 clean-compile-commands:
@@ -428,22 +426,32 @@ clean: clean-compile-commands
 	@rm -rf $(SNTZ_SO) $(SNTZ_STAT) $(SNTZ_OBJS)
 
 	@test -d $(DBG_OBJDIR) && rm -d $(DBG_OBJDIR) 2>/dev/null || true
+	@test -d $(DBG_LIBDIR)/obj && rm -d $(DBG_LIBDIR)/obj 2>/dev/null || true
 	@test -d $(DBG_LIBDIR) && rm -d $(DBG_LIBDIR) 2>/dev/null || true
 	@test -d $(DBG_DIR) && rm -d $(DBG_DIR) 2>/dev/null || true
 
 	@test -d $(COV_OBJDIR) && rm -d $(COV_OBJDIR) 2>/dev/null || true
+	@test -d $(COV_LIBDIR)/obj && rm -d $(COV_LIBDIR)/obj 2>/dev/null || true
 	@test -d $(COV_LIBDIR) && rm -d $(COV_LIBDIR) 2>/dev/null || true
 	@test -d $(COV_DIR) && rm -d $(COV_DIR) 2>/dev/null || true
 
 	@test -d $(SNTZ_OBJDIR) && rm -d $(SNTZ_OBJDIR) 2>/dev/null || true
+	@test -d $(SNTZ_LIBDIR)/obj && rm -d $(SNTZ_LIBDIR)/obj 2>/dev/null || true
 	@test -d $(SNTZ_LIBDIR) && rm -d $(SNTZ_LIBDIR) 2>/dev/null || true
 	@test -d $(SNTZ_DIR) && rm -d $(SNTZ_DIR) 2>/dev/null || true
 
 	@test -d $(PROD_OBJDIR) && rm -d $(PROD_OBJDIR) 2>/dev/null || true
+	@test -d $(PROD_LIBDIR)/obj && rm -d $(PROD_LIBDIR)/obj 2>/dev/null || true
 	@test -d $(PROD_LIBDIR) && rm -d $(PROD_LIBDIR) 2>/dev/null || true
 	@test -d $(PROD_DIR) && rm -d $(PROD_DIR) 2>/dev/null || true
 
+	@test -d $(DIST_OBJDIR) && rm -d $(DIST_OBJDIR) 2>/dev/null || true
+	@test -d $(DIST_LIBDIR)/obj && rm -d $(DIST_LIBDIR)/obj 2>/dev/null || true
+	@test -d $(DIST_LIBDIR) && rm -d $(DIST_LIBDIR) 2>/dev/null || true
+	@test -d $(DIST_DIR) && rm -d $(DIST_DIR) 2>/dev/null || true
+
 	@test -d $(PRTB_OBJDIR) && rm -d $(PRTB_OBJDIR) 2>/dev/null || true
+	@test -d $(PRTB_LIBDIR)/obj && rm -d $(PRTB_LIBDIR)/obj 2>/dev/null || true
 	@test -d $(PRTB_LIBDIR) && rm -d $(PRTB_LIBDIR) 2>/dev/null || true
 	@test -d $(PRTB_DIR) && rm -d $(PRTB_DIR) 2>/dev/null || true
 
@@ -478,7 +486,7 @@ $(COMPILE_COMMANDS):
 cppcheck: compile-commands
 	cppcheck --check-level=exhaustive --project=$(COMPILE_COMMANDS) --suppress=missingIncludeSystem --enable=all --platform=unix64 --std=c2x -q --force --inconclusive
 
-# Run clang static analyzer and view analysis results in a web browser when the build command completes
+# Run the Clang static analyzer and open its results in a web browser
 clang-analyzer: CC = clang
 clang-analyzer:
 	scan-build -V make debug

@@ -72,7 +72,7 @@ else ifneq ($(IS_MSYS),)
 LDLIBS += -largp
 endif
 
-# Detect whether we're using GCC
+# Detect whether the compiler is GCC
 GCC := $(findstring gcc,$(notdir $(firstword $(CC))))
 
 # Warning flags for additional checks
@@ -495,7 +495,7 @@ CLANG := $(notdir $(or $(lastword $(sort $(wildcard $(addsuffix /clang-[0-9]*,$(
 CLANG_SUFFIX := $(patsubst clang%,%,$(CLANG))
 SCAN_BUILD := scan-build$(CLANG_SUFFIX)
 
-# Run clang static analyzer and view analysis results in a web browser when the build command completes
+# Run the Clang static analyzer and open its results in a web browser
 clang-analyzer: CC = $(CLANG)
 clang-analyzer:
 	@echo "Using compiler: $(CLANG), analyzer: $(SCAN_BUILD)"

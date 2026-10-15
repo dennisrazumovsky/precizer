@@ -445,8 +445,7 @@ static Return test0003_13(void)
 	ASSERT(SUCCESS == run_and_match_templates(invalid_file,NULL,NULL));
 	call(delete_path_if_present("precizer.conf"));
 
-#ifdef __linux__
-	/* Linux permits opening the directory and fails when inih attempts to read it */
+	/* A directory opens successfully but causes a read error when inih reads it */
 	const struct argument_test_case unreadable_file[] = {
 		{"",FAILURE,"templates/0003_013.txt","templates/0003_022.txt"},
 		{"--config=precizer.conf",FAILURE,"templates/0003_013.txt","templates/0003_022.txt"},
@@ -456,7 +455,6 @@ static Return test0003_13(void)
 	ASSERT(SUCCESS == create_directory("precizer.conf"));
 	ASSERT(SUCCESS == run_and_match_templates(unreadable_file,NULL,NULL));
 	call(delete_path_if_present("precizer.conf"));
-#endif
 
 	RETURN_STATUS;
 }

@@ -10,9 +10,7 @@ Return comprehensive_mock_testing(void)
 	testitall_runit_mode = INTERNAL_TEST;
 
 	TEST(test0031,"Read error handling during hashing");
-#ifdef __linux__
-	TEST(test0046,"Read errors after configuration settings stop before scanning");
-#endif
+	TEST(test0046,"Configuration read errors preserve settings and stop startup");
 
 	testitall_runit_mode = prev_run_mode;
 

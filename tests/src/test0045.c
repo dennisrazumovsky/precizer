@@ -238,26 +238,11 @@ static Return test0045_4(void)
 	ASSERT(SUCCESS == check_reader("0045_reader.conf/child",true,FAILURE,false,
 		"templates/0045_009.txt"));
 
-#ifdef __linux__
-	/* Linux opens a directory stream successfully and rejects the first read */
+	/* A directory opens successfully but causes a read error on the first read */
 	ASSERT(SUCCESS == create_directory("0045_config_directory"));
 	ASSERT(SUCCESS == check_reader("0045_config_directory",true,FAILURE,false,
 		"templates/0045_010.txt"));
 	call(delete_path_if_present("0045_config_directory"));
-
-	/* A valid prefix must remain applied when the final stream check reports EIO */
-	ASSERT(SUCCESS == copy_from_origin("tests/templates/0045_004.conf",
-		"0045_reader.conf",REQUIRE_SOURCE_EXISTS));
-	mocks_ferror_reset();
-	mocks_ferror_set_target_suffix("0045_reader.conf");
-	ASSERT(SUCCESS == check_reader("0045_reader.conf",true,FAILURE,true,
-		"templates/0045_023.txt"));
-	ASSERT(mocks_ferror_call_count() == 1U);
-	mocks_ferror_reset();
-	ASSERT(config->roots.length == 1U);
-	memory *roots = m_data(memory,conf(roots));
-	ASSERT(strcmp(m_text(&roots[0]),"settings_read_before_failure") == 0);
-#endif
 
 	call(delete_path_if_present("0045_reader.conf"));
 	RETURN_STATUS;

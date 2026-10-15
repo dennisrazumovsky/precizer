@@ -13,6 +13,19 @@
 #include "sha512.h"
 #include "mem.h"
 #include "sqlite3.h"
+
+/* Shared inih settings for the application and bundled parser */
+#define INI_MAX_LINE 4096
+#define INI_STOP_ON_FIRST_ERROR 1
+#define INI_HANDLER_LINENO 1
+#define INI_ALLOW_MULTILINE 1
+#define INI_ALLOW_INLINE_COMMENTS 1
+#define INI_INLINE_COMMENT_PREFIXES "#"
+#define INI_CALL_HANDLER_ON_NEW_SECTION 1
+#define INI_START_COMMENT_PREFIXES "#"
+#define INI_USE_STACK 1
+#include "ini.h"
+
 // Application name and current code version
 #include "version.h"
 
@@ -330,6 +343,10 @@ typedef struct {
 
 	/// Bitmask of enabled --compare output filters
 	unsigned int compare_filter;
+
+	/// Selected configuration path, or NULL for CLI-only parsing.
+	/// Borrows storage from argv or a static string; no allocation is owned
+	const char *config_file_path;
 
 	/// Managed array of root paths to traverse
 	memory roots;
@@ -837,11 +854,51 @@ Changed file_compare_metadata_equivalence(
 	const CmpctStat *,
 	const CmpctStat *) __attribute__ ((pure));
 
+/**
+ * @brief Share temporary state for choosing and parsing a settings source
+ *
+ * Supports choosing CLI arguments or a configuration file, detecting source
+ * conflicts, and checking whether the file supplied settings. Application
+ * settings themselves are stored in Config
+ */
+typedef struct {
+	/** Whether the selected file must exist */
+	bool config_required;
+	/** Whether CLI contains arguments other than --config/-g */
+	bool has_other_arguments;
+	/** Whether help, usage, or version was requested through CLI */
+	bool information_mode_requested;
+	/** Whether the file contains recognized settings, including false flags */
+	bool config_has_entries;
+} ArgumentParseContext;
+
+error_t parse_source_option(
+	int,
+	char *,
+	struct argp_state *);
+
+Return select_settings_source(
+	const int,
+	error_t,
+	ArgumentParseContext *);
+
 Return parse_arguments(
 	const int,
 	char **);
 
+error_t parse_opt(
+	int,
+	char *,
+	struct argp_state *);
+
+Return read_config_file(
+	const char *,
+	bool,
+	bool *);
+
+#ifdef TESTITALL_TEST_HOOKS
 void show_testing_diagnostics(void);
+#endif
 
 void show_verbose_diagnostics(void);
 

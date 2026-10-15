@@ -65,8 +65,8 @@ CPPFLAGS ?=
 CFLAGS ?= -finline-functions
 LDFLAGS ?=
 
-LIBS = sha512 mem rational sqlite3
-STATLIBS = sha512 mem rational
+LIBS = sha512 mem rational sqlite3 inih
+STATLIBS = sha512 mem rational inih
 LDLIBS = $(foreach d,$(LIBS),-l$d)
 
 UNAME_S := $(shell uname -s)

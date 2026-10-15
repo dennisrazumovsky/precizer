@@ -28,6 +28,9 @@ void free_config(void)
 	restore_console_quick_edit();
 #endif
 
+	// Clear the borrowed configuration path
+	config->config_file_path = NULL;
+
 	// Primary database file path used for read and write operations
 	(void)m_del(conf(db_primary_file_path));
 

@@ -23,6 +23,7 @@ static const char *color_mode_name(void)
 	}
 }
 
+#ifdef TESTITALL_TEST_HOOKS
 /**
  * @brief Show parsed configuration details for TESTING logger output
  *
@@ -34,6 +35,12 @@ static const char *color_mode_name(void)
 void show_testing_diagnostics(void)
 {
 	slog(TESTING,"rational_logger_mode=%s\n",rational_reconvert(rational_logger_mode));
+
+	if(config->config_file_path != NULL)
+	{
+		slog(TESTING,"argument:config=%s\n",config->config_file_path);
+	}
+
 	slog(TESTING,"argument:color=%s\n",color_mode_name());
 
 	if(config->roots.length != 0)
@@ -219,6 +226,7 @@ void show_testing_diagnostics(void)
 		slog(TESTING,"argument:one-file-system=%s\n",config->one_file_system ? "yes" : "no");
 	}
 }
+#endif
 
 /**
  * @brief Show parsed configuration details for verbose user output
@@ -232,6 +240,11 @@ void show_verbose_diagnostics(void)
 {
 	slog(VERBOSE,"Configuration: ");
 	slog(VERBOSE|UNDECOR,"rational_logger_mode=%s\n",rational_reconvert(rational_logger_mode));
+
+	if(config->config_file_path != NULL)
+	{
+		slog(VERBOSE|UNDECOR,"config=%s; ",config->config_file_path);
+	}
 
 	if(config->roots.length != 0)
 	{

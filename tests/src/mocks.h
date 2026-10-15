@@ -16,6 +16,8 @@ size_t mocks_fread_call_count(void);
 
 void mocks_ferror_enable(bool);
 
+void mocks_ferror_set_target_suffix(const char *);
+
 void mocks_ferror_set_errno(int);
 
 void mocks_ferror_reset(void);

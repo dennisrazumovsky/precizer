@@ -240,7 +240,9 @@ Return test0015_4(void)
 /**
  * @brief Create a fresh DB with the default generated filename
  *
- * Verify the application reports the generated DB name in the expected output
+ * Verify CLI and file-supplied roots produce the same complete output and
+ * generated DB name. Check the configuration path separately before matching
+ * the file run against the CLI template
  */
 Return test0015_5(void)
 {
@@ -264,6 +266,38 @@ Return test0015_5(void)
 	};
 
 	ASSERT(SUCCESS == run_and_match_templates(cases,template,replacement));
+
+	/* Repeat the target creation from the same initial state. The resulting
+	   database remains available to the following comparison tests */
+	ASSERT(SUCCESS == delete_path(replacement));
+	ASSERT(SUCCESS == copy_from_origin("tests/templates/0015_004.conf",
+		"tests/templates/0015_004.conf",REQUIRE_SOURCE_EXISTS));
+	m_create(char,file_output,MEMORY_STRING);
+	m_create(char,file_errors,MEMORY_STRING);
+	m_create(char,pattern,MEMORY_STRING);
+	ASSERT(SUCCESS == runit("--config=tests/templates/0015_004.conf",file_output,file_errors,COMPLETED,STDERR_ALLOW));
+	ASSERT(file_errors->length == 0U);
+
+	/* Require exactly one correct source diagnostic, then compare the rest
+	   with the same full golden template used by the CLI run */
+	const char *config_line = "TESTING:argument:config=tests/templates/0015_004.conf\n";
+	const char *config_position = NULL;
+	IF(SUCCESS == status)
+	{
+		config_position = strstr(m_text(file_output),config_line);
+	}
+	ASSERT(config_position != NULL);
+	ASSERT(strstr(config_position + strlen(config_line),config_line) == NULL);
+	ASSERT(SUCCESS == replace_placeholder(file_output,
+		"(?m)^TESTING:argument:config=tests/templates/0015_004\\.conf\\n",""));
+	ASSERT(SUCCESS == get_file_content(filename,pattern));
+	ASSERT(SUCCESS == replace_placeholder(pattern,template,replacement));
+	ASSERT(SUCCESS == match_pattern(file_output,pattern,filename));
+
+	call(m_del(pattern));
+	call(m_del(file_errors));
+	call(m_del(file_output));
+	call(delete_path_if_present("tests/templates/0015_004.conf"));
 
 	RETURN_STATUS;
 }

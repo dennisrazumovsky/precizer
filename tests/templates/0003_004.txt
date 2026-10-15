@@ -22,6 +22,7 @@ Usage: precizer \[OPTION\.\.\.\] \[PATH\.\.\.\]
 [\s\S]*?  -e, --ignore=PCRE2_REGEXP[^\n]*
 [\s\S]*?  -i, --include=PCRE2_REGEXP[^\n]*
 [\s\S]*? Visualizations options:
+[\s\S]*?  -g, --config=FILE[^\n]*
 [\s\S]*?  -h, -\?, --help[^\n]*
 [\s\S]*?  -p, --progress[^\n]*
 [\s\S]*?  -q, --quiet-ignored[^\n]*

@@ -31,7 +31,7 @@ BUILDDIR = ../.builds
 short_path = $(if $(filter ./,$(dir $(1))),$(notdir $(1)),$(notdir $(patsubst %/,%,$(dir $(1))))/$(notdir $(1)))
 TEST_BUILDDIR = $(BUILDDIR)/$(EXE)
 COMPILE_COMMANDS = $(BUILDDIR)/compile_commands.json
-LIBS = testitall testmocking mem sha512 rational sqlite3 xdiff monocypher
+LIBS = testitall testmocking mem sha512 rational sqlite3 xdiff monocypher inih
 
 TESTED_APP_NAME := $(shell awk '$$2 == "APP_NAME" && $$3 ~ /^"/ { gsub(/"/,"",$$3); print $$3; exit }' $(APP_SRC_DIR)/version.h)
 ifeq ($(TESTED_APP_NAME),)

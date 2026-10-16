@@ -58,11 +58,14 @@ static Return test0011_1(void)
 }
 
 /**
+ * @brief Verify updates and the existing-database warning with progress enabled
+ *
  * The Example 2 from README
  * Updating the database:
  * Stage 1. Adding:
  * precizer --progress --database=database1.db tests/fixtures/diffs/diff1
- * Stage 2. Reuse previous example once agan. The first try. The warning message.
+ * Stage 2. Repeat the scan through CLI and configuration without --update.
+ * Both runs must show the same warning and leave the database unchanged:
  * precizer --progress --check-level=QUICK --database=database1.db tests/fixtures/diffs/diff1
  * Stage 3. Run of database update without making actual changes to disk:
  * precizer --update --check-level=QUICK --progress --database=database1.db tests/fixtures/diffs/diff1
@@ -115,15 +118,20 @@ static Return test0011_2(void)
 
 	filename = "templates/0011_002_2.txt";
 
-	ASSERT(SUCCESS == runit(arguments,result,NULL,WARNING,ALLOW_BOTH));
+	const struct argument_test_case cases[] = {
+		{arguments,WARNING,filename,STDERR_MUST_BE_EMPTY},
+		{0}
+	};
+	ASSERT(SUCCESS == run_and_match_templates(cases,NULL,NULL));
 
-	ASSERT(SUCCESS == get_file_content(filename,pattern));
-
-	ASSERT(SUCCESS == match_pattern(result,pattern,filename));
-
-	// Clean to use it iteratively
-	m_del(pattern);
-	m_del(result);
+	/* The rejected update leaves the same database ready for the configuration run */
+	ASSERT(SUCCESS == copy_path("tests/templates/0011_002_2.conf","0011_002_2.conf"));
+	const struct argument_test_case file_cases[] = {
+		{"--config=0011_002_2.conf",WARNING,filename,STDERR_MUST_BE_EMPTY},
+		{0}
+	};
+	ASSERT(SUCCESS == run_and_match_templates(file_cases,NULL,NULL));
+	call(delete_path_if_present("0011_002_2.conf"));
 
 	m_create(char,chunk,MEMORY_STRING);
 

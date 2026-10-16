@@ -3,6 +3,9 @@
 /**
  * @brief Verify traversal output when the source path starts with an apostrophe
  *
+ * CLI and configuration runs enable progress and use the same full output
+ * template, including the initial file count. Each run starts without a database
+ *
  * @return Return status code
  */
 Return test0024_1(void)
@@ -28,6 +31,16 @@ Return test0024_1(void)
 	ASSERT(SUCCESS == run_and_match_templates(cases,NULL,NULL));
 
 	// Clean up test results
+	ASSERT(SUCCESS == delete_path("database1.db"));
+
+	/* Repeat the scan through configuration with the literal apostrophe in the path */
+	ASSERT(SUCCESS == copy_path("tests/templates/0024_001.conf","0024_001.conf"));
+	const struct argument_test_case file_cases[] = {
+		{"--config=0024_001.conf",COMPLETED,filename,STDERR_MUST_BE_EMPTY},
+		{0}
+	};
+	ASSERT(SUCCESS == run_and_match_templates(file_cases,NULL,NULL));
+	call(delete_path_if_present("0024_001.conf"));
 	ASSERT(SUCCESS == delete_path("database1.db"));
 
 	RETURN_STATUS;

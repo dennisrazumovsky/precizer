@@ -96,7 +96,8 @@ static Return db_create_abort_on_second_stat_update_trigger(const char *db_filen
 /**
  * @brief Reject using a legacy v0 DB as the primary database without --update
  *
- * Verify the run fails and prints the expected warning for the upgrade path
+ * Verify CLI and configuration runs select QUICK verification and print the
+ * same upgrade warning. The rejected upgrade leaves the fixture unchanged
  */
 Return test0015_1(void)
 {
@@ -114,6 +115,15 @@ Return test0015_1(void)
 
 	// Match the result against the pattern
 	ASSERT(SUCCESS == run_and_match_templates(cases,NULL,NULL));
+
+	/* The rejected upgrade leaves the same database ready for the configuration run */
+	ASSERT(SUCCESS == copy_path("tests/templates/0015_001.conf","0015_001.conf"));
+	const struct argument_test_case file_cases[] = {
+		{"--config=0015_001.conf",WARNING,filename,STDERR_MUST_BE_EMPTY},
+		{0}
+	};
+	ASSERT(SUCCESS == run_and_match_templates(file_cases,NULL,NULL));
+	call(delete_path_if_present("0015_001.conf"));
 
 	// Clean up test results
 	ASSERT(SUCCESS == delete_path("0015_database_v0.db"));

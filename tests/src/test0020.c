@@ -51,9 +51,11 @@ Return test0020_2(void)
 }
 
 /**
+ * @brief Reject database creation in a write-protected directory through CLI and configuration
  *
- * Testing DB creation in write protected directory
+ * Both runs use the same directory permissions and full output template
  *
+ * @return Return status for equivalent database creation failures
  */
 Return test0020_3(void)
 {
@@ -74,6 +76,16 @@ Return test0020_3(void)
 
 	// Match the result against the pattern
 	ASSERT(SUCCESS == run_and_match_templates(cases,NULL,NULL));
+
+	/* Repeat the failure before restoring permissions on the database directory */
+	ASSERT(SUCCESS == copy_from_origin("tests/templates/0020_003.conf","0020_003.conf",REQUIRE_SOURCE_EXISTS));
+	const struct argument_test_case file_cases[] = {
+		{"--config=0020_003.conf",FAILURE,"templates/0020_003.txt",STDERR_MUST_BE_EMPTY},
+		{0}
+	};
+	ASSERT(SUCCESS == run_and_match_templates(file_cases,NULL,NULL));
+
+	call(delete_path_if_present("0020_003.conf"));
 
 	ASSERT(SUCCESS == change_mode("write_protected_directory",0777));
 	ASSERT(SUCCESS == delete_path("write_protected_directory"));

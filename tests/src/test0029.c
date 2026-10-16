@@ -252,13 +252,15 @@ static Return test0029_4(void)
  * Forces the first of two traversal roots to fail during root opening. The
  * unavailable root must be reported immediately and shown again in the final
  * warning summary, while a file from the second root must still be written to
- * the database
+ * the database. A configuration-file run repeats both checks with the same
+ * access failure after removing the database created by the CLI run
  */
 static Return test0029_5(void)
 {
 	INITTEST;
 
 	m_create(char,result,MEMORY_STRING);
+	m_create(char,errors,MEMORY_STRING);
 	m_create(char,pattern,MEMORY_STRING);
 
 	const char *db_filename = "database5.db";
@@ -273,17 +275,33 @@ static Return test0029_5(void)
 	const char *arguments = "--database=database5.db "
 	        "tests/fixtures/diffs/diff1/1 tests/fixtures/diffs/diff1/4";
 
-	ASSERT(SUCCESS == runit(arguments,result,NULL,COMPLETED,ALLOW_BOTH));
+	ASSERT(SUCCESS == runit(arguments,result,errors,COMPLETED,STDERR_ALLOW));
+	ASSERT(errors->length == 0U);
 
 	ASSERT(SUCCESS == get_file_content(filename,pattern));
 	ASSERT(SUCCESS == match_pattern(result,pattern,filename));
 	ASSERT(SUCCESS == db_relative_path_exists(db_filename,available_relative_path,&available_path_exists));
 	ASSERT(available_path_exists == true);
 
+	/* Preserve the unavailable-root condition for the configuration-file repeat */
+	ASSERT(SUCCESS == delete_path(db_filename));
+	ASSERT(SUCCESS == copy_from_origin("tests/templates/0029_005.conf",
+		"0029_005.conf",REQUIRE_SOURCE_EXISTS));
+	const struct argument_test_case file_cases[] = {
+		{"--config=0029_005.conf",COMPLETED,filename,STDERR_MUST_BE_EMPTY},
+		{0}
+	};
+	ASSERT(SUCCESS == run_and_match_templates(file_cases,NULL,NULL));
+	available_path_exists = false;
+	ASSERT(SUCCESS == db_relative_path_exists(db_filename,available_relative_path,&available_path_exists));
+	ASSERT(available_path_exists == true);
+	call(delete_path_if_present("0029_005.conf"));
+
 	ASSERT(SUCCESS == set_environment_variable("TESTITALL_TEST_ENV_FILE_ACCESS_SUFFIX",""));
 	ASSERT(SUCCESS == set_environment_variable("TESTITALL_TEST_ENV_FILE_ACCESS_STATUS",""));
 
 	m_del(pattern);
+	m_del(errors);
 	m_del(result);
 
 	ASSERT(SUCCESS == delete_path(db_filename));

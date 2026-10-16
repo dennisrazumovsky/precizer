@@ -3,6 +3,9 @@
 /**
  * @brief Verify `--maxdepth` behavior for initial traversal and later update
  *
+ * The unlimited traversal is repeated through a configuration file with an
+ * explicit database name, preserving the CLI output checks and the depth-limited DB
+ *
  * @return Return status code
  */
 Return test0018_1(void)
@@ -23,6 +26,18 @@ Return test0018_1(void)
 
 	// Match the result against the pattern
 	ASSERT(SUCCESS == run_and_match_templates(cases,NULL,NULL));
+
+	/* Repeat only the unlimited traversal, starting without its database */
+	ASSERT(SUCCESS == delete_path("database4.db"));
+	ASSERT(SUCCESS == copy_from_origin("tests/templates/0018_001_2.conf","0018_001_2.conf",REQUIRE_SOURCE_EXISTS));
+	ASSERT(SUCCESS == replace_placeholder_in_file("$TMPDIR/0018_001_2.conf","%ROOT_PATH%","$TMPDIR/tests/fixtures/levels"));
+	const struct argument_test_case file_cases[] = {
+		{"--config=0018_001_2.conf",COMPLETED,"templates/0018_001_2.txt",STDERR_MUST_BE_EMPTY},
+		{0}
+	};
+	ASSERT(SUCCESS == run_and_match_templates(file_cases,NULL,NULL));
+
+	call(delete_path_if_present("0018_001_2.conf"));
 
 	// Clean up test results
 	ASSERT(SUCCESS == delete_path("database4.db"));
@@ -170,9 +185,8 @@ static Return test0018_5(void)
 }
 
 /**
- *
- * --maxdepth argument testing
- *
+ * @brief Check traversal depth and explicit database paths
+ * @return Return status for traversal, output comparisons, and database filenames
  */
 Return test0018(void)
 {

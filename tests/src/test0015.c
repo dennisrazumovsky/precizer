@@ -553,6 +553,10 @@ Return test0015_12(void)
  * @brief Upgrade a legacy v3 DB whose filename contains UTF-8 characters
  *
  * Verify the primary DB upgrade works with spaces and non-ASCII characters
+ * through CLI and configuration. Both runs start from the same v3 fixture
+ * and use the same full output template
+ *
+ * @return Return status for the CLI and configuration upgrade checks
  */
 Return test0015_13(void)
 {
@@ -578,7 +582,17 @@ Return test0015_13(void)
 	// Match the result against the pattern
 	ASSERT(SUCCESS == match_pattern(result,pattern,filename));
 
+	/* Restore the original v3 database before repeating the upgrade through configuration */
+	ASSERT(SUCCESS == copy_path("tests/templates/0015_database_v3 это база данных с пробелами и символами UTF-8.db","0015_database_v3 это база данных с пробелами и символами UTF-8.db"));
+	ASSERT(SUCCESS == copy_path("tests/templates/0015_013.conf","0015_013.conf"));
+	const struct argument_test_case file_cases[] = {
+		{"--config=0015_013.conf",COMPLETED,filename,STDERR_MUST_BE_EMPTY},
+		{0}
+	};
+	ASSERT(SUCCESS == run_and_match_templates(file_cases,NULL,NULL));
+
 	// Clean up test results
+	call(delete_path_if_present("0015_013.conf"));
 	ASSERT(SUCCESS == delete_path("0015_database_v3 это база данных с пробелами и символами UTF-8.db"));
 
 	// Clean to use it iteratively

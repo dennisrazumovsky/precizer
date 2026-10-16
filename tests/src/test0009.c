@@ -1,9 +1,12 @@
 #include "sute.h"
 
 /**
+ * @brief Validate file-level ignore filtering through CLI and configuration
  *
- * Validate file-level ignore filtering in a mixed directory
+ * Both scans start without a database and check the same full output and exact
+ * stored paths. A separate CLI run also checks the TESTING diagnostics
  *
+ * @return Return status for equivalent filtering and diagnostic output
  */
 Return test0009_1(void)
 {
@@ -36,6 +39,17 @@ Return test0009_1(void)
 	ASSERT(SUCCESS == db_paths_match(db_filename,expected_paths,(int)(sizeof(expected_paths) / sizeof(expected_paths[0]))));
 
 	ASSERT(SUCCESS == delete_path(db_filename));
+
+	/* Repeat the initial scan from an empty database with the same ignore rule */
+	ASSERT(SUCCESS == copy_path("tests/templates/0009_001_1.conf","0009_001_1.conf"));
+	const struct argument_test_case file_cases[] = {
+		{"--config=0009_001_1.conf",COMPLETED,"templates/0009_001_1.txt",STDERR_MUST_BE_EMPTY},
+		{0}
+	};
+	ASSERT(SUCCESS == run_and_match_templates(file_cases,NULL,NULL));
+	ASSERT(SUCCESS == db_paths_match(db_filename,expected_paths,(int)(sizeof(expected_paths) / sizeof(expected_paths[0]))));
+	ASSERT(SUCCESS == delete_path(db_filename));
+	call(delete_path_if_present("0009_001_1.conf"));
 
 	ASSERT(SUCCESS == set_environment_variable("TESTING","true"));
 

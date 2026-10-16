@@ -3,8 +3,8 @@
 /**
  * @brief Verify `--maxdepth` behavior for initial traversal and later update
  *
- * The unlimited traversal is repeated through a configuration file with an
- * explicit database name, preserving the CLI output checks and the depth-limited DB
+ * Both depth-limited and unlimited traversals are repeated through configuration
+ * from an empty database. The depth-limited database remains for the later update
  *
  * @return Return status code
  */
@@ -18,24 +18,41 @@ Return test0018_1(void)
 		/* File system traversal with a maximum depth of 3 */
 		{"--maxdepth=3 --database=database3.db "
 		 "$TMPDIR/tests/fixtures/levels",COMPLETED,"templates/0018_001_1.txt",STDERR_MUST_BE_EMPTY},
-		/* File system traversal with unlimited depth */
-		{"--database=database4.db "
-		 "$TMPDIR/tests/fixtures/levels",COMPLETED,"templates/0018_001_2.txt",STDERR_MUST_BE_EMPTY},
 		{0}
 	};
 
 	// Match the result against the pattern
 	ASSERT(SUCCESS == run_and_match_templates(cases,NULL,NULL));
 
-	/* Repeat only the unlimited traversal, starting without its database */
-	ASSERT(SUCCESS == delete_path("database4.db"));
-	ASSERT(SUCCESS == copy_from_origin("tests/templates/0018_001_2.conf","0018_001_2.conf",REQUIRE_SOURCE_EXISTS));
-	ASSERT(SUCCESS == replace_placeholder_in_file("$TMPDIR/0018_001_2.conf","%ROOT_PATH%","$TMPDIR/tests/fixtures/levels"));
+	/* Repeat the limited traversal from the same empty state */
+	ASSERT(SUCCESS == delete_path("database3.db"));
+	ASSERT(SUCCESS == copy_path("tests/templates/0018_001_1.conf","0018_001_1.conf"));
+	ASSERT(SUCCESS == replace_placeholder_in_file("$TMPDIR/0018_001_1.conf","%ROOT_PATH%","$TMPDIR/tests/fixtures/levels"));
 	const struct argument_test_case file_cases[] = {
-		{"--config=0018_001_2.conf",COMPLETED,"templates/0018_001_2.txt",STDERR_MUST_BE_EMPTY},
+		{"--config=0018_001_1.conf",COMPLETED,"templates/0018_001_1.txt",STDERR_MUST_BE_EMPTY},
 		{0}
 	};
 	ASSERT(SUCCESS == run_and_match_templates(file_cases,NULL,NULL));
+	call(delete_path_if_present("0018_001_1.conf"));
+
+	const struct argument_test_case unlimited_cases[] = {
+		/* File system traversal with unlimited depth */
+		{"--database=database4.db "
+		 "$TMPDIR/tests/fixtures/levels",COMPLETED,"templates/0018_001_2.txt",STDERR_MUST_BE_EMPTY},
+		{0}
+	};
+
+	ASSERT(SUCCESS == run_and_match_templates(unlimited_cases,NULL,NULL));
+
+	/* Repeat the unlimited traversal, starting without its database */
+	ASSERT(SUCCESS == delete_path("database4.db"));
+	ASSERT(SUCCESS == copy_from_origin("tests/templates/0018_001_2.conf","0018_001_2.conf",REQUIRE_SOURCE_EXISTS));
+	ASSERT(SUCCESS == replace_placeholder_in_file("$TMPDIR/0018_001_2.conf","%ROOT_PATH%","$TMPDIR/tests/fixtures/levels"));
+	const struct argument_test_case unlimited_file_cases[] = {
+		{"--config=0018_001_2.conf",COMPLETED,"templates/0018_001_2.txt",STDERR_MUST_BE_EMPTY},
+		{0}
+	};
+	ASSERT(SUCCESS == run_and_match_templates(unlimited_file_cases,NULL,NULL));
 
 	call(delete_path_if_present("0018_001_2.conf"));
 
@@ -161,10 +178,11 @@ Return test0018_4(void)
 }
 
 /**
- * @brief Reject an empty value passed to `--maxdepth`
+ * @brief Reject an empty maxdepth value through CLI and configuration
  *
  * `--maxdepth=` does not contain a number and must fail argument parsing instead
- * of silently selecting depth zero
+ * of silently selecting depth zero. An empty configuration value must also
+ * fail and report its line number
  *
  * @return Return status code
  */
@@ -175,11 +193,19 @@ static Return test0018_5(void)
 	ASSERT(SUCCESS == set_environment_variable("TESTING","true"));
 
 	const struct argument_test_case cases[] = {
-		{"--maxdepth= tests/fixtures/diffs/diff1",FAILURE,NULL,"templates/0018_005.txt"},
+		{"--maxdepth= tests/fixtures/diffs/diff1",FAILURE,"templates/0018_005_1.txt","templates/0018_005_2.txt"},
 		{0}
 	};
 
 	ASSERT(SUCCESS == run_and_match_templates(cases,NULL,NULL));
+
+	ASSERT(SUCCESS == copy_path("tests/templates/0018_005.conf","0018_005.conf"));
+	const struct argument_test_case file_cases[] = {
+		{"--config=0018_005.conf",FAILURE,"templates/0018_005_3.txt","templates/0018_005_4.txt"},
+		{0}
+	};
+	ASSERT(SUCCESS == run_and_match_templates(file_cases,NULL,NULL));
+	call(delete_path_if_present("0018_005.conf"));
 
 	RETURN_STATUS;
 }

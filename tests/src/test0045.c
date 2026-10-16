@@ -130,6 +130,11 @@ static Return test0045_1(void)
 	ASSERT(SUCCESS == check_reader("0045_reader.conf",true,SUCCESS,true,NULL));
 	ASSERT(config->db_check_level == FULL);
 
+	/* The largest supported traversal depth is accepted without truncation */
+	ASSERT(SUCCESS == copy_path("tests/templates/0045_001_6.conf","0045_reader.conf"));
+	ASSERT(SUCCESS == check_reader("0045_reader.conf",true,SUCCESS,true,NULL));
+	ASSERT(config->maxdepth == 32767);
+
 	/* BOM, CRLF, initial indentation, and an unterminated continuation */
 	ASSERT(SUCCESS == copy_from_origin("tests/templates/0045_001_1.conf",
 		"0045_reader.conf",REQUIRE_SOURCE_EXISTS));
@@ -372,7 +377,9 @@ static Return test0045_6(void)
 		{"tests/templates/0045_006_11.conf","templates/0045_017.txt"},
 		{"tests/templates/0045_006_12.conf","templates/0045_018.txt"},
 		{"tests/templates/0045_006_13.conf","templates/0045_019.txt"},
-		{"tests/templates/0045_006_14.conf","templates/0045_032.txt"}
+		{"tests/templates/0045_006_14.conf","templates/0045_032.txt"},
+		{"tests/templates/0045_006_15.conf","templates/0045_015.txt"},
+		{"tests/templates/0045_006_16.conf","templates/0045_015.txt"}
 	};
 
 	for(size_t i = 0; i < sizeof(cases) / sizeof(cases[0]) && SUCCESS == status; ++i)

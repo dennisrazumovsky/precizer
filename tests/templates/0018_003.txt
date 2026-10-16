@@ -1,7 +1,4 @@
-\A-TESTING:argument:color=always
-\+\Q(?:TESTING:argument:config=[^\r\n]+\n)?(?x)\E
-\+\Q(?-x)TESTING:argument:color=always\E
--TESTING:argument:database=database3\\.db
+\A-TESTING:argument:database=database3\\.db
 -TESTING:argument:db_file_name=database3\\.db
 -TESTING:argument:maxdepth=3
 \+TESTING:argument:database=database4\\.db

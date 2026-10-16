@@ -243,11 +243,13 @@ static Return test0011_4(void)
 }
 
 /**
+ * @brief Verify depth zero through CLI and configuration before an unlimited update
  *
  * The Example 5 from README
  * Disable recursion with --maxdepth=0 option
  *
- *
+ * Both initial scans start without a database and use the same full output
+ * template. The resulting database is then updated without the depth limit
  */
 static Return test0011_5(void)
 {
@@ -263,6 +265,22 @@ static Return test0011_5(void)
 
 	const struct argument_test_case cases[] = {
 		{"--maxdepth=0 tests/fixtures/4",COMPLETED,"templates/0011_005_1.txt",STDERR_MUST_BE_EMPTY},
+		{0}
+	};
+
+	ASSERT(SUCCESS == run_and_match_templates(cases,template,replacement));
+
+	/* Repeat the initial scan without a database, then retain its result for the update */
+	ASSERT(SUCCESS == delete_path(replacement));
+	ASSERT(SUCCESS == copy_path("tests/templates/0011_005_1.conf","0011_005_1.conf"));
+	const struct argument_test_case file_cases[] = {
+		{"--config=0011_005_1.conf",COMPLETED,"templates/0011_005_1.txt",STDERR_MUST_BE_EMPTY},
+		{0}
+	};
+	ASSERT(SUCCESS == run_and_match_templates(file_cases,template,replacement));
+	call(delete_path_if_present("0011_005_1.conf"));
+
+	const struct argument_test_case update_cases[] = {
 		/* At the second stage, the --maxdepth=0 option is not used.
 		   Therefore, all files that were not previously included
 		   will be added to the database */
@@ -270,7 +288,7 @@ static Return test0011_5(void)
 		{0}
 	};
 
-	ASSERT(SUCCESS == run_and_match_templates(cases,template,replacement));
+	ASSERT(SUCCESS == run_and_match_templates(update_cases,template,replacement));
 
 	ASSERT(SUCCESS == delete_path(replacement));
 

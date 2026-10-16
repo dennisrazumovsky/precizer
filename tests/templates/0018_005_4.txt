@@ -1,0 +1,1 @@
+\A(?:precizer|testitall): ERROR: Line 1 in config file: Wrong --maxdepth \(-m\) value\. Should be an integer from 0 to 32767\. See --help for more information\Z

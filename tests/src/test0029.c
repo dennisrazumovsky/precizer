@@ -259,10 +259,6 @@ static Return test0029_5(void)
 {
 	INITTEST;
 
-	m_create(char,result,MEMORY_STRING);
-	m_create(char,errors,MEMORY_STRING);
-	m_create(char,pattern,MEMORY_STRING);
-
 	const char *db_filename = "database5.db";
 	const char *filename = "templates/0029_005.txt";
 	const char *available_relative_path = "AAA/BBB/CCC/a.txt";
@@ -274,12 +270,12 @@ static Return test0029_5(void)
 
 	const char *arguments = "--database=database5.db "
 	        "tests/fixtures/diffs/diff1/1 tests/fixtures/diffs/diff1/4";
+	const struct argument_test_case cases[] = {
+		{arguments,COMPLETED,filename,STDERR_MUST_BE_EMPTY},
+		{0}
+	};
 
-	ASSERT(SUCCESS == runit(arguments,result,errors,COMPLETED,STDERR_ALLOW));
-	ASSERT(errors->length == 0U);
-
-	ASSERT(SUCCESS == get_file_content(filename,pattern));
-	ASSERT(SUCCESS == match_pattern(result,pattern,filename));
+	ASSERT(SUCCESS == run_and_match_templates(cases,NULL,NULL));
 	ASSERT(SUCCESS == db_relative_path_exists(db_filename,available_relative_path,&available_path_exists));
 	ASSERT(available_path_exists == true);
 
@@ -299,10 +295,6 @@ static Return test0029_5(void)
 
 	ASSERT(SUCCESS == set_environment_variable("TESTITALL_TEST_ENV_FILE_ACCESS_SUFFIX",""));
 	ASSERT(SUCCESS == set_environment_variable("TESTITALL_TEST_ENV_FILE_ACCESS_STATUS",""));
-
-	m_del(pattern);
-	m_del(errors);
-	m_del(result);
 
 	ASSERT(SUCCESS == delete_path(db_filename));
 

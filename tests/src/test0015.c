@@ -106,22 +106,14 @@ Return test0015_1(void)
 	ASSERT(SUCCESS == copy_path("tests/templates/0015_database_v0.db","0015_database_v0.db"));
 
 	const char *arguments = "--check-level=QUICK --database=./0015_database_v0.db tests/fixtures/diffs/diff1";
-
-	m_create(char,result,MEMORY_STRING);
-	m_create(char,pattern,MEMORY_STRING);
-
 	const char *filename = "templates/0015_001.txt";
-
-	ASSERT(SUCCESS == runit(arguments,result,NULL,WARNING,ALLOW_BOTH));
-
-	ASSERT(SUCCESS == get_file_content(filename,pattern));
+	const struct argument_test_case cases[] = {
+		{arguments,WARNING,filename,STDERR_MUST_BE_EMPTY},
+		{0}
+	};
 
 	// Match the result against the pattern
-	ASSERT(SUCCESS == match_pattern(result,pattern,filename));
-
-	// Clean to use it iteratively
-	m_del(pattern);
-	m_del(result);
+	ASSERT(SUCCESS == run_and_match_templates(cases,NULL,NULL));
 
 	// Clean up test results
 	ASSERT(SUCCESS == delete_path("0015_database_v0.db"));
@@ -240,9 +232,9 @@ Return test0015_4(void)
 /**
  * @brief Create a fresh DB with the default generated filename
  *
- * Verify CLI and file-supplied roots produce the same complete output and
- * generated DB name. Check the configuration path separately before matching
- * the file run against the CLI template
+ * Verify CLI and file-supplied roots produce the same generated DB name and
+ * match the same complete output template. The template allows the additional
+ * configuration-path diagnostic for the file run
  */
 Return test0015_5(void)
 {
@@ -272,31 +264,11 @@ Return test0015_5(void)
 	ASSERT(SUCCESS == delete_path(replacement));
 	ASSERT(SUCCESS == copy_from_origin("tests/templates/0015_004.conf",
 		"tests/templates/0015_004.conf",REQUIRE_SOURCE_EXISTS));
-	m_create(char,file_output,MEMORY_STRING);
-	m_create(char,file_errors,MEMORY_STRING);
-	m_create(char,pattern,MEMORY_STRING);
-	ASSERT(SUCCESS == runit("--config=tests/templates/0015_004.conf",file_output,file_errors,COMPLETED,STDERR_ALLOW));
-	ASSERT(file_errors->length == 0U);
-
-	/* Require exactly one correct source diagnostic, then compare the rest
-	   with the same full golden template used by the CLI run */
-	const char *config_line = "TESTING:argument:config=tests/templates/0015_004.conf\n";
-	const char *config_position = NULL;
-	IF(SUCCESS == status)
-	{
-		config_position = strstr(m_text(file_output),config_line);
-	}
-	ASSERT(config_position != NULL);
-	ASSERT(strstr(config_position + strlen(config_line),config_line) == NULL);
-	ASSERT(SUCCESS == replace_placeholder(file_output,
-		"(?m)^TESTING:argument:config=tests/templates/0015_004\\.conf\\n",""));
-	ASSERT(SUCCESS == get_file_content(filename,pattern));
-	ASSERT(SUCCESS == replace_placeholder(pattern,template,replacement));
-	ASSERT(SUCCESS == match_pattern(file_output,pattern,filename));
-
-	call(m_del(pattern));
-	call(m_del(file_errors));
-	call(m_del(file_output));
+	const struct argument_test_case file_cases[] = {
+		{"--config=tests/templates/0015_004.conf",COMPLETED,filename,STDERR_MUST_BE_EMPTY},
+		{0}
+	};
+	ASSERT(SUCCESS == run_and_match_templates(file_cases,template,replacement));
 	call(delete_path_if_present("tests/templates/0015_004.conf"));
 
 	RETURN_STATUS;
@@ -568,19 +540,14 @@ Return test0015_13(void)
 
 	const char *arguments = "--check-level=QUICK --update --database=\"0015_database_v3 это база данных с пробелами и символами UTF-8.db\" "
 	        "tests/fixtures/diffs/diff1";
-
-	m_create(char,result,MEMORY_STRING);
-
-	ASSERT(SUCCESS == runit(arguments,result,NULL,COMPLETED,ALLOW_BOTH));
-
 	const char *filename = "templates/0015_012.txt";
-
-	m_create(char,pattern,MEMORY_STRING);
-
-	ASSERT(SUCCESS == get_file_content(filename,pattern));
+	const struct argument_test_case cases[] = {
+		{arguments,COMPLETED,filename,STDERR_MUST_BE_EMPTY},
+		{0}
+	};
 
 	// Match the result against the pattern
-	ASSERT(SUCCESS == match_pattern(result,pattern,filename));
+	ASSERT(SUCCESS == run_and_match_templates(cases,NULL,NULL));
 
 	/* Restore the original v3 database before repeating the upgrade through configuration */
 	ASSERT(SUCCESS == copy_path("tests/templates/0015_database_v3 это база данных с пробелами и символами UTF-8.db","0015_database_v3 это база данных с пробелами и символами UTF-8.db"));
@@ -594,10 +561,6 @@ Return test0015_13(void)
 	// Clean up test results
 	call(delete_path_if_present("0015_013.conf"));
 	ASSERT(SUCCESS == delete_path("0015_database_v3 это база данных с пробелами и символами UTF-8.db"));
-
-	// Clean to use it iteratively
-	m_del(pattern);
-	m_del(result);
 
 	RETURN_STATUS;
 }

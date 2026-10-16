@@ -126,6 +126,10 @@ static Return test0016_1(void)
 /**
  * @brief Rehash same-size content changes when mtime changes without --watch-timestamps
  *
+ * CLI and configuration runs start from the same database and changed file.
+ * Both runs must produce the same full output, checksum, and stored timestamps.
+ * Only the database is restored before the configuration run
+ *
  * @return Return status code
  */
 static Return test0016_2(void)
@@ -135,9 +139,8 @@ static Return test0016_2(void)
 	const char *fixture_path = "0016_mtime";
 	const char *file_path = "0016_mtime/file.txt";
 	const char *db_filename = "0016_mtime.db";
+	const char *db_backup_filename = "0016_mtime_before_update.db";
 	m_create(char,target_path,MEMORY_STRING);
-	m_create(char,result,MEMORY_STRING);
-	m_create(char,pattern,MEMORY_STRING);
 	struct stat stat_before = {0};
 	struct stat stat_after = {0};
 	CmpctStat saved_stat = {0};
@@ -174,13 +177,19 @@ static Return test0016_2(void)
 	ASSERT(stat_before.st_mtim.tv_sec != stat_after.st_mtim.tv_sec
 		|| stat_before.st_mtim.tv_nsec != stat_after.st_mtim.tv_nsec);
 
+	// Preserve the database before either target update
+	ASSERT(SUCCESS == copy_path(db_filename,db_backup_filename));
+
 	// Update without --watch-timestamps to exercise default mtime detection
-	ASSERT(SUCCESS == runit("--update --check-level=QUICK --database=0016_mtime.db 0016_mtime",result,NULL,COMPLETED,ALLOW_BOTH));
+	const char *filename = "templates/0016_002_1.txt";
+	const struct argument_test_case cases[] = {
+		{"--update --check-level=QUICK --database=0016_mtime.db 0016_mtime",
+		 COMPLETED,filename,STDERR_MUST_BE_EMPTY},
+		{0}
+	};
 
 	// Check the full output for a rehash of file.txt and exactly three hashed bytes
-	const char *filename = "templates/0016_002_1.txt";
-	ASSERT(SUCCESS == get_file_content(filename,pattern));
-	ASSERT(SUCCESS == match_pattern(result,pattern,filename));
+	ASSERT(SUCCESS == run_and_match_templates(cases,NULL,NULL));
 
 	// Verify that the new checksum is complete and differs from the checksum of "aaa"
 	ASSERT(SUCCESS == read_final_sha512_from_db(db_filename,"file.txt",&offset,checksum_after));
@@ -194,11 +203,27 @@ static Return test0016_2(void)
 	ASSERT(SUCCESS == db_read_cmpctstat_by_relative_path(db_filename,"file.txt",&saved_stat));
 	ASSERT(cmpctstat_matches_stat_timestamps(&saved_stat,&stat_after));
 
+	/* Restore only the database so the configuration run processes the same
+	   changed content and timestamps, then repeat all result checks */
+	ASSERT(SUCCESS == copy_path(db_backup_filename,db_filename));
+	ASSERT(SUCCESS == copy_path("tests/templates/0016_002_1.conf","0016_002_1.conf"));
+	const struct argument_test_case file_cases[] = {
+		{"--config=0016_002_1.conf",COMPLETED,filename,STDERR_MUST_BE_EMPTY},
+		{0}
+	};
+	ASSERT(SUCCESS == run_and_match_templates(file_cases,NULL,NULL));
+	ASSERT(SUCCESS == read_final_sha512_from_db(db_filename,"file.txt",&offset,checksum_after));
+	ASSERT(offset == 0);
+	ASSERT(memcmp(checksum_before,checksum_after,sizeof(checksum_before)) != 0);
+	ASSERT(SUCCESS == db_final_sha512_matches_file(db_filename,"file.txt",m_text(target_path)));
+	ASSERT(SUCCESS == db_read_cmpctstat_by_relative_path(db_filename,"file.txt",&saved_stat));
+	ASSERT(cmpctstat_matches_stat_timestamps(&saved_stat,&stat_after));
+
 	// Remove the temporary DB and files, then release the test buffers
+	call(delete_path_if_present("0016_002_1.conf"));
+	call(delete_path_if_present(db_backup_filename));
 	call(delete_path_if_present(db_filename));
 	call(delete_path_if_present(fixture_path));
-	m_del(pattern);
-	m_del(result);
 	m_del(target_path);
 
 	RETURN_STATUS;

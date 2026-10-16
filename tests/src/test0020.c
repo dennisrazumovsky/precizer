@@ -26,9 +26,12 @@ Return test0020_1(void)
 }
 
 /**
+ * @brief Reject updating a missing database through CLI and configuration
  *
- * Testing attempt to open DB with --update when database is missing
+ * Both runs use the same full output template and must fail without creating
+ * the database
  *
+ * @return Return status for equivalent update failures
  */
 Return test0020_2(void)
 {
@@ -46,6 +49,15 @@ Return test0020_2(void)
 
 	// Match the result against the pattern
 	ASSERT(SUCCESS == run_and_match_templates(cases,NULL,NULL));
+
+	/* Repeat the failure through configuration while the database is still absent */
+	ASSERT(SUCCESS == copy_path("tests/templates/0020_002.conf","0020_002.conf"));
+	const struct argument_test_case file_cases[] = {
+		{"--config=0020_002.conf",FAILURE,"templates/0020_002.txt",STDERR_MUST_BE_EMPTY},
+		{0}
+	};
+	ASSERT(SUCCESS == run_and_match_templates(file_cases,NULL,NULL));
+	call(delete_path_if_present("0020_002.conf"));
 
 	RETURN_STATUS;
 }

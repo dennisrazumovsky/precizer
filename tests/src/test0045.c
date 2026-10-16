@@ -272,22 +272,22 @@ static Return test0045_5(void)
 		const char *config_template;
 		bool enabled;
 	} cases[] = {
-		{"tests/templates/0045_005_1_true.conf",true},
-		{"tests/templates/0045_005_1_false.conf",false},
-		{"tests/templates/0045_005_1_repeated.conf",false},
-		{"tests/templates/0045_005_2_true.conf",true},
-		{"tests/templates/0045_005_2_false.conf",false},
-		{"tests/templates/0045_005_2_repeated.conf",false},
-		{"tests/templates/0045_005_3_true.conf",true},
-		{"tests/templates/0045_005_3_false.conf",false},
-		{"tests/templates/0045_005_3_repeated.conf",false},
-		{"tests/templates/0045_005_4_true.conf",true},
-		{"tests/templates/0045_005_4_false.conf",false},
-		{"tests/templates/0045_005_4_repeated.conf",false},
-		{"tests/templates/0045_005_5_true.conf",true},
-		{"tests/templates/0045_005_5_false.conf",false},
-		{"tests/templates/0045_005_5_repeated.conf",false},
-		{"tests/templates/0045_005_reenabled.conf",true}
+		{"tests/templates/0045_005_1.conf",true},
+		{"tests/templates/0045_005_2.conf",false},
+		{"tests/templates/0045_005_3.conf",false},
+		{"tests/templates/0045_005_4.conf",true},
+		{"tests/templates/0045_005_5.conf",false},
+		{"tests/templates/0045_005_6.conf",false},
+		{"tests/templates/0045_005_7.conf",true},
+		{"tests/templates/0045_005_8.conf",false},
+		{"tests/templates/0045_005_9.conf",false},
+		{"tests/templates/0045_005_10.conf",true},
+		{"tests/templates/0045_005_11.conf",false},
+		{"tests/templates/0045_005_12.conf",false},
+		{"tests/templates/0045_005_13.conf",true},
+		{"tests/templates/0045_005_14.conf",false},
+		{"tests/templates/0045_005_15.conf",false},
+		{"tests/templates/0045_005_16.conf",true}
 	};
 
 	for(size_t i = 0; i < sizeof(cases) / sizeof(cases[0]) && SUCCESS == status; ++i)
@@ -319,11 +319,11 @@ static Return test0045_5(void)
 	}
 
 	/* A plain true value replaces the checksum mode; a later named mode enables it */
-	ASSERT(SUCCESS == copy_from_origin("tests/templates/0045_005_dry_run_plain.conf",
+	ASSERT(SUCCESS == copy_from_origin("tests/templates/0045_005_17.conf",
 		"0045_reader.conf",REQUIRE_SOURCE_EXISTS));
 	ASSERT(SUCCESS == check_reader("0045_reader.conf",true,SUCCESS,true,NULL));
 	ASSERT(config->dry_run == true && config->dry_run_with_checksums == false);
-	ASSERT(SUCCESS == copy_from_origin("tests/templates/0045_005_dry_run_checksums.conf",
+	ASSERT(SUCCESS == copy_from_origin("tests/templates/0045_005_18.conf",
 		"0045_reader.conf",REQUIRE_SOURCE_EXISTS));
 	ASSERT(SUCCESS == check_reader("0045_reader.conf",true,SUCCESS,true,NULL));
 	ASSERT(config->dry_run == true && config->dry_run_with_checksums == true);
@@ -334,10 +334,10 @@ static Return test0045_5(void)
 		LOGMODES logger_mode;
 		bool verbose;
 	} output_cases[] = {
-		{"tests/templates/0045_005_silent_disabled.conf",default_logger_mode,false},
-		{"tests/templates/0045_005_verbose_disabled.conf",default_logger_mode,false},
-		{"tests/templates/0045_005_keep_silent.conf",SILENT,false},
-		{"tests/templates/0045_005_keep_verbose.conf",VERBOSE,true}
+		{"tests/templates/0045_005_19.conf",default_logger_mode,false},
+		{"tests/templates/0045_005_20.conf",default_logger_mode,false},
+		{"tests/templates/0045_005_21.conf",SILENT,false},
+		{"tests/templates/0045_005_22.conf",VERBOSE,true}
 	};
 
 	for(size_t i = 0; i < sizeof(output_cases) / sizeof(output_cases[0]) && SUCCESS == status; ++i)

@@ -20,6 +20,10 @@ typedef struct {
 
 /**
  * @brief Resolve a configuration key and apply its value through parse_opt
+ *
+ * Strip one matching pair of outer quotes before interpreting the value.
+ * Interior spaces and backslashes are preserved after inih handles comments
+ *
  * @param user Configuration read context
  * @param section Ignored section name supplied by inih
  * @param name Exact long option name, or NULL for a section header
@@ -82,7 +86,58 @@ static int read_config_entry(
 		{
 			/* A false flag still counts as an explicit setting */
 			context->has_entries = true;
+
+			/* Whether parse_opt() needs the prepared value as its argument.
+			   Remains true for options with values and for false flags, which
+			   receive the normalized string "false". Becomes false for true
+			   flags, which receive NULL just like flags supplied through CLI */
 			bool takes_value = true;
+
+			/* Number of value bytes to copy, excluding the terminating null byte.
+			   Initially includes any outer quotes; reduced by two when they are removed.
+			   inih has already removed surrounding whitespace and comments.
+			   Only a leading single or double quote starts a quoted value;
+			   otherwise the pointer and length retain the entire value */
+			size_t value_length = strlen(value);
+
+			if(value[0] == '"' || value[0] == '\'')
+			{
+				/* A quoted value needs at least two characters, and its final
+				   character must match the opening quote. A lone opening quote
+				   or a different final character is an error on this physical line */
+				if(value_length < 2 || value[value_length - 1] != value[0])
+				{
+					/* Report the key and line, then stop reading. Recording the failure
+					   prevents the file reader from adding a generic syntax error */
+					argp_failure(NULL,0,0,"ERROR: Line %d in config file: Unclosed quoted value for '%s'",line,name);
+
+					context->status = FAILURE;
+
+					return(0);
+				}
+
+				/* Skip the opening quote and exclude both quotes from the copy length.
+				   The original text is not modified. Only this outer pair is removed;
+				   inner quotes, spaces, and backslashes remain literal characters.
+				   An empty pair produces a zero-length value for normal option validation */
+				value++;
+
+				value_length -= 2;
+			}
+
+			/* Argp accepts mutable arguments, so copy the selected bytes into a local
+			   buffer. inih bounds the input with INI_MAX_LINE, so the value fits.
+			   Add the terminating null byte explicitly: memcpy() copies only the
+			   selected contents, excluding any closing quote and original terminator */
+			char value_buffer[INI_MAX_LINE];
+
+			memcpy(value_buffer,value,value_length);
+
+			value_buffer[value_length] = '\0';
+
+			/* Interpret booleans and other option values from this prepared copy,
+			   so quoted and unquoted spellings reach the same validation logic */
+			value = value_buffer;
 
 			/* Flags accept boolean values. dry-run also accepts a named mode,
 			   which is validated by parse_opt() when it is not a boolean */
@@ -93,7 +148,7 @@ static int read_config_entry(
 				        strcasecmp(value,"off") == 0 || strcasecmp(value,"n") == 0 ||
 				        strcmp(value,"0") == 0)
 				{
-					value = "false";
+					strcpy(value_buffer,"false");
 
 				} else if(strcasecmp(value,"true") == 0 || strcasecmp(value,"yes") == 0 ||
 				        strcasecmp(value,"on") == 0 || strcasecmp(value,"y") == 0 ||
@@ -109,14 +164,10 @@ static int read_config_entry(
 				}
 			}
 
-			/* Argp accepts mutable arguments; inih values fit in its line buffer */
-			char value_buffer[INI_MAX_LINE];
-
 			char *argument = NULL;
 
-			if(takes_value)
+			if(takes_value == true)
 			{
-				strcpy(value_buffer,value);
 				argument = value_buffer;
 			}
 

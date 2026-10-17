@@ -379,7 +379,9 @@ static Return test0045_6(void)
 		{"tests/templates/0045_006_13.conf","templates/0045_019.txt"},
 		{"tests/templates/0045_006_14.conf","templates/0045_032.txt"},
 		{"tests/templates/0045_006_15.conf","templates/0045_015.txt"},
-		{"tests/templates/0045_006_16.conf","templates/0045_015.txt"}
+		{"tests/templates/0045_006_16.conf","templates/0045_015.txt"},
+		{"tests/templates/0045_006_17.conf","templates/0045_018.txt"},
+		{"tests/templates/0045_006_18.conf","templates/0045_018.txt"}
 	};
 
 	for(size_t i = 0; i < sizeof(cases) / sizeof(cases[0]) && SUCCESS == status; ++i)
@@ -628,6 +630,75 @@ static Return test0045_10(void)
 }
 
 /**
+ * @brief Apply quoted values while preserving spaces, backslashes, and literal contents
+ * @return Return status for quote removal and shared value interpretation
+ */
+static Return test0045_11(void)
+{
+	INITTEST;
+	ASSERT(SUCCESS == copy_path("tests/templates/0045_011.conf","0045_reader.conf"));
+	ASSERT(SUCCESS == check_reader("0045_reader.conf",true,SUCCESS,true,NULL));
+	ASSERT(config->roots.length == 3U);
+	memory *roots = m_data(memory,conf(roots));
+	ASSERT(strcmp(m_text(&roots[0]),"/mnt/my files") == 0);
+	ASSERT(strcmp(m_text(&roots[1]),"  spaced path  ") == 0);
+	ASSERT(strcmp(m_text(&roots[2]),"$HOME/$(literal)") == 0);
+
+	const char *expected_ignore[] = {
+		"^proc/.*","^sys/.*","\\.log$","^\\w+\\s+\\d+$","\"literal quotes\"","^before#after","^literal\"$"
+	};
+	ASSERT(config->ignore != NULL);
+	for(size_t i = 0; i < sizeof(expected_ignore) / sizeof(expected_ignore[0]) && SUCCESS == status; ++i)
+	{
+		ASSERT(config->ignore[i] != NULL);
+		ASSERT(strcmp(config->ignore[i],expected_ignore[i]) == 0);
+	}
+	ASSERT(config->ignore[7] == NULL);
+	ASSERT(config->include != NULL && config->include[0] != NULL);
+	ASSERT(strcmp(config->include[0],"^dir with spaces/") == 0);
+	ASSERT(config->include[1] == NULL);
+	ASSERT(strcmp(confstr(db_primary_file_path),"/tmp/my data.db") == 0);
+	ASSERT(strcmp(confstr(db_file_name),"my data.db") == 0);
+	ASSERT(config->maxdepth == 3);
+	ASSERT(config->db_check_level == QUICK);
+	ASSERT(config->update == true);
+	ASSERT(config->quiet_ignored == false);
+	ASSERT(config->progress == false);
+	ASSERT(config->dry_run == true && config->dry_run_with_checksums == true);
+
+	call(delete_path_if_present("0045_reader.conf"));
+	RETURN_STATUS;
+}
+
+/**
+ * @brief Reject missing or mismatched closing quotes at the original line
+ * @return Return status for complete diagnostics and stopping before later records
+ */
+static Return test0045_12(void)
+{
+	INITTEST;
+	const char *cases[] = {
+		"tests/templates/0045_012_1.conf",
+		"tests/templates/0045_012_2.conf",
+		"tests/templates/0045_012_3.conf",
+		"tests/templates/0045_012_4.conf"
+	};
+
+	for(size_t i = 0; i < sizeof(cases) / sizeof(cases[0]) && SUCCESS == status; ++i)
+	{
+		ASSERT(SUCCESS == copy_path(cases[i],"0045_reader.conf"));
+		ASSERT(SUCCESS == check_reader("0045_reader.conf",true,FAILURE,true,"templates/0045_012_1.txt"));
+		ASSERT(config->roots.length == 1U);
+		memory *roots = m_data(memory,conf(roots));
+		ASSERT(strcmp(m_text(&roots[0]),"first") == 0);
+		ASSERT(config->ignore == NULL);
+	}
+
+	call(delete_path_if_present("0045_reader.conf"));
+	RETURN_STATUS;
+}
+
+/**
  * @brief Exercise configuration reading and source selection independently of CLI startup
  * @return Return status for the configuration reader and source selection tests
  */
@@ -651,6 +722,8 @@ Return test0045(void)
 	TEST(test0045_8,"Regex errors are deferred until working compilation, after configuration parsing");
 	TEST(test0045_9,"Settings source selection is silent and discards preliminary parsing errors");
 	TEST(test0045_10,"Explicit configuration and other arguments produce a source conflict");
+	TEST(test0045_11,"Quoted configuration values preserve literal contents and apply normal value rules");
+	TEST(test0045_12,"Unclosed configuration quotes report their line and stop reading");
 
 	/* Restore the runner's configuration and output policy after any test result */
 	free_config();

@@ -171,6 +171,8 @@ static Return test0011_2(void)
 }
 
 /**
+ * @brief Verify silent output through CLI and configuration on an unchanged database
+ *
  * The Example 3 from README
  * Using the --silent mode. When this mode is enabled, the program suppresses
  * normal output after command execution. This makes sense when using the
@@ -210,10 +212,20 @@ static Return test0011_3(void)
 
 	ASSERT(SUCCESS == run_and_match_templates(testing_cases,NULL,NULL));
 
+	/* The unchanged database and fixtures are ready for the configuration repeat */
+	ASSERT(SUCCESS == copy_path("tests/templates/0011_003.conf","0011_003.conf"));
+	const struct argument_test_case file_cases[] = {
+		{"--config=0011_003.conf",COMPLETED,"templates/0011_003.txt",STDERR_MUST_BE_EMPTY},
+		{0}
+	};
+	ASSERT(SUCCESS == run_and_match_templates(file_cases,NULL,NULL));
+	call(delete_path_if_present("0011_003.conf"));
+
 	RETURN_STATUS;
 }
 
 /**
+ * @brief Verify verbose output through CLI and configuration before fixture cleanup
  *
  * The Example 4 from README
  * Additional information with --verbose mode
@@ -234,6 +246,15 @@ static Return test0011_4(void)
 	};
 
 	ASSERT(SUCCESS == run_and_match_templates(cases,NULL,NULL));
+
+	/* Repeat the same unchanged update before the shared database is removed */
+	ASSERT(SUCCESS == copy_path("tests/templates/0011_004_1.conf","0011_004_1.conf"));
+	const struct argument_test_case file_cases[] = {
+		{"--config=0011_004_1.conf",COMPLETED,"templates/0011_004_1.txt",STDERR_MUST_BE_EMPTY},
+		{0}
+	};
+	ASSERT(SUCCESS == run_and_match_templates(file_cases,NULL,NULL));
+	call(delete_path_if_present("0011_004_1.conf"));
 
 	// Clean up test results
 	ASSERT(SUCCESS == delete_path("database1.db"));

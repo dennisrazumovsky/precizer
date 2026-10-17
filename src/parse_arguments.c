@@ -511,6 +511,16 @@ error_t parse_opt(
 			}
 
 			/* Options were supplied, but the paths required for this mode are missing */
+			if(config->compare == false)
+			{
+				/* Explain how to supply scan roots in the selected settings source */
+				const char *path_hint = "Specify a directory as a positional argument or with --path=PATH";
+				if(config->config_file_path != NULL)
+				{
+					path_hint = "Add 'path = /path/to/directory' to the configuration file";
+				}
+				argp_failure(state,0,0,"ERROR: At least one scan path is required. %s",path_hint);
+			}
 			argp_usage(state);
 			return(EX_USAGE);
 			break;

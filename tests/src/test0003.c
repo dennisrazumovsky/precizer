@@ -221,7 +221,8 @@ static Return test0003_6(void)
  * @brief Reject missing roots, missing path values, and missing compare operands
  *
  * Empty named and positional roots are invalid. Named roots cannot substitute
- * for either positional database operand required by compare mode
+ * for either positional database operand required by compare mode. Missing
+ * scan roots produce a hint for positional paths and --path
  *
  * @return Return status for complete stdout and stderr diagnostics
  */
@@ -229,7 +230,7 @@ static Return test0003_7(void)
 {
 	INITTEST;
 	const struct argument_test_case cases[] = {
-		{"--dry-run",FAILURE,"templates/0028_006_14.txt","templates/0003_002.txt"},
+		{"--dry-run",FAILURE,"templates/0028_006_14.txt","templates/0003_007_1.txt"},
 		{"--",FAILURE,"templates/0028_006_14.txt","templates/0003_024.txt"},
 		{"-- tests/fixtures/diffs/diff1",FAILURE,"templates/0028_006_14.txt","templates/0003_024.txt"},
 		{"--path=tests/fixtures/diffs/diff1 --",FAILURE,"templates/0028_006_14.txt","templates/0003_024.txt"},
@@ -253,6 +254,10 @@ static Return test0003_7(void)
 
 /**
  * @brief Select the default file only for an argument-free invocation
+ *
+ * Missing scan roots produce a hint to add the path key to the configuration
+ * file, whether it was selected automatically or explicitly
+ *
  * @return Return status for empty, documented, incomplete, and populated files
  */
 static Return test0003_8(void)
@@ -260,11 +265,12 @@ static Return test0003_8(void)
 	INITTEST;
 	const struct argument_test_case empty_file[] = {
 		{"",COMPLETED,"templates/0003_003.txt","templates/0003_002.txt"},
-		{"--config=precizer.conf",FAILURE,"templates/0028_006_14.txt","templates/0003_002.txt"},
+		{"--config=precizer.conf",FAILURE,"templates/0028_006_14.txt","templates/0003_008_1.txt"},
 		{0}
 	};
 	const struct argument_test_case missing_root[] = {
-		{"",FAILURE,"templates/0028_006_14.txt","templates/0003_002.txt"},
+		{"",FAILURE,"templates/0028_006_14.txt","templates/0003_008_1.txt"},
+		{"--config=precizer.conf",FAILURE,"templates/0028_006_14.txt","templates/0003_008_1.txt"},
 		{0}
 	};
 	const struct argument_test_case configured_root[] = {

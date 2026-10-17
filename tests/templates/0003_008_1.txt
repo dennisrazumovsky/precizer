@@ -1,0 +1,3 @@
+\Aprecizer: ERROR: At least one scan path is required\. Add 'path = /path/to/directory' to the configuration file
+Usage: precizer \[OPTION\.\.\.\] \[PATH\.\.\.\]
+Try `precizer --help' or `precizer --usage' for more information\.\Z

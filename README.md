@@ -25,6 +25,7 @@ A tiny, high-performance application for verifying file integrity
 		- [macOS](#macos-1)
 		- [Windows](#windows-1)
 	- [Testing](#testing)
+- [Configuration file](#configuration-file)
 - [Usage examples](#usage-examples)
 - [Main command-line options](#main-command-line-options)
 - [Troubleshooting](#troubleshooting)
@@ -72,6 +73,8 @@ A tiny, high-performance application for verifying file integrity
 **precizer** is a lightweight, high-performance CLI tool written in pure C. It’s designed for file integrity verification and comparison, making it especially useful for validating synchronization results. The program walks directory trees and builds a database of files and their checksums for fast, repeatable comparisons.
 
 Built for embedded systems and large-scale clustered environments, **precizer** detects synchronization drift by comparing files and checksums across sources. It can also analyze historical changes by comparing databases captured from the same source at different points in time.
+
+Run settings can be saved in a [configuration file](#configuration-file) so paths and options do not have to be entered again for repeated runs
 
 ### Basic Example
 
@@ -617,6 +620,78 @@ make tests
 ```
 
 The complete list of system packages and installation commands is provided under [“System packages for testing”](CONTRIBUTING.md#system-packages-for-testing).
+
+## CONFIGURATION FILE
+
+A configuration file saves the settings for a task: which folders to scan, where to store the database, and which files to exclude. Separate files can be prepared for different tasks
+
+### Running with saved settings
+
+For an initial scan, a folder path in `precizer.conf` is enough. This example also enables progress reporting:
+
+```ini
+path = /mnt/storage
+progress = true
+```
+
+Starting the program from the folder containing this file requires no arguments:
+
+```sh
+precizer
+```
+
+The program scans `/mnt/storage` and its subfolders. The database is created in the launch folder, using the computer name followed by `.db`. Adding `update = true` to the file allows an existing database to be updated. At least one `path` is required for scanning
+
+A different configuration file can be selected with either of these equivalent commands:
+
+```sh
+precizer --config=/path/to/task.conf
+precizer -g /path/to/task.conf
+```
+
+Relative paths inside the configuration are resolved from the program's launch folder, even when the configuration file is stored elsewhere
+
+The sample [precizer.conf](precizer.conf) in the repository contains setting descriptions, defaults, and examples. All entries are commented out: removing the `#` immediately before a setting name activates that line
+
+### Configuration and the command line
+
+> **Run settings must come from one source: the command line or a configuration file**
+
+Settings and paths supplied through CLI disable automatic reading of `precizer.conf`. When a file is explicitly selected with `--config` (`-g`), all settings belong in that file; adding other settings or paths to the command line causes an error
+
+Requests for `--help`, `--usage`, `--version`, and their short forms do not read configuration files. For example, `precizer --config=task.conf --help` displays help without opening the file
+
+When no arguments are supplied and `precizer.conf` is absent or contains no settings, a short usage message is displayed. Errors in the selected file stop the run; a missing or unreadable file explicitly selected with `--config` is also an error
+
+### Settings format
+
+Setting names match long CLI option names without the leading `--`, such as `database`, `progress`, and `ignore`. Names retain their case and hyphens. The name and value are separated by `=`; `:` is also accepted. The `help`, `usage`, `version`, and `config` options are available only on the command line
+
+Boolean settings accept all of the following values, regardless of letter case:
+
+| Action | Values |
+|---|---|
+| Enable | `true`, `yes`, `on`, `y`, `1` |
+| Disable | `false`, `no`, `off`, `n`, `0` |
+
+For a setting with a single value, the last entry takes effect: for example, `progress = false` after `progress = true` turns progress off. Entries for lists such as `ignore` and `include` accumulate. Repeated names and continuation lines can be combined:
+
+```ini
+ignore = "^cache/"
+ignore = "^tmp/"
+    "^build/"
+```
+
+This defines three exclusion rules. A nonempty indented line, other than a comment, adds another value to the preceding key. New keys are written without indentation
+
+A value can be enclosed in matching single or double quotes. Only the outer pair is removed; spaces and backslashes inside are preserved. For example, `ignore = "\.log$"` and `ignore = \.log$` define the same rule. An unclosed quote causes an error with the line number. Variables such as `$HOME` remain literal text
+
+Within a value, `#` starts a comment when preceded by a space or tab; otherwise, it remains part of the value. Quotes do not change this rule
+
+```ini
+database = archive.db # comment
+database = archive#1.db
+```
 
 ## USAGE EXAMPLES
 

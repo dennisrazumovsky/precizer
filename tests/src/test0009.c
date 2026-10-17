@@ -339,13 +339,16 @@ static Return test0009_6(void)
  * @brief Verify --db-drop-ignored removes an ignored missing DB row as ignored
  *
  * A deleted file row that matches --ignore must be classified as ignored cleanup
- * when --db-drop-ignored is present, not as ordinary missing-file cleanup
+ * when --db-drop-ignored is present, not as ordinary missing-file cleanup.
+ * CLI and configuration updates use the same saved database and deleted file,
+ * then check the full output and removal of the ignored record
  */
 static Return test0009_7(void)
 {
 	INITTEST;
 
 	const char *db_file_name = "database0009_7.db";
+	const char *db_backup_file_name = "database0009_7_before_update.db";
 	const char *ignored_relative_path = "path2/AAA/ZAW/D/e/f/b_file.txt";
 	const char *arguments = NULL;
 	bool ignored_row_exists = true;
@@ -357,6 +360,9 @@ static Return test0009_7(void)
 	ASSERT(SUCCESS == runit(arguments,NULL,NULL,COMPLETED,ALLOW_BOTH));
 
 	ASSERT(SUCCESS == delete_path("tests/fixtures/diffs/diff1/path2/AAA/ZAW/D/e/f/b_file.txt"));
+
+	/* Preserve the database before either update removes the ignored record */
+	ASSERT(SUCCESS == copy_path(db_file_name,db_backup_file_name));
 
 	arguments = "--update --check-level=QUICK --db-drop-ignored "
 	        "--ignore=\"^path2/AAA/ZAW/D/e/f/b_file\\.txt$\" "
@@ -371,6 +377,19 @@ static Return test0009_7(void)
 
 	ASSERT(SUCCESS == db_relative_path_exists(db_file_name,ignored_relative_path,&ignored_row_exists));
 	ASSERT(ignored_row_exists == false);
+
+	/* Restore only the database; the file remains deleted for the configuration run */
+	ASSERT(SUCCESS == copy_path(db_backup_file_name,db_file_name));
+	ASSERT(SUCCESS == copy_path("tests/templates/0009_007.conf","0009_007.conf"));
+	const struct argument_test_case file_cases[] = {
+		{"--config=0009_007.conf",COMPLETED,"templates/0009_007.txt",STDERR_MUST_BE_EMPTY},
+		{0}
+	};
+	ASSERT(SUCCESS == run_and_match_templates(file_cases,NULL,NULL));
+	ASSERT(SUCCESS == db_relative_path_exists(db_file_name,ignored_relative_path,&ignored_row_exists));
+	ASSERT(ignored_row_exists == false);
+	call(delete_path_if_present("0009_007.conf"));
+	call(delete_path_if_present(db_backup_file_name));
 
 	ASSERT(SUCCESS == delete_path(db_file_name));
 	ASSERT(SUCCESS == restore_mutable_fixture("tests/fixtures/diffs/diff1"));

@@ -368,7 +368,8 @@ static Return test0011_7(void)
  * Using the --ignore options together with --include
  * Also covers the compare example that narrows the reported comparison scope
  *
- *
+ * The cleanup update is repeated through configuration from the same saved
+ * database, retaining all ignore and include rules and the full output check
  */
 static Return test0011_8(void)
 {
@@ -403,7 +404,21 @@ static Return test0011_8(void)
 		{0}
 	};
 
+	/* Preserve the prepared database before either cleanup update */
+	ASSERT(SUCCESS == copy_path(replacement,"0011_008_1.db"));
+
 	ASSERT(SUCCESS == run_and_match_templates(update_cases,template,replacement));
+
+	/* Repeat the same cleanup with all filtering rules supplied by configuration */
+	ASSERT(SUCCESS == copy_path("0011_008_1.db",replacement));
+	ASSERT(SUCCESS == copy_path("tests/templates/0011_008_1.conf","0011_008_1.conf"));
+	const struct argument_test_case file_cases[] = {
+		{"--config=0011_008_1.conf",COMPLETED,filename,STDERR_MUST_BE_EMPTY},
+		{0}
+	};
+	ASSERT(SUCCESS == run_and_match_templates(file_cases,template,replacement));
+	call(delete_path_if_present("0011_008_1.conf"));
+	call(delete_path_if_present("0011_008_1.db"));
 
 	ASSERT(SUCCESS == delete_path(replacement));
 

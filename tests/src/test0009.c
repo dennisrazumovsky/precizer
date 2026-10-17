@@ -66,9 +66,12 @@ Return test0009_1(void)
 }
 
 /**
+ * @brief Validate include exceptions to ignore rules through CLI and configuration
  *
- * Validate include over ignore with chaotic filenames
+ * Both scans start without a database and check the same full output and exact
+ * stored paths, including the files restored by include
  *
+ * @return Return status for equivalent include filtering
  */
 static Return test0009_2(void)
 {
@@ -103,6 +106,17 @@ static Return test0009_2(void)
 	ASSERT(SUCCESS == db_paths_match(db_filename,expected_paths,(int)(sizeof(expected_paths) / sizeof(expected_paths[0]))));
 
 	ASSERT(SUCCESS == delete_path(db_filename));
+
+	/* Repeat the scan with the same ignore and include rules from configuration */
+	ASSERT(SUCCESS == copy_path("tests/templates/0009_002.conf","0009_002.conf"));
+	const struct argument_test_case file_cases[] = {
+		{"--config=0009_002.conf",COMPLETED,"templates/0009_002.txt",STDERR_MUST_BE_EMPTY},
+		{0}
+	};
+	ASSERT(SUCCESS == run_and_match_templates(file_cases,NULL,NULL));
+	ASSERT(SUCCESS == db_paths_match(db_filename,expected_paths,(int)(sizeof(expected_paths) / sizeof(expected_paths[0]))));
+	ASSERT(SUCCESS == delete_path(db_filename));
+	call(delete_path_if_present("0009_002.conf"));
 
 	RETURN_STATUS;
 }

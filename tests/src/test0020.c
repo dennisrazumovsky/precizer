@@ -171,9 +171,12 @@ Return test0020_5(void)
 }
 
 /**
+ * @brief Reject changing the primary path without force through CLI and configuration
  *
- * Attempt to change the primary path in the database
+ * Both runs use the same prepared database and full output template. The warning
+ * leaves the database unchanged for the following test
  *
+ * @return Return status for equivalent path mismatch warnings
  */
 Return test0020_6(void)
 {
@@ -195,13 +198,25 @@ Return test0020_6(void)
 	// Match the result against the pattern
 	ASSERT(SUCCESS == run_and_match_templates(cases,NULL,NULL));
 
+	/* Repeat the warning with force disabled in the configuration file */
+	ASSERT(SUCCESS == copy_path("tests/templates/0020_006.conf","0020_006.conf"));
+	const struct argument_test_case file_cases[] = {
+		{"--config=0020_006.conf",WARNING,"templates/0020_006.txt",STDERR_MUST_BE_EMPTY},
+		{0}
+	};
+	ASSERT(SUCCESS == run_and_match_templates(file_cases,NULL,NULL));
+	call(delete_path_if_present("0020_006.conf"));
+
 	RETURN_STATUS;
 }
 
 /**
+ * @brief Replace the primary path with force through CLI and configuration
  *
- * Replace the primary path in the database
+ * Both updates start from the same saved database and use the same full output
+ * template. File timestamps are prepared once before either update
  *
+ * @return Return status for equivalent forced path replacements
  */
 Return test0020_7(void)
 {
@@ -219,6 +234,9 @@ Return test0020_7(void)
 	ASSERT(SUCCESS == touch_file_mtime_with_reference_delta_ns("tests/fixtures/diffs/diff1/path1/AAA/ZAW/A/b/c/a_file.txt","tests/fixtures/diffs/diff2/path1/AAA/ZAW/A/b/c/a_file.txt",0));
 	ASSERT(SUCCESS == touch_file_mtime_with_reference_delta_ns("tests/fixtures/diffs/diff1/path2/AAA/ZAW/A/b/c/a_file.txt","tests/fixtures/diffs/diff2/path2/AAA/ZAW/A/b/c/a_file.txt",0));
 
+	/* Save the database before either update replaces its stored paths and records */
+	ASSERT(SUCCESS == copy_path("database1.db","0020_007.db"));
+
 	const char *arguments = "--check-level=QUICK --update --force --database=database1.db "
 	        "tests/fixtures/diffs/diff2";
 
@@ -229,6 +247,17 @@ Return test0020_7(void)
 
 	// Match the result against the pattern
 	ASSERT(SUCCESS == run_and_match_templates(cases,NULL,NULL));
+
+	/* Restore only the database so configuration processes the same prepared files */
+	ASSERT(SUCCESS == copy_path("0020_007.db","database1.db"));
+	ASSERT(SUCCESS == copy_path("tests/templates/0020_007.conf","0020_007.conf"));
+	const struct argument_test_case file_cases[] = {
+		{"--config=0020_007.conf",COMPLETED,"templates/0020_007.txt",STDERR_MUST_BE_EMPTY},
+		{0}
+	};
+	ASSERT(SUCCESS == run_and_match_templates(file_cases,NULL,NULL));
+	call(delete_path_if_present("0020_007.conf"));
+	call(delete_path_if_present("0020_007.db"));
 
 	ASSERT(SUCCESS == delete_path("database1.db"));
 

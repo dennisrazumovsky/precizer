@@ -438,6 +438,59 @@ static Return test0009_8(void)
 	RETURN_STATUS;
 }
 
+/**
+ * @brief Validate quiet ignore reporting through CLI and configuration
+ *
+ * Both scans start without a database and use the same full output template.
+ * Ignored-file lines must be absent while the remaining messages and exact
+ * stored paths match the ordinary ignore-filtered scan
+ *
+ * @return Return status for equivalent quiet reporting and stored paths
+ */
+static Return test0009_9(void)
+{
+	INITTEST;
+	const char *db_filename = "database0009_9.db";
+
+	ASSERT(SUCCESS == set_environment_variable("TESTING","false"));
+
+	const char *arguments = "--database=database0009_9.db --quiet-ignored "
+	        "--ignore=\"^(?:skip_|tmp_).*\\.(?:log|bak)$\" "
+	        "tests/fixtures/ignore_include_cases/chaotic_filenames";
+
+	const struct argument_test_case cases[] = {
+		{arguments,COMPLETED,"templates/0009_009.txt",STDERR_MUST_BE_EMPTY},
+		{0}
+	};
+
+	const char *expected_paths[] =
+	{
+		"alpha_m0n9k2_zz.txt",
+		"hold_a1r9v-0pq.bak",
+		"keep_4xv7__m2.log",
+		"omega_77xy__aa.bin",
+		"xqwe_90210.md",
+		"zeta_z1-9vv.dat"
+	};
+
+	ASSERT(SUCCESS == run_and_match_templates(cases,NULL,NULL));
+	ASSERT(SUCCESS == db_paths_match(db_filename,expected_paths,(int)(sizeof(expected_paths) / sizeof(expected_paths[0]))));
+	ASSERT(SUCCESS == delete_path(db_filename));
+
+	/* Repeat the scan with the same quiet setting and ignore rule from configuration */
+	ASSERT(SUCCESS == copy_path("tests/templates/0009_009.conf","0009_009.conf"));
+	const struct argument_test_case file_cases[] = {
+		{"--config=0009_009.conf",COMPLETED,"templates/0009_009.txt",STDERR_MUST_BE_EMPTY},
+		{0}
+	};
+	ASSERT(SUCCESS == run_and_match_templates(file_cases,NULL,NULL));
+	ASSERT(SUCCESS == db_paths_match(db_filename,expected_paths,(int)(sizeof(expected_paths) / sizeof(expected_paths[0]))));
+	ASSERT(SUCCESS == delete_path(db_filename));
+	call(delete_path_if_present("0009_009.conf"));
+
+	RETURN_STATUS;
+}
+
 Return test0009(void)
 {
 	INITTEST;
@@ -450,6 +503,7 @@ Return test0009(void)
 	TEST(test0009_6,"--include restores an ignored missing DB row to cleanup scope");
 	TEST(test0009_7,"--db-drop-ignored removes an ignored missing DB row as ignored");
 	TEST(test0009_8,"--db-drop-ignored removes an ignored existing DB row");
+	TEST(test0009_9,"--quiet-ignored hides ignored-file lines without changing stored paths through CLI and configuration");
 
 	RETURN_STATUS;
 }

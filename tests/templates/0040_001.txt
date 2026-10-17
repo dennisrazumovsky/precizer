@@ -1,6 +1,7 @@
 \ATESTING:Configuration initialization is finished
 TESTING:rational_logger_mode=TESTING
-TESTING:argument:color=%COLOR_MODE%
+(?:TESTING:argument:config=0040_001\.conf\n)?(?x)
+(?-x)TESTING:argument:color=%COLOR_MODE%
 TESTING:argument:roots=tests/fixtures/diffs/diff1/2
 TESTING:argument:database=0040\.db
 TESTING:argument:db_file_name=0040\.db

@@ -173,7 +173,38 @@ static Return test0039_5(void)
 }
 
 /**
- * @brief Run legacy CLI argument compatibility tests
+ * @brief Verify the canonical filesystem restriction through CLI and configuration
+ *
+ * A small dry run checks the selected traversal flag and complete output without
+ * creating a database or requiring an additional mounted filesystem
+ *
+ * @return Return status for CLI and configuration output comparisons
+ */
+static Return test0039_6(void)
+{
+	INITTEST;
+
+	ASSERT(SUCCESS == set_environment_variable("TESTING","true"));
+	const struct argument_test_case cases[] = {
+		{"--one-file-system --dry-run --database=0039_6.db tests/fixtures/diffs/diff1/2",
+		 COMPLETED,"templates/0039_006.txt",STDERR_MUST_BE_EMPTY},
+		{0}
+	};
+	ASSERT(SUCCESS == run_and_match_templates(cases,NULL,NULL));
+
+	ASSERT(SUCCESS == copy_path("tests/templates/0039_006.conf","0039_006.conf"));
+	const struct argument_test_case file_cases[] = {
+		{"--config=0039_006.conf",COMPLETED,"templates/0039_006.txt",STDERR_MUST_BE_EMPTY},
+		{0}
+	};
+	ASSERT(SUCCESS == run_and_match_templates(file_cases,NULL,NULL));
+	call(delete_path_if_present("0039_006.conf"));
+
+	RETURN_STATUS;
+}
+
+/**
+ * @brief Run legacy CLI compatibility and canonical filesystem option tests
  *
  * @return Return status code
  */
@@ -186,6 +217,7 @@ Return test0039(void)
 	TEST(test0039_3,"Legacy --start-device-only maps to --one-file-system");
 	TEST(test0039_4,"Legacy -o maps to -x");
 	TEST(test0039_5,"Help and usage hide legacy CLI spellings");
+	TEST(test0039_6,"One-file-system selects the same traversal settings through CLI and configuration");
 
 	RETURN_STATUS;
 }

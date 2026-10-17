@@ -1,9 +1,11 @@
 #include "sute.h"
 
 /**
+ * @brief Detect changes to files protected by repeated --lock-checksum rules
  *
- * Attempt to modify files protected by the --lock-checksum
- *
+ * CLI and configuration updates start from the same saved database and
+ * modified files, then check the same full output and warning status.
+ * Files outside the protected paths continue to update normally
  */
 static Return test0027_1(void)
 {
@@ -42,6 +44,17 @@ static Return test0027_1(void)
 	};
 
 	ASSERT(SUCCESS == run_and_match_templates(update_cases,NULL,NULL));
+
+	/* Restore the database for the configuration run without repeating file changes.
+	   Keep lock1.db unchanged for the subsequent run without testing diagnostics */
+	ASSERT(SUCCESS == copy_path("lock1.db","lock.db"));
+	ASSERT(SUCCESS == copy_path("tests/templates/0027_001_3.conf","0027_001_3.conf"));
+	const struct argument_test_case file_cases[] = {
+		{"--config=0027_001_3.conf",WARNING,"templates/0027_001_3.txt",STDERR_MUST_BE_EMPTY},
+		{0}
+	};
+	ASSERT(SUCCESS == run_and_match_templates(file_cases,NULL,NULL));
+	call(delete_path_if_present("0027_001_3.conf"));
 
 	ASSERT(SUCCESS == set_environment_variable("TESTING","false"));
 

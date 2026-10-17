@@ -303,6 +303,10 @@ static Return test0016_3(void)
 /**
  * @brief Rehash unchanged content after a permission change when --watch-timestamps watches ctime
  *
+ * CLI and configuration updates start from the same saved database after a
+ * single permission change. Both check the full output, checksum, and stored
+ * timestamps against the same prepared file
+ *
  * @return Return status code
  */
 static Return test0016_4(void)
@@ -312,9 +316,8 @@ static Return test0016_4(void)
 	const char *fixture_path = "0016_watch_chmod";
 	const char *file_path = "0016_watch_chmod/file.txt";
 	const char *db_filename = "0016_watch_chmod.db";
+	const char *db_backup_filename = "0016_watch_chmod_before_update.db";
 	m_create(char,target_path,MEMORY_STRING);
-	m_create(char,result,MEMORY_STRING);
-	m_create(char,pattern,MEMORY_STRING);
 	struct stat stat_before = {0};
 	struct stat stat_after = {0};
 	CmpctStat saved_stat = {0};
@@ -343,10 +346,16 @@ static Return test0016_4(void)
 	ASSERT(stat_before.st_size == stat_after.st_size);
 	ASSERT(stat_before.st_blocks == stat_after.st_blocks);
 
-	ASSERT(SUCCESS == runit("--update --check-level=QUICK --watch-timestamps --database=0016_watch_chmod.db 0016_watch_chmod",result,NULL,COMPLETED,ALLOW_BOTH));
+	/* Preserve the database before either update records the changed ctime */
+	ASSERT(SUCCESS == copy_path(db_filename,db_backup_filename));
+
 	const char *filename = "templates/0016_002_3.txt";
-	ASSERT(SUCCESS == get_file_content(filename,pattern));
-	ASSERT(SUCCESS == match_pattern(result,pattern,filename));
+	const struct argument_test_case cases[] = {
+		{"--update --check-level=QUICK --watch-timestamps --database=0016_watch_chmod.db 0016_watch_chmod",
+		 COMPLETED,filename,STDERR_MUST_BE_EMPTY},
+		{0}
+	};
+	ASSERT(SUCCESS == run_and_match_templates(cases,NULL,NULL));
 	ASSERT(SUCCESS == read_final_sha512_from_db(db_filename,"file.txt",&offset,checksum_after));
 	ASSERT(offset == 0);
 	ASSERT(memcmp(checksum_before,checksum_after,sizeof(checksum_before)) == 0);
@@ -354,10 +363,26 @@ static Return test0016_4(void)
 	ASSERT(SUCCESS == db_read_cmpctstat_by_relative_path(db_filename,"file.txt",&saved_stat));
 	ASSERT(cmpctstat_matches_stat_timestamps(&saved_stat,&stat_after));
 
+	/* Restore only the database so the configuration run sees the same permission
+	   change, then repeat the checksum and timestamp checks */
+	ASSERT(SUCCESS == copy_path(db_backup_filename,db_filename));
+	ASSERT(SUCCESS == copy_path("tests/templates/0016_002_3.conf","0016_002_3.conf"));
+	const struct argument_test_case file_cases[] = {
+		{"--config=0016_002_3.conf",COMPLETED,filename,STDERR_MUST_BE_EMPTY},
+		{0}
+	};
+	ASSERT(SUCCESS == run_and_match_templates(file_cases,NULL,NULL));
+	ASSERT(SUCCESS == read_final_sha512_from_db(db_filename,"file.txt",&offset,checksum_after));
+	ASSERT(offset == 0);
+	ASSERT(memcmp(checksum_before,checksum_after,sizeof(checksum_before)) == 0);
+	ASSERT(SUCCESS == db_final_sha512_matches_file(db_filename,"file.txt",m_text(target_path)));
+	ASSERT(SUCCESS == db_read_cmpctstat_by_relative_path(db_filename,"file.txt",&saved_stat));
+	ASSERT(cmpctstat_matches_stat_timestamps(&saved_stat,&stat_after));
+
+	call(delete_path_if_present("0016_002_3.conf"));
+	call(delete_path_if_present(db_backup_filename));
 	call(delete_path_if_present(db_filename));
 	call(delete_path_if_present(fixture_path));
-	m_del(pattern);
-	m_del(result);
 	m_del(target_path);
 
 	RETURN_STATUS;

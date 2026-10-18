@@ -439,13 +439,20 @@ static Return test0028_5(void)
 }
 
 /**
- * Compare-filter combinations in compare mode and argument validation.
+ * @brief Check compare-filter categories, repetitions, and validation through CLI and configuration
  */
 static Return test0028_6(void)
 {
 	INITTEST;
 
 	SLOWTEST;
+
+	ASSERT(SUCCESS == copy_path("tests/templates/0028_006_21.conf","0028_006_21.conf"));
+	ASSERT(SUCCESS == copy_path("tests/templates/0028_006_9.conf","0028_006_9.conf"));
+	ASSERT(SUCCESS == copy_path("tests/templates/0028_006_10.conf","0028_006_10.conf"));
+	ASSERT(SUCCESS == copy_path("tests/templates/0028_006_20.conf","0028_006_20.conf"));
+	ASSERT(SUCCESS == copy_path("tests/templates/0028_006_22.conf","0028_006_22.conf"));
+	ASSERT(SUCCESS == copy_path("tests/templates/0028_006_14.conf","0028_006_14.conf"));
 
 	const struct argument_test_case equal_cases[] = {
 		// Valid combinations with --compare for equal databases
@@ -474,18 +481,27 @@ static Return test0028_6(void)
 		// Valid combinations with --compare for databases with all difference categories
 		{"--check-level=QUICK --compare database1.db database2.db",COMPLETED,"templates/0028_001.txt",STDERR_MUST_BE_EMPTY},
 		{"--check-level=QUICK --compare --compare-filter=checksum-mismatch database1.db database2.db",COMPLETED,"templates/0028_006_21.txt",STDERR_MUST_BE_EMPTY},
+		{"--config=0028_006_21.conf",COMPLETED,"templates/0028_006_21.txt",STDERR_MUST_BE_EMPTY},
 		{"--check-level=QUICK --compare --compare-filter=first-source database1.db database2.db",COMPLETED,"templates/0028_006_9.txt",STDERR_MUST_BE_EMPTY},
+		{"--config=0028_006_9.conf",COMPLETED,"templates/0028_006_9.txt",STDERR_MUST_BE_EMPTY},
 		{"--check-level=QUICK --compare --compare-filter=second-source database1.db database2.db",COMPLETED,"templates/0028_006_10.txt",STDERR_MUST_BE_EMPTY},
+		{"--config=0028_006_10.conf",COMPLETED,"templates/0028_006_10.txt",STDERR_MUST_BE_EMPTY},
 		{"--check-level=QUICK --compare --compare-filter=checksum-mismatch --compare-filter=first-source database1.db database2.db",COMPLETED,"templates/0028_006_11.txt",STDERR_MUST_BE_EMPTY},
 		{"--check-level=QUICK --compare --compare-filter=checksum-mismatch --compare-filter=second-source database1.db database2.db",COMPLETED,"templates/0028_006_12.txt",STDERR_MUST_BE_EMPTY},
 		{"--check-level=QUICK --compare --compare-filter=first-source --compare-filter=second-source database1.db database2.db",COMPLETED,"templates/0028_006_13.txt",STDERR_MUST_BE_EMPTY},
 		{"--check-level=QUICK --compare --compare-filter=checksum-mismatch --compare-filter=first-source --compare-filter=second-source database1.db database2.db",COMPLETED,"templates/0028_006_20.txt",STDERR_MUST_BE_EMPTY},
+		{"--config=0028_006_20.conf",COMPLETED,"templates/0028_006_20.txt",STDERR_MUST_BE_EMPTY},
+
+		// Repeating a category must not duplicate its report or enable other categories
+		{"--check-level=QUICK --compare --compare-filter=checksum-mismatch --compare-filter=checksum-mismatch database1.db database2.db",COMPLETED,"templates/0028_006_21.txt",STDERR_MUST_BE_EMPTY},
+		{"--config=0028_006_22.conf",COMPLETED,"templates/0028_006_21.txt",STDERR_MUST_BE_EMPTY},
 		{0}
 	};
 
 	const struct argument_test_case invalid_cases[] = {
 		// Invalid combinations: --compare-filter=value without --compare
 		{"--compare-filter=checksum-mismatch database1.db database2.db",FAILURE,"templates/0028_006_14.txt","templates/0028_006_15.txt"},
+		{"--config=0028_006_14.conf",FAILURE,"templates/0028_006_14.txt","templates/0028_006_15.txt"},
 		{"--compare-filter=first-source database1.db database2.db",FAILURE,"templates/0028_006_14.txt","templates/0028_006_15.txt"},
 		{"--compare-filter=second-source database1.db database2.db",FAILURE,"templates/0028_006_14.txt","templates/0028_006_15.txt"},
 		{"--compare-filter=checksum-mismatch --compare-filter=first-source database1.db database2.db",FAILURE,"templates/0028_006_14.txt","templates/0028_006_15.txt"},
@@ -524,11 +540,21 @@ static Return test0028_6(void)
 
 	ASSERT(SUCCESS == run_and_match_templates(invalid_cases,NULL,NULL));
 
+	call(delete_path_if_present("0028_006_21.conf"));
+	call(delete_path_if_present("0028_006_9.conf"));
+	call(delete_path_if_present("0028_006_10.conf"));
+	call(delete_path_if_present("0028_006_20.conf"));
+	call(delete_path_if_present("0028_006_22.conf"));
+	call(delete_path_if_present("0028_006_14.conf"));
+
 	RETURN_STATUS;
 }
 
 /**
- * Invalid --compare-filter value should fail argument parsing
+ * @brief Reject empty and unsupported compare-filter values with or without comparison
+ *
+ * Both settings sources stop at the first invalid value. Later valid or invalid
+ * entries must neither hide that error nor produce additional diagnostics
  */
 static Return test0028_7(void)
 {
@@ -536,14 +562,37 @@ static Return test0028_7(void)
 
 	ASSERT(SUCCESS == set_environment_variable("TESTING","true"));
 
-	const char *arguments = "--compare --compare-filter=invalid-value database1.db database2.db";
+	ASSERT(SUCCESS == copy_path("tests/templates/0028_007_1.conf","0028_007_1.conf"));
+	ASSERT(SUCCESS == copy_path("tests/templates/0028_007_2.conf","0028_007_2.conf"));
+	ASSERT(SUCCESS == copy_path("tests/templates/0028_007_3.conf","0028_007_3.conf"));
+	ASSERT(SUCCESS == copy_path("tests/templates/0028_007_4.conf","0028_007_4.conf"));
+	ASSERT(SUCCESS == copy_path("tests/templates/0028_007_5.conf","0028_007_5.conf"));
 
 	const struct argument_test_case cases[] = {
-		{arguments,FAILURE,NULL,"templates/0028_007_1.txt"},
+		{"--compare --compare-filter=invalid-value database1.db database2.db",FAILURE,"templates/0028_007_3.txt","templates/0028_007_1.txt"},
+		{"--config=0028_007_1.conf",FAILURE,"templates/0028_007_4.txt","templates/0028_007_2.txt"},
+		{"--compare --compare-filter= database1.db database2.db",FAILURE,"templates/0028_007_3.txt","templates/0028_007_5.txt"},
+		{"--config=0028_007_2.conf",FAILURE,"templates/0028_007_4.txt","templates/0028_007_6.txt"},
+
+		// Value errors precede the check requiring comparison mode
+		{"--compare-filter=invalid-value database1.db database2.db",FAILURE,"templates/0028_007_3.txt","templates/0028_007_1.txt"},
+		{"--config=0028_007_3.conf",FAILURE,"templates/0028_007_4.txt","templates/0028_007_7.txt"},
+		{"--compare-filter= database1.db database2.db",FAILURE,"templates/0028_007_3.txt","templates/0028_007_5.txt"},
+		{"--config=0028_007_4.conf",FAILURE,"templates/0028_007_4.txt","templates/0028_007_8.txt"},
+
+		// Only the first invalid value is reported, regardless of subsequent entries
+		{"--compare --compare-filter=invalid-value --compare-filter=first-source --compare-filter=later-invalid-value database1.db database2.db",FAILURE,"templates/0028_007_3.txt","templates/0028_007_1.txt"},
+		{"--config=0028_007_5.conf",FAILURE,"templates/0028_007_4.txt","templates/0028_007_2.txt"},
 		{0}
 	};
 
 	ASSERT(SUCCESS == run_and_match_templates(cases,NULL,NULL));
+
+	call(delete_path_if_present("0028_007_1.conf"));
+	call(delete_path_if_present("0028_007_2.conf"));
+	call(delete_path_if_present("0028_007_3.conf"));
+	call(delete_path_if_present("0028_007_4.conf"));
+	call(delete_path_if_present("0028_007_5.conf"));
 
 	RETURN_STATUS;
 }

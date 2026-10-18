@@ -16,8 +16,10 @@ static ReaderCapture *active_reader = NULL;
  */
 static void capture_reader(void)
 {
+	char program_name[] = "testitall";
+	struct argp_state state = {.name = program_name,.err_stream = stderr,.flags = ARGP_NO_EXIT};
 	active_reader->result = read_config_file(active_reader->path,
-		active_reader->required,&active_reader->has_entries);
+		active_reader->required,&active_reader->has_entries,&state);
 }
 
 /**
@@ -39,8 +41,12 @@ static Return check_reader(
 	/* Status returned by this function through deliver()
 	   Default value assumes successful completion */
 	Return status = SUCCESS;
+	/* Cleanup must discard a pending diagnostic line before the next run */
+	config->config_file_error_line = 12;
 	free_config();
+	ASSERT(config->config_file_error_line == -1);
 	ASSERT(SUCCESS == init_config_and_check_output());
+	ASSERT(config->config_file_error_line == -1);
 	m_create(char,path,MEMORY_STRING);
 	m_create(char,captured_stdout,MEMORY_STRING);
 	m_create(char,captured_stderr,MEMORY_STRING);
@@ -61,6 +67,7 @@ static Return check_reader(
 	active_reader = NULL;
 	ASSERT(capture.result == expected_result);
 	ASSERT(capture.has_entries == expected_entries);
+	ASSERT(config->config_file_error_line == -1);
 	ASSERT(captured_stdout->length == 0U);
 
 	if(error_template != NULL)
@@ -528,6 +535,7 @@ static Return test0045_8(void)
 static Return check_settings_source_choices(void)
 {
 	INITTEST;
+	char program_name[] = "testitall";
 	static const struct {
 		int argc;
 		error_t preliminary_error;
@@ -562,7 +570,8 @@ static Return check_settings_source_choices(void)
 		ArgumentParseContext context = {
 			.config_required = true,
 			.has_other_arguments = cases[i].has_other_arguments,
-			.information_mode_requested = cases[i].information_mode_requested
+			.information_mode_requested = cases[i].information_mode_requested,
+			.diagnostic_state = {.name = program_name,.err_stream = stderr}
 		};
 		ASSERT(SUCCESS == select_settings_source(cases[i].argc,cases[i].preliminary_error,&context));
 		ASSERT(context.config_required == cases[i].expected_required);
@@ -603,10 +612,12 @@ static Return test0045_9(void)
 static Return check_settings_source_conflict(void)
 {
 	INITTEST;
+	char program_name[] = "testitall";
 	config->config_file_path = "missing.conf";
 	ArgumentParseContext context = {
 		.config_required = true,
-		.has_other_arguments = true
+		.has_other_arguments = true,
+		.diagnostic_state = {.name = program_name,.err_stream = stderr}
 	};
 	ASSERT(FAILURE == select_settings_source(4,EX_OK,&context));
 	ASSERT(config->config_file_path == NULL);

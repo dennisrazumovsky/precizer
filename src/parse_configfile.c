@@ -11,11 +11,13 @@ extern const struct argp_option options[];
  * records whether a recognized, permitted key was encountered, including a
  * false flag that disables an option. status records handler failure, so the
  * reader does not add a generic syntax error after a diagnostic was already
- * reported. The settings themselves are stored in Config
+ * reported. state supplies the program name and error stream for diagnostics.
+ * The settings themselves are stored in Config
  */
 typedef struct {
 	bool has_entries;
 	Return status;
+	struct argp_state *state;
 } ConfigFileReadContext;
 
 /**
@@ -54,7 +56,7 @@ static int read_config_entry(
 	if(strcmp(name,"help") == 0 || strcmp(name,"usage") == 0 ||
 	   strcmp(name,"version") == 0 || strcmp(name,"config") == 0)
 	{
-		argp_failure(NULL,0,0,"ERROR: Line %d in config file: Config key '%s' is only available in CLI",line,name);
+		argp_failure(context->state,0,0,"ERROR: Line %d in config file: Config key '%s' is only available in CLI",line,name);
 		context->status = FAILURE;
 		return(0);
 	}
@@ -109,7 +111,7 @@ static int read_config_entry(
 				{
 					/* Report the key and line, then stop reading. Recording the failure
 					   prevents the file reader from adding a generic syntax error */
-					argp_failure(NULL,0,0,"ERROR: Line %d in config file: Unclosed quoted value for '%s'",line,name);
+					argp_failure(context->state,0,0,"ERROR: Line %d in config file: Unclosed quoted value for '%s'",line,name);
 
 					context->status = FAILURE;
 
@@ -159,7 +161,7 @@ static int read_config_entry(
 
 				} else if(option->key != 'n'){
 
-					argp_failure(NULL,0,0,"ERROR: Line %d in config file: Unsupported --%s value '%s'. Supported values: true/yes/on/y/1 or false/no/off/n/0",line,name,value);
+					argp_failure(context->state,0,0,"ERROR: Line %d in config file: Unsupported --%s value '%s'. Supported values: true/yes/on/y/1 or false/no/off/n/0",line,name,value);
 					context->status = FAILURE;
 					return(0);
 				}
@@ -180,7 +182,7 @@ static int read_config_entry(
 			{
 				if(argument[0] == '\0')
 				{
-					argp_failure(NULL,0,0,"ERROR: Line %d in config file: Database path for 'compare' must not be empty",line);
+					argp_failure(context->state,0,0,"ERROR: Line %d in config file: Database path for 'compare' must not be empty",line);
 					context->status = FAILURE;
 					return(0);
 				}
@@ -189,10 +191,14 @@ static int read_config_entry(
 				key = ARGP_KEY_ARG;
 			}
 
-			/* The line address remains valid throughout the synchronous option call */
-			struct argp_state state = {.hook = &line};
+			/* Make the line available to shared option diagnostics only while this
+			   entry is being applied. Reset it even when parse_opt() returns an
+			   error, so later CLI processing cannot inherit a file line */
+			config->config_file_error_line = line;
 
-			error_t parse_error = parse_opt(key,argument,&state);
+			error_t parse_error = parse_opt(key,argument,context->state);
+
+			config->config_file_error_line = -1;
 
 			if(parse_error != EX_OK)
 			{
@@ -204,7 +210,7 @@ static int read_config_entry(
 		}
 	}
 
-	argp_failure(NULL,0,0,"ERROR: Line %d in config file: Unknown config key '%s'",line,name);
+	argp_failure(context->state,0,0,"ERROR: Line %d in config file: Unknown config key '%s'",line,name);
 	context->status = FAILURE;
 	return(0);
 }
@@ -220,12 +226,14 @@ static int read_config_entry(
  * @param path Configuration file path, relative to the working directory or absolute
  * @param required Whether a missing file is an error; other open errors always fail
  * @param has_entries Set when at least one recognized, permitted record is read
+ * @param state Diagnostic state with the program name and error stream
  * @return SUCCESS on completion or an optional missing file, otherwise FAILURE
  */
 Return read_config_file(
-	const char *path,
-	bool       required,
-	bool       *has_entries)
+	const char        *path,
+	bool              required,
+	bool              *has_entries,
+	struct argp_state *state)
 {
 	/* Status returned by this function through deliver()
 	   Default value assumes successful completion */
@@ -244,7 +252,7 @@ Return read_config_file(
 	{
 		if(required || errno != ENOENT)
 		{
-			argp_failure(NULL,0,errno,"ERROR: Cannot open config file '%s'",path);
+			argp_failure(state,0,errno,"ERROR: Cannot open config file '%s'",path);
 			status = FAILURE;
 		}
 
@@ -256,7 +264,7 @@ Return read_config_file(
 		   If the callback succeeded, check for a stream read error first, then
 		   a parser error, using the returned line number for syntax diagnostics.
 		   The status checks prevent a second message for an already reported error */
-		ConfigFileReadContext context = {.status = SUCCESS};
+		ConfigFileReadContext context = {.status = SUCCESS,.state = state};
 
 		int parse_error = ini_parse_file(file,read_config_entry,&context);
 
@@ -266,13 +274,13 @@ Return read_config_file(
 
 		if(SUCCESS == status && ferror(file))
 		{
-			argp_failure(NULL,0,errno,"ERROR: Cannot read config file '%s'",path);
+			argp_failure(state,0,errno,"ERROR: Cannot read config file '%s'",path);
 			status = FAILURE;
 		}
 
 		if(SUCCESS == status && parse_error != 0)
 		{
-			argp_failure(NULL,0,0,"ERROR: Line %d in config file: Invalid config syntax",parse_error);
+			argp_failure(state,0,0,"ERROR: Line %d in config file: Invalid config syntax",parse_error);
 			status = FAILURE;
 		}
 
@@ -281,7 +289,7 @@ Return read_config_file(
 
 		if(SUCCESS == status && close_error != 0)
 		{
-			argp_failure(NULL,0,errno,"ERROR: Cannot close config file '%s'",path);
+			argp_failure(state,0,errno,"ERROR: Cannot close config file '%s'",path);
 			status = FAILURE;
 		}
 	}

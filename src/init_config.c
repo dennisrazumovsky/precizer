@@ -105,6 +105,9 @@ void init_config(void)
 	// No configuration file selected
 	config->config_file_path = NULL;
 
+	// No configuration entry is being processed for option error reporting
+	config->config_file_error_line = -1;
+
 	// Managed array of root paths to traverse
 	config->roots = m_init(memory);
 

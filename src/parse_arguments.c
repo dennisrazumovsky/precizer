@@ -173,7 +173,7 @@ static const char *argp_error_to_text(const error_t parse_error)
 
 /**
  * @brief Report an option error with its configuration line when present
- * @param state CLI state, or a local state whose hook points to the current file line
+ * @param state Parser or diagnostic state supplying the program name and error stream
  * @param error_number Error number to append as system text, or zero
  * @param format Printf-style diagnostic format without the ERROR: prefix
  * @param ... Values referenced by the diagnostic format
@@ -199,11 +199,10 @@ static void report_option_error(
 		error_number = errno;
 	}
 
-	if(state != NULL && state->hook != NULL)
+	if(config->config_file_error_line > 0)
 	{
-		const int *line = state->hook;
-		/* File states carry only hook; NULL keeps the default diagnostic name and stream */
-		argp_failure(NULL,0,error_number,"ERROR: Line %d in config file: %s",*line,message_text);
+		/* File errors retain the same program name and stream as CLI errors */
+		argp_failure(state,0,error_number,"ERROR: Line %d in config file: %s",config->config_file_error_line,message_text);
 	} else {
 		argp_failure(state,0,error_number,"ERROR: %s",message_text);
 	}
@@ -218,7 +217,7 @@ static void report_option_error(
  * @brief Apply a named option or handle an argp parser event
  * @param key Current option key or argp event key
  * @param arg Optional option value; file flags use NULL for true and "false" for false
- * @param state CLI state with ArgumentParseContext in input, or a file state with the line address in hook
+ * @param state CLI state with ArgumentParseContext in input, or a diagnostic state for file options
  * @return EX_OK on success, EX_USAGE for invalid usage, or errno-style error code
  */
 error_t parse_opt(
@@ -233,9 +232,9 @@ error_t parse_opt(
 	long int argument_value = -1;
 
 	/* Both CLI options and configuration records reach this handler.
-	   CLI calls leave state->hook NULL. Configuration calls set it to the
-	   current file line's address for error reporting, which also identifies
-	   the source of the value here.
+	   config_file_error_line is -1 for CLI calls. While applying a file entry,
+	   read_config_entry() sets it to the current line for error reporting and
+	   resets it afterward. A positive line also identifies a file value here.
 
 	   Before calling parse_opt(), read_config_entry() recognizes boolean
 	   spellings without regard to letter case and converts them as follows:
@@ -258,7 +257,7 @@ error_t parse_opt(
 	   Flag branches below assign this boolean to Config fields, so a later
 	   false record can turn off a previously enabled flag. Options with ordinary
 	   string or numeric arguments do not use this value */
-	const bool value = state->hook == NULL || arg == NULL || strcmp(arg,"false") != 0;
+	const bool value = config->config_file_error_line < 0 || arg == NULL || strcmp(arg,"false") != 0;
 
 	/* Reject argp-marked -- before accepting operands or checking required paths.
 	   Error and cleanup events must not repeat the diagnostic */
@@ -317,7 +316,7 @@ error_t parse_opt(
 			config->dry_run = value;
 
 			/* Each file value selects the complete dry-run mode */
-			if(state->hook != NULL)
+			if(config->config_file_error_line > 0)
 			{
 				config->dry_run_with_checksums = false;
 			}
@@ -655,7 +654,9 @@ Return parse_arguments(
 	information_mode_requested = false;
 	config->config_file_path = NULL;
 
-	/* Local source-selection state shared by both argp passes and file reading */
+	/* Local source-selection state shared by both argp passes and file reading.
+	   The preliminary pass stores the program name and error stream in its
+	   embedded diagnostic_state for diagnostics between passes */
 	ArgumentParseContext context = {0};
 
 	/*
@@ -696,7 +697,7 @@ Return parse_arguments(
 
 	if(SUCCESS == status && config->config_file_path != NULL)
 	{
-		run(read_config_file(config->config_file_path,context.config_required,&context.config_has_entries));
+		run(read_config_file(config->config_file_path,context.config_required,&context.config_has_entries,&context.diagnostic_state));
 	}
 
 	if(CRITICAL & status)

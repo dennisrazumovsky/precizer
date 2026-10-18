@@ -348,6 +348,9 @@ typedef struct {
 	/// Borrows storage from argv or a static string; no allocation is owned
 	const char *config_file_path;
 
+	/// Current configuration line for option errors, or -1 outside a file entry
+	int config_file_error_line;
+
 	/// Managed array of root paths to traverse
 	memory roots;
 
@@ -870,6 +873,8 @@ typedef struct {
 	bool information_mode_requested;
 	/** Whether the file contains recognized settings, including false flags */
 	bool config_has_entries;
+	/** State retaining the program name and error stream between argp passes */
+	struct argp_state diagnostic_state;
 } ArgumentParseContext;
 
 error_t parse_source_option(
@@ -894,7 +899,8 @@ error_t parse_opt(
 Return read_config_file(
 	const char *,
 	bool,
-	bool *);
+	bool *,
+	struct argp_state *);
 
 #ifdef TESTITALL_TEST_HOOKS
 void show_testing_diagnostics(void);

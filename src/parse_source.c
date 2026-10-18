@@ -42,9 +42,16 @@ error_t parse_source_option(
 				return(EX_USAGE);
 			}
 			break;
+		case ARGP_KEY_SUCCESS:
+			/* Argp has initialized the diagnostic name and stream by this event.
+			   Retain only these fields: the name refers to argv storage, and the
+			   stream remains open after this pass. The parser state itself expires
+			   when argp_parse() returns and must not be retained */
+			context->diagnostic_state.name = state->name;
+			context->diagnostic_state.err_stream = state->err_stream;
+			break;
 		case ARGP_KEY_INIT:
 		case ARGP_KEY_NO_ARGS:
-		case ARGP_KEY_SUCCESS:
 		case ARGP_KEY_ERROR:
 		case ARGP_KEY_FINI:
 			break;
@@ -112,7 +119,7 @@ Return select_settings_source(
 			/* An explicit file cannot be combined with other CLI arguments.
 			   Report the conflict and clear the path before any file is opened.
 			   FAILURE tells the caller to stop instead of applying either source */
-			argp_failure(NULL,0,0,"ERROR: --config cannot be combined with other arguments. Use either a config file or CLI arguments");
+			argp_failure(&context->diagnostic_state,0,0,"ERROR: --config cannot be combined with other arguments. Use either a config file or CLI arguments");
 			config->config_file_path = NULL;
 			status = FAILURE;
 

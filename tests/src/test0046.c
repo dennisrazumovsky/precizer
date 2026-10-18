@@ -41,12 +41,15 @@ static Return test0046_1(void)
 static Return check_settings_after_read_error(void)
 {
 	INITTEST;
+	char program_name[] = "testitall";
+	struct argp_state state = {.name = program_name,.err_stream = stderr,.flags = ARGP_NO_EXIT};
 	bool has_entries = false;
 	m_create(char,path,MEMORY_STRING);
 
 	ASSERT(SUCCESS == construct_path("0046_002.conf",path));
-	ASSERT(FAILURE == read_config_file(m_text(path),true,&has_entries));
+	ASSERT(FAILURE == read_config_file(m_text(path),true,&has_entries,&state));
 	ASSERT(has_entries == true);
+	ASSERT(config->config_file_error_line == -1);
 	/* A valid prefix must remain applied when the final stream check reports EIO */
 	ASSERT(config->roots.length == 1U);
 	memory *roots = m_data(memory,conf(roots));

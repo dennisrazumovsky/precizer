@@ -726,49 +726,6 @@ Comparison of database1.db and database2.db databases is complete
 The precizer completed its execution without any issues  
 </sub>
 
-#### Selecting databases for comparison
-
-On the command line, `--compare` is followed by paths to two databases:
-
-```sh
-precizer --compare database1.db database2.db
-```
-
-In `precizer.conf`, each path uses a separate `compare` entry:
-
-```ini
-compare = database1.db
-compare = database2.db
-```
-
-The second path can also be written on an indented continuation line:
-
-```ini
-compare = database1.db
-    database2.db
-```
-
-Comparison requires two databases. Each path is written on a separate line. File names can contain spaces, for example: `compare = my database.db`
-
-#### Filtering comparison report categories
-
-By default, `--compare` prints all three difference categories: paths that exist only in the first database named in the command; paths that exist only in the second database named in the command; and paths that exist in both databases but have different SHA512 checksums. The `--compare-filter` option limits the report to one or more categories and works only together with `--compare`. The `checksum-mismatch` value leaves only SHA512 differences. The `first-source` value leaves only paths from the first database. The `second-source` value leaves only paths from the second database
-
-```sh
-precizer --compare --compare-filter=checksum-mismatch database1.db database2.db
-
-precizer --compare --compare-filter=first-source database1.db database2.db
-
-precizer --compare \
-	--compare-filter=first-source \
-	--compare-filter=second-source \
-	database1.db database2.db
-```
-
-When `--compare-filter` is specified more than once, precizer combines the selected categories. The last example prints only paths that are present in one database and missing from the other, while SHA512 differences for common paths are not shown
-
-In `--compare` mode, `--ignore` and `--include` limit the relative-path scope used to build the comparison report. If filters hide part of the differences, the equality messages apply only to the remaining filtered scope. Any path brought back with `--include` participates again in both the difference lists and the final summaries
-
 ### Example 2
 Database Update
 
@@ -1279,11 +1236,50 @@ precizer --help
 
 ### Comparing databases
 
-- `--compare`, `-c` — Compare two databases by relative paths and checksums, for example `precizer --compare first.db second.db`
+#### Selecting databases for comparison
 
-- `--compare-filter=TYPE`, `-F TYPE` — Select report categories: `checksum-mismatch` for different checksums, `first-source` for files only in the first database, or `second-source` for files only in the second. Requires `--compare`; repeat the option to combine categories
+The `--compare` (`-c`) option compares two databases by relative paths and checksums. On the command line, it is followed by paths to two database files:
 
-Without `--compare-filter`, all three categories are reported. See [Filtering comparison report categories](#filtering-comparison-report-categories) for a detailed example
+```sh
+precizer --compare database1.db database2.db
+```
+
+In `precizer.conf`, each path uses a separate `compare` entry:
+
+```ini
+compare = database1.db
+compare = database2.db
+```
+
+The second path can also be written on an indented continuation line:
+
+```ini
+compare = database1.db
+    database2.db
+```
+
+File names can contain spaces, for example: `compare = my database.db`
+
+#### Filtering comparison report categories
+
+By default, comparison shows all three difference categories. The `compare-filter` option selects the desired categories: `checksum-mismatch` for files with the same relative paths but different checksums; `first-source` for files present in the first database and missing from the second; and `second-source` for files present in the second database and missing from the first. The option can be specified multiple times in any combination: the report includes all selected categories. It is used in comparison mode
+
+On the command line, the value is supplied with `--compare-filter=TYPE` or `-F TYPE`:
+
+```sh
+precizer --compare --compare-filter=checksum-mismatch database1.db database2.db
+
+precizer --compare --compare-filter=first-source database1.db database2.db
+
+precizer --compare \
+	--compare-filter=first-source \
+	--compare-filter=second-source \
+	database1.db database2.db
+```
+
+The last example prints only paths that are present in one database and missing from the other, while SHA512 differences for common paths are not shown
+
+In `--compare` mode, `--ignore` and `--include` limit the relative-path scope used to build the comparison report. If filters hide part of the differences, the equality messages apply only to the remaining filtered scope. Any path brought back with `--include` participates again in both the difference lists and the final summaries
 
 ### Selecting files and traversal depth
 

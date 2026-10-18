@@ -683,7 +683,7 @@ msys-build: $(DIST_EXE)
 windows-zip: msys-build
 	@mkdir -p "$(ZIP_DIR)/v$(APP_VERSION)"
 	@cp "$(DIST_EXE).exe" /usr/bin/msys-2.0.dll "$(ZIP_DIR)/v$(APP_VERSION)/"
-	@"$(ZIP_DIR)/v$(APP_VERSION)/$(EXE).exe" --version
+	@cd "$(ZIP_DIR)/v$(APP_VERSION)" && MSYS2_ARG_CONV_EXCL='*' cmd.exe /d /c '.\$(EXE).exe --version'
 	@rm -f $(EXE).zip
 	@cd "$(ZIP_DIR)" && zip -q -9 -MM "$(abspath $(EXE).zip)" "v$(APP_VERSION)/$(EXE).exe" "v$(APP_VERSION)/msys-2.0.dll"
 	@zip -q -9 -j -MM $(EXE).zip COPYING CHANGELOG.md README.ru.md README.md

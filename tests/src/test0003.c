@@ -126,6 +126,8 @@ Return test0003_3(void)
 /**
  * @brief Check that information modes ignore PATH and stop before the main workflow
  *
+ * Invalid regex values must not be compiled when help, usage, or version is requested
+ *
  * @return Return status for information modes combined with paths and comparison
  */
 Return test0003_4(void)
@@ -145,6 +147,15 @@ Return test0003_4(void)
 		{"--path=/definitely/nonexistent/path --help",COMPLETED,"templates/0003_004.txt",STDERR_MUST_BE_EMPTY},
 		{"--path=/definitely/nonexistent/path --usage",COMPLETED,"templates/0003_005.txt",STDERR_MUST_BE_EMPTY},
 		{"--path=/definitely/nonexistent/path --version",COMPLETED,"templates/0003_006.txt",STDERR_MUST_BE_EMPTY},
+		{"--help --ignore='('",COMPLETED,"templates/0003_004_1.txt",STDERR_MUST_BE_EMPTY},
+		{"--help --include='('",COMPLETED,"templates/0003_004_1.txt",STDERR_MUST_BE_EMPTY},
+		{"--help --lock-checksum='('",COMPLETED,"templates/0003_004_1.txt",STDERR_MUST_BE_EMPTY},
+		{"--usage --ignore='('",COMPLETED,"templates/0003_005.txt",STDERR_MUST_BE_EMPTY},
+		{"--usage --include='('",COMPLETED,"templates/0003_005.txt",STDERR_MUST_BE_EMPTY},
+		{"--usage --lock-checksum='('",COMPLETED,"templates/0003_005.txt",STDERR_MUST_BE_EMPTY},
+		{"--version --ignore='('",COMPLETED,"templates/0003_006.txt",STDERR_MUST_BE_EMPTY},
+		{"--version --include='('",COMPLETED,"templates/0003_006.txt",STDERR_MUST_BE_EMPTY},
+		{"--version --lock-checksum='('",COMPLETED,"templates/0003_006.txt",STDERR_MUST_BE_EMPTY},
 		{0}
 	};
 
@@ -159,7 +170,8 @@ Return test0003_4(void)
  * @brief Require named and positional roots to produce the same traversal output
  *
  * Run each command first without a default configuration file, then with an
- * invalid default file and a valid file containing different settings.
+ * invalid default file, a valid file containing different settings, and a file
+ * without read permission.
  * All runs must produce the same output and status
  *
  * @return Return status for long and short named options and positional roots
@@ -187,6 +199,11 @@ static Return test0003_5(void)
 	/* Valid default settings must not alter or supplement CLI settings */
 	ASSERT(SUCCESS == copy_path("tests/templates/0003_005.conf","precizer.conf"));
 	ASSERT(SUCCESS == run_and_match_templates(cases,NULL,NULL));
+
+	/* Read permission on an unused default file must not affect CLI operations */
+	ASSERT(SUCCESS == change_mode("precizer.conf",0000));
+	ASSERT(SUCCESS == run_and_match_templates(cases,NULL,NULL));
+	call(change_mode("precizer.conf",0600));
 	call(delete_path_if_present("precizer.conf"));
 
 	RETURN_STATUS;
@@ -196,7 +213,8 @@ static Return test0003_5(void)
  * @brief Preserve repeated roots and combine named roots with positional roots
  *
  * Named options are processed before positional arguments by argp. The full
- * output must match the equivalent positional root array, including duplicates
+ * output must match the equivalent positional root array, including duplicates.
+ * A file repeat must normalize trailing slashes without removing repeated roots
  *
  * @return Return status for repeated, mixed, and normalized root spellings
  */
@@ -218,6 +236,15 @@ static Return test0003_6(void)
 	ASSERT(SUCCESS == set_environment_variable("TESTING","true"));
 
 	ASSERT(SUCCESS == run_and_match_templates(cases,NULL,NULL));
+
+	/* Reuse the dry-run state and full output for the same roots from a file */
+	ASSERT(SUCCESS == copy_path("tests/templates/0003_006.conf","0003_006.conf"));
+	const struct argument_test_case file_cases[] = {
+		{"--config=0003_006.conf",COMPLETED,"templates/0003_007.txt",STDERR_MUST_BE_EMPTY},
+		{0}
+	};
+	ASSERT(SUCCESS == run_and_match_templates(file_cases,NULL,NULL));
+	call(delete_path_if_present("0003_006.conf"));
 
 	RETURN_STATUS;
 }
@@ -334,7 +361,11 @@ static Return test0003_9(void)
 }
 
 /**
- * @brief Accept config filenames that resemble options or contain spaces
+ * @brief Accept option-like values and configuration filenames containing spaces
+ *
+ * Config selector names passed as --path or -P values remain scan roots.
+ * Missing directories must produce path diagnostics, not source-selection errors
+ *
  * @return Return status for literal option-like values and quoted paths
  */
 static Return test0003_10(void)
@@ -357,6 +388,11 @@ static Return test0003_10(void)
 		{"-g '0003 config.conf'",FAILURE,"templates/0003_012.txt",STDERR_MUST_BE_EMPTY},
 		{0}
 	};
+	const struct argument_test_case root_values[] = {
+		{"--path --config --path -g",FAILURE,"templates/0003_010_1.txt",STDERR_MUST_BE_EMPTY},
+		{"-P --config -P -g",FAILURE,"templates/0003_010_1.txt",STDERR_MUST_BE_EMPTY},
+		{0}
+	};
 
 	ASSERT(SUCCESS == set_environment_variable("TESTING","true"));
 	ASSERT(SUCCESS == copy_from_origin("tests/templates/0003_012.conf","--",REQUIRE_SOURCE_EXISTS));
@@ -366,6 +402,7 @@ static Return test0003_10(void)
 	ASSERT(SUCCESS == run_and_match_templates(option_name,"%CONFIG_PATH%","--help"));
 	ASSERT(SUCCESS == copy_from_origin("tests/templates/0003_012.conf","0003 config.conf",REQUIRE_SOURCE_EXISTS));
 	ASSERT(SUCCESS == run_and_match_templates(spaced_name,"%CONFIG_PATH%","0003 config[.]conf"));
+	ASSERT(SUCCESS == run_and_match_templates(root_values,NULL,NULL));
 
 	call(delete_path_if_present("0003 config.conf"));
 	call(delete_path_if_present("--help"));
@@ -377,8 +414,8 @@ static Return test0003_10(void)
  * @brief Reject explicit file selection combined with other CLI arguments before opening the file
  *
  * Check all selector forms, both argument orders, repeated selections, and a
- * short-option group. A missing file and a malformed file must produce the
- * same source-conflict diagnostic without attempting to read settings
+ * short-option group. Missing, malformed, and unreadable files must produce
+ * the same source-conflict diagnostic without attempting to read settings
  *
  * @return Return status for operational and positional conflicts
  */
@@ -414,6 +451,10 @@ static Return test0003_11(void)
 	/* Invalid settings must not replace the conflict with a configuration error */
 	ASSERT(SUCCESS == copy_path("tests/templates/0003_011.conf","0003_011.conf"));
 	ASSERT(SUCCESS == run_and_match_templates(cases,NULL,NULL));
+	/* File permissions must not replace the source conflict with an open error */
+	ASSERT(SUCCESS == change_mode("0003_011.conf",0000));
+	ASSERT(SUCCESS == run_and_match_templates(cases,NULL,NULL));
+	call(change_mode("0003_011.conf",0600));
 	call(delete_path_if_present("0003_011.conf"));
 
 	RETURN_STATUS;
@@ -421,6 +462,9 @@ static Return test0003_11(void)
 
 /**
  * @brief Defer invalid CLI diagnostics to the main parser without reading a file
+ *
+ * Preserve the first main-pass error and any help or silent behavior preceding it
+ *
  * @return Return status for missing values, unknown options, forbidden option values, and argp-marked --
  */
 static Return test0003_12(void)
@@ -431,6 +475,10 @@ static Return test0003_12(void)
 		{"-g",FAILURE,"templates/0040_003.txt","templates/0003_016.txt"},
 		{"--config=0003_absent.conf --path",FAILURE,"templates/0040_003.txt","templates/0003_008.txt"},
 		{"--config=0003_absent.conf --unknown",FAILURE,"templates/0040_003.txt","templates/0003_017.txt"},
+		{"--unknown --config=0003_absent.conf",FAILURE,"templates/0040_003.txt","templates/0003_017.txt"},
+		{"--maxdepth=bad --unknown",FAILURE,"templates/0040_003.txt","templates/0018_005_2.txt"},
+		{"--help --unknown",FAILURE,"templates/0003_012_1.txt","templates/0003_017.txt"},
+		{"--silent --unknown",FAILURE,"templates/0045_033.txt","templates/0003_017.txt"},
 		{"--version --config=0003_absent.conf --unknown",FAILURE,"templates/0040_003.txt","templates/0003_017.txt"},
 		{"--config=0003_absent.conf --version --color=invalid-value",FAILURE,"templates/0040_003.txt","templates/0040_004.txt"},
 		{"--config=0003_absent.conf --progress=no",FAILURE,"templates/0040_003.txt","templates/0003_018.txt"},
@@ -459,6 +507,10 @@ static Return test0003_12(void)
 
 /**
  * @brief Stop startup on configuration open, read, and parsing errors without fallback
+ *
+ * A file without read permission must fail for default and explicit selection.
+ * Information requests must ignore the same inaccessible file
+ *
  * @return Return status for default and explicitly selected file errors
  */
 static Return test0003_13(void)
@@ -494,6 +546,20 @@ static Return test0003_13(void)
 	ASSERT(SUCCESS == run_and_match_templates(unreadable_file,NULL,NULL));
 	call(delete_path_if_present("precizer.conf"));
 
+	/* Permission denial is an open error, unlike a directory's read error */
+	const struct argument_test_case denied_file[] = {
+		{"",FAILURE,"templates/0003_013.txt","templates/0003_013_1.txt"},
+		{"--config=precizer.conf",FAILURE,"templates/0003_013.txt","templates/0003_013_1.txt"},
+		{"--version",COMPLETED,"templates/0003_006.txt",STDERR_MUST_BE_EMPTY},
+		{"--config=precizer.conf --version",COMPLETED,"templates/0003_006.txt",STDERR_MUST_BE_EMPTY},
+		{0}
+	};
+	ASSERT(SUCCESS == copy_path("tests/templates/0003_005.conf","precizer.conf"));
+	ASSERT(SUCCESS == change_mode("precizer.conf",0000));
+	ASSERT(SUCCESS == run_and_match_templates(denied_file,NULL,NULL));
+	call(change_mode("precizer.conf",0600));
+	call(delete_path_if_present("precizer.conf"));
+
 	RETURN_STATUS;
 }
 
@@ -516,6 +582,39 @@ static Return test0003_14(void)
 	RETURN_STATUS;
 }
 
+/**
+ * @brief Reject invalid regex values identically through CLI and configuration
+ *
+ * Each pattern is compiled during normal startup after argument parsing.
+ * Full output matching verifies the PCRE2 error and that no traversal starts
+ *
+ * @return Return status for ignore, include, and lock-checksum compilation errors
+ */
+static Return test0003_15(void)
+{
+	INITTEST;
+	const struct argument_test_case cases[] = {
+		{"--ignore='(' tests/fixtures/diffs/diff1",FAILURE,"templates/0003_015_1.txt",STDERR_MUST_BE_EMPTY},
+		{"--config=0003_015_1.conf",FAILURE,"templates/0003_015_1.txt",STDERR_MUST_BE_EMPTY},
+		{"--include='(' tests/fixtures/diffs/diff1",FAILURE,"templates/0003_015_2.txt",STDERR_MUST_BE_EMPTY},
+		{"--config=0003_015_2.conf",FAILURE,"templates/0003_015_2.txt",STDERR_MUST_BE_EMPTY},
+		{"--lock-checksum='(' tests/fixtures/diffs/diff1",FAILURE,"templates/0003_015_3.txt",STDERR_MUST_BE_EMPTY},
+		{"--config=0003_015_3.conf",FAILURE,"templates/0003_015_3.txt",STDERR_MUST_BE_EMPTY},
+		{0}
+	};
+
+	ASSERT(SUCCESS == set_environment_variable("TESTING","true"));
+	ASSERT(SUCCESS == copy_path("tests/templates/0003_015_1.conf","0003_015_1.conf"));
+	ASSERT(SUCCESS == copy_path("tests/templates/0003_015_2.conf","0003_015_2.conf"));
+	ASSERT(SUCCESS == copy_path("tests/templates/0003_015_3.conf","0003_015_3.conf"));
+	ASSERT(SUCCESS == run_and_match_templates(cases,NULL,NULL));
+	call(delete_path_if_present("0003_015_1.conf"));
+	call(delete_path_if_present("0003_015_2.conf"));
+	call(delete_path_if_present("0003_015_3.conf"));
+
+	RETURN_STATUS;
+}
+
 Return test0003(void)
 {
 	INITTEST;
@@ -529,11 +628,12 @@ Return test0003(void)
 	TEST(test0003_7,"Missing or empty roots and missing compare operands are rejected");
 	TEST(test0003_8,"Default configuration distinguishes empty files from incomplete settings");
 	TEST(test0003_9,"Explicit configuration forms select only the last file");
-	TEST(test0003_10,"Config values accept option-like filenames and spaces");
+	TEST(test0003_10,"Option-like values and config filenames with spaces are accepted");
 	TEST(test0003_11,"Explicit configuration conflicts with other CLI arguments before reading");
 	TEST(test0003_12,"Invalid CLI arguments and argp-marked -- are reported without reading configuration");
 	TEST(test0003_13,"Configuration errors stop startup without fallback");
 	TEST(test0003_14,"Verbose diagnostics identify the selected configuration file");
+	TEST(test0003_15,"Invalid regex values produce the same CLI and configuration errors");
 
 	RETURN_STATUS;
 }

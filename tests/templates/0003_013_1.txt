@@ -1,0 +1,1 @@
+\A(?:[^:\r\n]*/)?(?:precizer|testitall): ERROR: Cannot open config file 'precizer\.conf': Permission denied\Z

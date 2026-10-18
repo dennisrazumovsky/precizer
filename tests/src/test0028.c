@@ -198,7 +198,12 @@ static Return cleanup_compare_filter_equal_fixture(void)
 }
 
 /**
- * One file is removed, updated, and added at a time
+ * @brief Compare removed, modified, and added files through CLI and configuration
+ *
+ * Reuse the prepared databases for normal comparison and dry-run with checksums.
+ * The complete output must retain the dry-run mode without traversal or hashing
+ *
+ * @return Return status for equivalent comparison output from both settings sources
  */
 static Return test0028_1(void)
 {
@@ -247,6 +252,17 @@ static Return test0028_1(void)
 	};
 	ASSERT(SUCCESS == run_and_match_templates(file_cases,NULL,NULL));
 	call(delete_path_if_present("precizer.conf"));
+
+	/* Comparison reads saved checksums even when dry-run requests file hashing */
+	ASSERT(SUCCESS == copy_path("tests/templates/0028_001_1.conf","0028_001_1.conf"));
+	const struct argument_test_case dry_run_cases[] = {
+		{"--check-level=QUICK --dry-run=with-checksums --compare database1.db database2.db",
+		 COMPLETED,"templates/0028_001_1.txt",STDERR_MUST_BE_EMPTY},
+		{"--config=0028_001_1.conf",COMPLETED,"templates/0028_001_1.txt",STDERR_MUST_BE_EMPTY},
+		{0}
+	};
+	ASSERT(SUCCESS == run_and_match_templates(dry_run_cases,NULL,NULL));
+	call(delete_path_if_present("0028_001_1.conf"));
 
 	m_del(result);
 

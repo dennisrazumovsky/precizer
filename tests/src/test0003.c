@@ -370,20 +370,47 @@ static Return test0003_10(void)
 
 /**
  * @brief Reject explicit file selection combined with other CLI arguments before opening the file
+ *
+ * Check all selector forms, both argument orders, repeated selections, and a
+ * short-option group. A missing file and a malformed file must produce the
+ * same source-conflict diagnostic without attempting to read settings
+ *
  * @return Return status for operational and positional conflicts
  */
 static Return test0003_11(void)
 {
 	INITTEST;
 	const struct argument_test_case cases[] = {
-		{"--config=0003_absent.conf --path=0003_missing_root",FAILURE,"templates/0003_013.txt","templates/0003_014.txt"},
-		{"--config=0003_absent.conf 0003_missing_root",FAILURE,"templates/0003_013.txt","templates/0003_014.txt"},
-		{"-vg0003_absent.conf",FAILURE,"templates/0003_013.txt","templates/0003_014.txt"},
+		{"--config=0003_011.conf --path=0003_missing_root",FAILURE,"templates/0003_013.txt","templates/0003_014.txt"},
+		{"--path=0003_missing_root --config=0003_011.conf",FAILURE,"templates/0003_013.txt","templates/0003_014.txt"},
+		{"--config=0003_011.conf 0003_missing_root",FAILURE,"templates/0003_013.txt","templates/0003_014.txt"},
+		{"0003_missing_root --config=0003_011.conf",FAILURE,"templates/0003_013.txt","templates/0003_014.txt"},
+		{"--config 0003_011.conf --path=0003_missing_root",FAILURE,"templates/0003_013.txt","templates/0003_014.txt"},
+		{"--path=0003_missing_root --config 0003_011.conf",FAILURE,"templates/0003_013.txt","templates/0003_014.txt"},
+		{"--config 0003_011.conf 0003_missing_root",FAILURE,"templates/0003_013.txt","templates/0003_014.txt"},
+		{"0003_missing_root --config 0003_011.conf",FAILURE,"templates/0003_013.txt","templates/0003_014.txt"},
+		{"-g 0003_011.conf --path=0003_missing_root",FAILURE,"templates/0003_013.txt","templates/0003_014.txt"},
+		{"--path=0003_missing_root -g 0003_011.conf",FAILURE,"templates/0003_013.txt","templates/0003_014.txt"},
+		{"-g 0003_011.conf 0003_missing_root",FAILURE,"templates/0003_013.txt","templates/0003_014.txt"},
+		{"0003_missing_root -g 0003_011.conf",FAILURE,"templates/0003_013.txt","templates/0003_014.txt"},
+		{"-g0003_011.conf --path=0003_missing_root",FAILURE,"templates/0003_013.txt","templates/0003_014.txt"},
+		{"--path=0003_missing_root -g0003_011.conf",FAILURE,"templates/0003_013.txt","templates/0003_014.txt"},
+		{"-g0003_011.conf 0003_missing_root",FAILURE,"templates/0003_013.txt","templates/0003_014.txt"},
+		{"0003_missing_root -g0003_011.conf",FAILURE,"templates/0003_013.txt","templates/0003_014.txt"},
+		{"-vg0003_011.conf",FAILURE,"templates/0003_013.txt","templates/0003_014.txt"},
+		{"--config=0003_absent.conf --path=0003_missing_root -g0003_011.conf",FAILURE,"templates/0003_013.txt","templates/0003_014.txt"},
+		{"0003_missing_root -g0003_absent.conf --config=0003_011.conf",FAILURE,"templates/0003_013.txt","templates/0003_014.txt"},
 		{0}
 	};
 
 	ASSERT(SUCCESS == set_environment_variable("TESTING","true"));
 	ASSERT(SUCCESS == run_and_match_templates(cases,NULL,NULL));
+
+	/* Invalid settings must not replace the conflict with a configuration error */
+	ASSERT(SUCCESS == copy_path("tests/templates/0003_011.conf","0003_011.conf"));
+	ASSERT(SUCCESS == run_and_match_templates(cases,NULL,NULL));
+	call(delete_path_if_present("0003_011.conf"));
+
 	RETURN_STATUS;
 }
 

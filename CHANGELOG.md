@@ -2,7 +2,7 @@
 
 All notable changes will be documented in this file
 
-# Release 0.18.0 2026-10-15
+# Release 0.18.0 2026-10-17
 
 * The application is significantly faster due to a combination of factors, primarily optimizations to database access
 * Embeded SQLite upgraded to the mainstream version

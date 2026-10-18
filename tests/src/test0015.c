@@ -326,6 +326,7 @@ Return test0015_7(void)
 	INITTEST;
 
 	ASSERT(SUCCESS == set_environment_variable("TESTING","true"));
+	ASSERT(SUCCESS == copy_path("0015_database_v0.db","0015_006.db"));
 
 	// Run the comparison and upgrade flow
 	const char *arguments = "--check-level=QUICK --compare --update $DBNAME 0015_database_v0.db";
@@ -343,6 +344,18 @@ Return test0015_7(void)
 	};
 
 	ASSERT(SUCCESS == run_and_match_templates(cases,template,replacement));
+
+	/* Restore the legacy database so the file run performs the same upgrade */
+	ASSERT(SUCCESS == copy_path("0015_006.db","0015_database_v0.db"));
+	ASSERT(SUCCESS == copy_path("tests/templates/0015_006.conf","0015_006.conf"));
+	ASSERT(SUCCESS == replace_placeholder_in_file("$TMPDIR/0015_006.conf","%DB_NAME%","$DBNAME"));
+	const struct argument_test_case file_cases[] = {
+		{"--config=0015_006.conf",COMPLETED,filename,STDERR_MUST_BE_EMPTY},
+		{0}
+	};
+	ASSERT(SUCCESS == run_and_match_templates(file_cases,template,replacement));
+	call(delete_path_if_present("0015_006.conf"));
+	call(delete_path_if_present("0015_006.db"));
 
 	// Clean up test results
 	ASSERT(SUCCESS == delete_path("0015_database_v0.db"));

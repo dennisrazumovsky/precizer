@@ -491,12 +491,14 @@ error_t parse_opt(
 			}
 
 			/* Argp sends this event after parsing options if no positional
-			   arguments were processed. For example, --path=/mnt/data stores
+			   CLI arguments were processed. For example, --path=/mnt/data stores
 			   a root in Config.roots without supplying a positional argument.
-			   Scanning can therefore proceed when roots are already present.
-			   Comparison still requires two positional database paths; --path
-			   supplies scan roots and cannot satisfy that requirement */
-			if(config->compare == false && config->roots.length != 0)
+			   Configuration entries can also supply paths before this pass.
+			   Continue when paths for the selected mode are already present;
+			   ARGP_KEY_END checks that comparison has exactly two database paths.
+			   Scan roots cannot satisfy the comparison path requirement */
+			if((config->compare == false && config->roots.length != 0) ||
+			   (config->compare == true && config->db_file_paths.length != 0))
 			{
 				break;
 			}
@@ -538,6 +540,8 @@ error_t parse_opt(
 			 * Argp normally processes options before positional arguments, so
 			 * `--compare` has selected the intended mode when a positional
 			 * argument arrives.
+			 * The configuration reader also uses ARGP_KEY_ARG for each compare
+			 * entry after enabling comparison and rejecting an empty path.
 			 *
 			 * In compare mode, positional arguments are database file paths.
 			 * Named paths and positional arguments in scan mode are filesystem
@@ -558,14 +562,13 @@ error_t parse_opt(
 
 			if((TRIUMPH & status) == 0)
 			{
-				/* Named paths can come from a configuration file, so their errors use
-				   report_option_error() to include the line number. Positional arguments
-				   come only from CLI and use argp_failure() directly */
+				/* Paths can come from CLI or a configuration file. The shared error
+				   handler includes the line number for paths supplied by the file */
 				if(key == 'P')
 				{
 					report_option_error(state,ENOMEM,"Memory allocation for --path failed");
 				} else {
-					argp_failure(state,0,ENOMEM,"ERROR: Memory allocation for positional argument failed");
+					report_option_error(state,ENOMEM,"Memory allocation for positional argument failed");
 				}
 				return(ENOMEM);
 			}

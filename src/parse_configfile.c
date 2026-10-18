@@ -139,9 +139,10 @@ static int read_config_entry(
 			   so quoted and unquoted spellings reach the same validation logic */
 			value = value_buffer;
 
-			/* Flags accept boolean values. dry-run also accepts a named mode,
+			/* Flags accept boolean values, except compare, whose file entries
+			   contain database paths. dry-run also accepts a named mode,
 			   which is validated by parse_opt() when it is not a boolean */
-			if(option->arg == NULL || option->key == 'n')
+			if((option->arg == NULL && option->key != 'c') || option->key == 'n')
 			{
 				/* Normalize false spellings for the shared option handler */
 				if(strcasecmp(value,"false") == 0 || strcasecmp(value,"no") == 0 ||
@@ -171,10 +172,27 @@ static int read_config_entry(
 				argument = value_buffer;
 			}
 
+			/* Each compare entry enables comparison and supplies one database
+			   path through the existing positional-argument handler */
+			int key = option->key;
+
+			if(key == 'c')
+			{
+				if(argument[0] == '\0')
+				{
+					argp_failure(NULL,0,0,"ERROR: Line %d in config file: Database path for 'compare' must not be empty",line);
+					context->status = FAILURE;
+					return(0);
+				}
+
+				config->compare = true;
+				key = ARGP_KEY_ARG;
+			}
+
 			/* The line address remains valid throughout the synchronous option call */
 			struct argp_state state = {.hook = &line};
 
-			error_t parse_error = parse_opt(option->key,argument,&state);
+			error_t parse_error = parse_opt(key,argument,&state);
 
 			if(parse_error != EX_OK)
 			{

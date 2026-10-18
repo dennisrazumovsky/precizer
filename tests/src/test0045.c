@@ -299,7 +299,6 @@ static Return test0045_5(void)
 		ASSERT(config->update == cases[i].enabled);
 		ASSERT(config->dry_run == cases[i].enabled);
 		ASSERT(config->rehash_locked == cases[i].enabled);
-		ASSERT(config->compare == cases[i].enabled);
 		ASSERT(config->one_file_system == cases[i].enabled);
 		ASSERT(config->db_drop_ignored == cases[i].enabled);
 		ASSERT(config->db_drop_inaccessible == cases[i].enabled);
@@ -699,6 +698,84 @@ static Return test0045_12(void)
 }
 
 /**
+ * @brief Preserve comparison paths in file order across repeated keys and continuation lines
+ * @return Return status for owned paths, literal values, and configuration cleanup
+ */
+static Return test0045_13(void)
+{
+	INITTEST;
+	const struct {
+		const char *config_template;
+		const char *first_path;
+		const char *second_path;
+	} cases[] = {
+		{"tests/templates/0045_013_1.conf","first.db","second.db"},
+		{"tests/templates/0045_013_2.conf","first.db","second.db"},
+		{"tests/templates/0045_013_3.conf","first db.db","second db.db"},
+		{"tests/templates/0045_013_4.conf","first db.db","second db.db"},
+		{"tests/templates/0045_013_5.conf","true","false"}
+	};
+
+	for(size_t i = 0; i < sizeof(cases) / sizeof(cases[0]) && SUCCESS == status; ++i)
+	{
+		ASSERT(SUCCESS == copy_path(cases[i].config_template,"0045_reader.conf"));
+		ASSERT(SUCCESS == check_reader("0045_reader.conf",true,SUCCESS,true,NULL));
+		ASSERT(config->compare == true);
+		ASSERT(config->roots.length == 0U);
+		ASSERT(config->db_file_paths.length == 2U);
+		memory *paths = m_data(memory,conf(db_file_paths));
+		ASSERT(strcmp(m_text(&paths[0]),cases[i].first_path) == 0);
+		ASSERT(strcmp(m_text(&paths[1]),cases[i].second_path) == 0);
+	}
+
+	/* Release the populated array and verify the next configuration starts empty */
+	free_config();
+	ASSERT(config->db_file_paths.length == 0U);
+	init_config();
+	ASSERT(config->compare == false);
+	ASSERT(config->db_file_paths.length == 0U);
+
+	call(delete_path_if_present("0045_reader.conf"));
+	RETURN_STATUS;
+}
+
+/**
+ * @brief Reject an empty comparison path before applying subsequent configuration entries
+ * @return Return status for line diagnostics and preservation of earlier paths
+ */
+static Return test0045_14(void)
+{
+	INITTEST;
+	const struct {
+		const char *config_template;
+		bool compare;
+		size_t path_count;
+	} cases[] = {
+		{"tests/templates/0045_014_1.conf",false,0U},
+		{"tests/templates/0045_014_2.conf",true,1U},
+		{"tests/templates/0045_014_3.conf",true,1U},
+		{"tests/templates/0045_014_4.conf",true,1U}
+	};
+
+	for(size_t i = 0; i < sizeof(cases) / sizeof(cases[0]) && SUCCESS == status; ++i)
+	{
+		ASSERT(SUCCESS == copy_path(cases[i].config_template,"0045_reader.conf"));
+		ASSERT(SUCCESS == check_reader("0045_reader.conf",true,FAILURE,true,"templates/0045_014_1.txt"));
+		ASSERT(config->compare == cases[i].compare);
+		ASSERT(config->db_file_paths.length == cases[i].path_count);
+		ASSERT(config->update == false);
+		if(cases[i].path_count != 0U && SUCCESS == status)
+		{
+			memory *paths = m_data(memory,conf(db_file_paths));
+			ASSERT(strcmp(m_text(&paths[0]),"first.db") == 0);
+		}
+	}
+
+	call(delete_path_if_present("0045_reader.conf"));
+	RETURN_STATUS;
+}
+
+/**
  * @brief Exercise configuration reading and source selection independently of CLI startup
  * @return Return status for the configuration reader and source selection tests
  */
@@ -724,6 +801,8 @@ Return test0045(void)
 	TEST(test0045_10,"Explicit configuration and other arguments produce a source conflict");
 	TEST(test0045_11,"Quoted configuration values preserve literal contents and apply normal value rules");
 	TEST(test0045_12,"Unclosed configuration quotes report their line and stop reading");
+	TEST(test0045_13,"Comparison paths retain their order and literal contents until configuration cleanup");
+	TEST(test0045_14,"Empty comparison paths report their line and stop configuration reading");
 
 	/* Restore the runner's configuration and output policy after any test result */
 	free_config();

@@ -724,6 +724,30 @@ Comparison of database1.db and database2.db databases is complete
 The precizer completed its execution without any issues  
 </sub>
 
+#### Выбор баз для сравнения
+
+В CLI после `--compare` указываются пути к двум базам:
+
+```sh
+precizer --compare database1.db database2.db
+```
+
+В `precizer.conf` каждый путь задаётся отдельной записью `compare`:
+
+```ini
+compare = database1.db
+compare = database2.db
+```
+
+Второй путь также можно записать на следующей строке с отступом:
+
+```ini
+compare = database1.db
+    database2.db
+```
+
+Для сравнения нужны две базы. Путь к каждой записывается на отдельной строке. Имена файлов могут содержать пробелы, например: `compare = my database.db`
+
 #### Фильтрация категорий отчёта сравнения
 
 По умолчанию `--compare` выводит все три категории различий: пути, которые есть только в первой базе; пути, которые есть только во второй базе; пути, которые есть в обеих базах, но имеют разные SHA512. Параметр `--compare-filter` ограничивает отчёт одной или несколькими категориями и работает только вместе с `--compare`. Значение `checksum-mismatch` оставляет только различия SHA512. Значение `first-source` оставляет только пути из первой базы. Значение `second-source` оставляет только пути из второй базы

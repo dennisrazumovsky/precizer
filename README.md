@@ -726,6 +726,30 @@ Comparison of database1.db and database2.db databases is complete
 The precizer completed its execution without any issues  
 </sub>
 
+#### Selecting databases for comparison
+
+On the command line, `--compare` is followed by paths to two databases:
+
+```sh
+precizer --compare database1.db database2.db
+```
+
+In `precizer.conf`, each path uses a separate `compare` entry:
+
+```ini
+compare = database1.db
+compare = database2.db
+```
+
+The second path can also be written on an indented continuation line:
+
+```ini
+compare = database1.db
+    database2.db
+```
+
+Comparison requires two databases. Each path is written on a separate line. File names can contain spaces, for example: `compare = my database.db`
+
 #### Filtering comparison report categories
 
 By default, `--compare` prints all three difference categories: paths that exist only in the first database named in the command; paths that exist only in the second database named in the command; and paths that exist in both databases but have different SHA512 checksums. The `--compare-filter` option limits the report to one or more categories and works only together with `--compare`. The `checksum-mismatch` value leaves only SHA512 differences. The `first-source` value leaves only paths from the first database. The `second-source` value leaves only paths from the second database

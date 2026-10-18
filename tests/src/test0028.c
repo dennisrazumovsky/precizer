@@ -238,6 +238,16 @@ static Return test0028_1(void)
 	};
 
 	ASSERT(SUCCESS == run_and_match_templates(cases,NULL,NULL));
+
+	/* Repeat the comparison through the default configuration on the same databases */
+	ASSERT(SUCCESS == copy_path("tests/templates/0028_001.conf","precizer.conf"));
+	const struct argument_test_case file_cases[] = {
+		{"",COMPLETED,"templates/0028_001.txt",STDERR_MUST_BE_EMPTY},
+		{0}
+	};
+	ASSERT(SUCCESS == run_and_match_templates(file_cases,NULL,NULL));
+	call(delete_path_if_present("precizer.conf"));
+
 	m_del(result);
 
 	// Clean up test results
@@ -621,6 +631,15 @@ static Return test0028_10(void)
 
 	ASSERT(SUCCESS == run_and_match_templates(cases,NULL,NULL));
 
+	/* The apostrophe is literal in the configuration value */
+	ASSERT(SUCCESS == copy_path("tests/templates/0028_010_1.conf","0028_010_1.conf"));
+	const struct argument_test_case file_cases[] = {
+		{"--config=0028_010_1.conf",COMPLETED,"templates/0028_010_1.txt",STDERR_MUST_BE_EMPTY},
+		{0}
+	};
+	ASSERT(SUCCESS == run_and_match_templates(file_cases,NULL,NULL));
+	call(delete_path_if_present("0028_010_1.conf"));
+
 	ASSERT(SUCCESS == delete_path("database'1.db"));
 	ASSERT(SUCCESS == delete_path("database2.db"));
 
@@ -643,6 +662,16 @@ static Return test0028_11(void)
 	ASSERT(SUCCESS == set_environment_variable("TESTING","false"));
 
 	ASSERT(SUCCESS & assert_compare_output("--check-level=QUICK --silent --compare database1.db database2.db",COMPLETED,"templates/0028_011_1.txt",NULL));
+
+	/* Repeat the silent comparison without rebuilding either database */
+	ASSERT(SUCCESS == copy_path("tests/templates/0028_011_1.conf","0028_011_1.conf"));
+	const struct argument_test_case file_cases[] = {
+		{"--config=0028_011_1.conf",COMPLETED,"templates/0028_011_1.txt",STDERR_MUST_BE_EMPTY},
+		{0}
+	};
+	ASSERT(SUCCESS == run_and_match_templates(file_cases,NULL,NULL));
+	call(delete_path_if_present("0028_011_1.conf"));
+
 	ASSERT(SUCCESS & assert_compare_output("--check-level=QUICK --silent --compare --compare-filter=first-source database1.db database2.db",COMPLETED,"templates/0028_011_2.txt",NULL));
 	ASSERT(SUCCESS & assert_compare_output("--check-level=QUICK --silent --compare --compare-filter=second-source database1.db database2.db",COMPLETED,"templates/0028_011_5.txt",NULL));
 	ASSERT(SUCCESS & assert_compare_output("--check-level=QUICK --silent --compare --compare-filter=checksum-mismatch database1.db database2.db",COMPLETED,"templates/0028_011_3.txt",NULL));
@@ -677,9 +706,13 @@ static Return test0028_12(void)
 	ASSERT(SUCCESS & prepare_compare_filter_differences_fixture());
 	ASSERT(SUCCESS == set_environment_variable("TESTING","true"));
 
+	ASSERT(SUCCESS == copy_path("tests/templates/0028_012_1.conf","0028_012_1.conf"));
+	ASSERT(SUCCESS == copy_path("tests/templates/0028_012_6.conf","0028_012_6.conf"));
+
 	const struct argument_test_case cases[] = {
 		// All three raw differences are filtered out, so the filtered compare scope is fully identical
 		{"--check-level=QUICK --compare --ignore=\"^1/AAA/ZAW/D/e/f/b_file\\.txt$\" --ignore=\"^2/AAA/BBB/CZC/.*$\" database1.db database2.db",COMPLETED,"templates/0028_012_1.txt",STDERR_MUST_BE_EMPTY},
+		{"--config=0028_012_1.conf",COMPLETED,"templates/0028_012_1.txt",STDERR_MUST_BE_EMPTY},
 
 		// Restore only the first-source path a.txt; the hidden checksum mismatch stays outside the reported scope
 		{"--check-level=QUICK --compare --ignore=\"^1/AAA/ZAW/D/e/f/b_file\\.txt$\" --ignore=\"^2/AAA/BBB/CZC/.*$\" --include=\"^2/AAA/BBB/CZC/a\\.txt$\" database1.db database2.db",COMPLETED,"templates/0028_012_2.txt",STDERR_MUST_BE_EMPTY},
@@ -695,12 +728,42 @@ static Return test0028_12(void)
 
 		// Ignore the whole 2/ subtree, then restore both existence-side differences while the 1/ checksum mismatch remains visible
 		{"--check-level=QUICK --compare --ignore=\"^2/.*$\" --include=\"^2/AAA/BBB/CZC/a\\.txt$\" --include=\"^2/AAA/BBB/CZC/b\\.txt$\" database1.db database2.db",COMPLETED,"templates/0028_012_6.txt",STDERR_MUST_BE_EMPTY},
+		{"--config=0028_012_6.conf",COMPLETED,"templates/0028_012_6.txt",STDERR_MUST_BE_EMPTY},
 		{0}
 	};
 
 	ASSERT(SUCCESS == run_and_match_templates(cases,NULL,NULL));
 
+	call(delete_path_if_present("0028_012_1.conf"));
+	call(delete_path_if_present("0028_012_6.conf"));
 	ASSERT(SUCCESS & cleanup_compare_filter_differences_fixture());
+
+	RETURN_STATUS;
+}
+
+/**
+ * @brief Reject comparison with one or three database paths from either settings source
+ * @return Return status for matching CLI and configuration diagnostics
+ */
+static Return test0028_13(void)
+{
+	INITTEST;
+
+	ASSERT(SUCCESS == set_environment_variable("TESTING","true"));
+	ASSERT(SUCCESS == copy_path("tests/templates/0028_013_1.conf","0028_013_1.conf"));
+	ASSERT(SUCCESS == copy_path("tests/templates/0028_013_2.conf","0028_013_2.conf"));
+
+	const struct argument_test_case cases[] = {
+		{"--compare first.db",FAILURE,"templates/0028_006_14.txt","templates/0003_011.txt"},
+		{"--config=0028_013_1.conf",FAILURE,"templates/0028_006_14.txt","templates/0003_011.txt"},
+		{"--compare first.db second.db third.db",FAILURE,"templates/0028_006_14.txt","templates/0028_013_1.txt"},
+		{"--config=0028_013_2.conf",FAILURE,"templates/0028_006_14.txt","templates/0028_013_1.txt"},
+		{0}
+	};
+	ASSERT(SUCCESS == run_and_match_templates(cases,NULL,NULL));
+
+	call(delete_path_if_present("0028_013_1.conf"));
+	call(delete_path_if_present("0028_013_2.conf"));
 
 	RETURN_STATUS;
 }
@@ -726,6 +789,7 @@ Return test0028(void)
 	TEST(test0028_10,"Compare mode should work with database names containing apostrophes");
 	TEST(test0028_11,"Silent compare mode should print only compare results");
 	TEST(test0028_12,"Compare mode should apply --ignore and --include to the reported comparison scope, including summaries and equality messages");
+	TEST(test0028_13,"Comparison requires exactly two database paths through CLI and configuration");
 
 	RETURN_STATUS;
 }

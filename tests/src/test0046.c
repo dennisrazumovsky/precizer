@@ -68,7 +68,7 @@ static Return test0046_2(void)
 	const LOGMODES initial_logger_mode = atomic_load_explicit(&rational_logger_mode,memory_order_relaxed);
 	const RATIONAL_COLOR_MODE initial_color_mode = atomic_load_explicit(&rational_color_mode,memory_order_relaxed);
 	config = &test_config;
-	init_config();
+	ASSERT(SUCCESS == init_config_and_check_output());
 	m_create(char,pattern,MEMORY_STRING);
 
 	ASSERT(SUCCESS == copy_from_origin("tests/templates/0046_002.conf",

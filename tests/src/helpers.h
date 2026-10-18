@@ -28,6 +28,8 @@ struct argument_test_case {
 	const char *stderr_template;
 };
 
+Return init_config_and_check_output(void);
+
 Return run_and_match_templates(
 	const struct argument_test_case *cases,
 	const char *template,

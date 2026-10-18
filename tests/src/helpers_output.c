@@ -1,6 +1,37 @@
 #include "sute.h"
 
 /**
+ * @brief Initialize Config while capturing and checking its complete diagnostic output
+ *
+ * Direct configuration tests use TESTING=true and expect one initialization
+ * message on stdout and no stderr. The initialized settings remain available
+ * to the caller
+ *
+ * @return SUCCESS when initialization output matches the golden template and stderr is empty
+ */
+Return init_config_and_check_output(void)
+{
+	/* Status returned by this function through deliver()
+	   Default value assumes successful completion */
+	Return status = SUCCESS;
+
+	m_create(char,captured_stdout,MEMORY_STRING);
+	m_create(char,captured_stderr,MEMORY_STRING);
+	m_create(char,pattern,MEMORY_STRING);
+
+	run(function_capture(init_config,captured_stdout,captured_stderr));
+	run(get_file_content("templates/0045_033.txt",pattern));
+	run(match_pattern(captured_stdout,pattern,"templates/0045_033.txt"));
+	ASSERT(captured_stderr->length == 0U);
+
+	call(m_del(pattern));
+	call(m_del(captured_stderr));
+	call(m_del(captured_stdout));
+
+	deliver(status);
+}
+
+/**
  * @brief Run application scenarios in order and check their exit codes and selected output streams
  *
  * The cases array must end with a zero-initialized record whose arguments is

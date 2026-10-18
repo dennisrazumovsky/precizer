@@ -40,7 +40,7 @@ static Return check_reader(
 	   Default value assumes successful completion */
 	Return status = SUCCESS;
 	free_config();
-	init_config();
+	ASSERT(SUCCESS == init_config_and_check_output());
 	m_create(char,path,MEMORY_STRING);
 	m_create(char,captured_stdout,MEMORY_STRING);
 	m_create(char,captured_stderr,MEMORY_STRING);
@@ -266,7 +266,7 @@ static Return test0045_5(void)
 {
 	INITTEST;
 	free_config();
-	init_config();
+	ASSERT(SUCCESS == init_config_and_check_output());
 	const LOGMODES default_logger_mode = atomic_load_explicit(&rational_logger_mode,memory_order_relaxed);
 	const struct {
 		const char *config_template;
@@ -731,7 +731,7 @@ static Return test0045_13(void)
 	/* Release the populated array and verify the next configuration starts empty */
 	free_config();
 	ASSERT(config->db_file_paths.length == 0U);
-	init_config();
+	ASSERT(SUCCESS == init_config_and_check_output());
 	ASSERT(config->compare == false);
 	ASSERT(config->db_file_paths.length == 0U);
 
@@ -787,7 +787,7 @@ Return test0045(void)
 	const LOGMODES initial_logger_mode = atomic_load_explicit(&rational_logger_mode,memory_order_relaxed);
 	const RATIONAL_COLOR_MODE initial_color_mode = atomic_load_explicit(&rational_color_mode,memory_order_relaxed);
 	config = &test_config;
-	init_config();
+	ASSERT(SUCCESS == init_config_and_check_output());
 
 	TEST(test0045_1,"Configuration applies values and retains owned strings after reading");
 	TEST(test0045_2,"Invalid configuration syntax and keys stop at the first error");

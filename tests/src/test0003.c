@@ -159,7 +159,8 @@ Return test0003_4(void)
  * @brief Require named and positional roots to produce the same traversal output
  *
  * Run each command first without a default configuration file, then with an
- * invalid default file. Both runs must produce the same output and status
+ * invalid default file and a valid file containing different settings.
+ * All runs must produce the same output and status
  *
  * @return Return status for long and short named options and positional roots
  */
@@ -181,6 +182,10 @@ static Return test0003_5(void)
 	/* Ordinary CLI operations must not read a malformed default file */
 	ASSERT(SUCCESS == copy_from_origin("tests/templates/0003_003.conf",
 		"precizer.conf",REQUIRE_SOURCE_EXISTS));
+	ASSERT(SUCCESS == run_and_match_templates(cases,NULL,NULL));
+
+	/* Valid default settings must not alter or supplement CLI settings */
+	ASSERT(SUCCESS == copy_path("tests/templates/0003_005.conf","precizer.conf"));
 	ASSERT(SUCCESS == run_and_match_templates(cases,NULL,NULL));
 	call(delete_path_if_present("precizer.conf"));
 

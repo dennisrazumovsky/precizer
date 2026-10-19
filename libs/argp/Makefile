@@ -261,7 +261,7 @@ force-config-command:
 $(CONFIG_COMMANDS): force-config-command
 	@mkdir -p "$(@D)"
 	@printf '%s\n' $(call shell_quote,cd $(call shell_quote,$(CURDIR)) && $(if $(MACOSX_DEPLOYMENT_TARGET),MACOSX_DEPLOYMENT_TARGET=$(call shell_quote,$(MACOSX_DEPLOYMENT_TARGET))) $(CC) $(CPPFLAGS) $(CONFIG_FLAGS) $(LDFLAGS) $(USE_LLD) $(C_STANDARD) -x c $(call shell_quote,$(abspath $(@D)/conftest.c)) -o $(call shell_quote,$(abspath $(@D)/conftest.exe)) >> $(call shell_quote,$(abspath $(@D)/configure.log)) 2>&1) > "$@.tmp"
-	@cmp -s "$@.tmp" "$@" && rm "$@.tmp" || mv "$@.tmp" "$@"
+	@test -f "$@" && test "$$(cat "$@.tmp")" = "$$(cat "$@")" && rm "$@.tmp" || mv "$@.tmp" "$@"
 
 $(CONFIG_GENERATORS): configure.c Makefile
 	@mkdir -p "$(@D)"

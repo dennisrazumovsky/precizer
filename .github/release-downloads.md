@@ -35,7 +35,7 @@ experimental and the executable is not code-signed, so Microsoft Defender may di
 The macOS builds use dynamic libraries. The following Homebrew packages are required at runtime:
 
 ```sh
-brew install sqlite pcre2 argp-standalone
+brew install sqlite pcre2
 ```
 
 **Apple Silicon processor (M1 or newer, ARM64)**

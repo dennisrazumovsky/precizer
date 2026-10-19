@@ -65,7 +65,7 @@ Use tabs for indentation. Spaces may be used for alignment when needed, for exam
 - `make purge`: remove build artifacts in `.builds/` while preserving release packages in the project root
 
 ## Coding Style & Naming Conventions
-- Language standard is `C2x`; builds use strict warnings and `-Werror`.
+- Language mode is `GNU C2x` (`-std=gnu2x`); builds use strict warnings and `-Werror`
 - Formatting is enforced with `uncrustify` (`Uncrustify.cfg`)
 - Follow existing naming: lowercase snake_case for files/functions (for example `db_check_changes.c`, `parse_arguments`).
 - Keep changes localized; avoid broad refactors in feature PRs.

@@ -243,7 +243,7 @@ jobs:
       - name: Install dependencies
         run: |
           brew update
-          brew install llvm argp-standalone || true
+          brew install llvm || true
 
       - name: Build project (macOS arm64)
         run: |
@@ -338,7 +338,7 @@ jobs:
       - name: Install dependencies
         run: |
           brew update
-          brew install llvm@20 argp-standalone
+          brew install llvm@20
 
       - name: Build project (macOS x86_64)
         run: |
@@ -451,7 +451,6 @@ jobs:
             make
             libsqlite-devel
             pcre2-devel
-            libargp-devel
             mingw-w64-ucrt-x86_64-binutils
             mingw-w64-ucrt-x86_64-gcc
             mingw-w64-ucrt-x86_64-upx

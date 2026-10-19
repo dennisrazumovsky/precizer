@@ -499,7 +499,7 @@ jobs:
           cd "$archive_dir"
 
           # Print the version to verify that the extracted program starts
-          ./precizer.exe --version
+          MSYS2_ARG_CONV_EXCL='*' cmd.exe /d /c '.\precizer.exe --version'
 
       # Generate a Sigstore attestation for the self-extracting executable
       - name: Generate attestation (MSYS x64 self-extracting exe)

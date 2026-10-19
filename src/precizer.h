@@ -717,7 +717,7 @@ typedef enum FileAccessStatus : unsigned int
 
 } FileAccessStatus;
 
-FileAccessStatus file_access_status(const int);
+FileAccessStatus file_access_status(const int) __attribute__ ((const));
 
 FileAccessStatus directory_open(
 	const memory *,
@@ -851,7 +851,7 @@ Return stat_copy(
 	const struct stat *,
 	CmpctStat *);
 
-size_t blocks_to_bytes(blkcnt_t);
+size_t blocks_to_bytes(blkcnt_t) __attribute__ ((const));
 
 Changed file_compare_metadata_equivalence(
 	const CmpctStat *,

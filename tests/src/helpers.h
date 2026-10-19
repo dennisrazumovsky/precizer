@@ -159,7 +159,7 @@ Return db_read_cmpctstat_by_relative_path(
 
 bool cmpctstat_matches_stat_timestamps(
 	const CmpctStat   *db_stat,
-	const struct stat *file_stat);
+	const struct stat *file_stat) __attribute__ ((pure));
 
 /**
  * @brief Read final offset and SHA512 checksum for one file from files table

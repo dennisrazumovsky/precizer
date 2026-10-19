@@ -10,7 +10,7 @@ Return testitall_db_bump_timestamps(void);
 
 Return testitall_db_resync_stat_baseline(const struct stat *);
 
-bool testitall_is_huge_interruption_target(const char *);
+bool testitall_is_huge_interruption_target(const char *) __attribute__ ((pure));
 
 uint64_t testitall_random_stop_byte(const uint64_t);
 

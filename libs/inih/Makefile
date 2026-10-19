@@ -17,7 +17,7 @@ UNAME_S := $(shell uname -s)
 #
 # USE_LLD and AR are exported by the root Makefile when COMPILER=clang
 # to use LLVM's own linker and archiver, avoiding gold plugin version mismatch
-C_STANDARD := -std=c2x
+C_STANDARD := -std=gnu2x
 CPPFLAGS ?=
 CFLAGS ?= -finline-functions
 LDFLAGS ?=
@@ -28,8 +28,8 @@ IS_MSYS := $(shell $(CC) $(CPPFLAGS) $(CFLAGS) -dM -E -x c /dev/null 2>/dev/null
 SO = $(LIBNAME).so
 STATLIB = $(LIBNAME).a
 
-# Detect whether the compiler is GCC
-GCC := $(findstring gcc,$(notdir $(firstword $(CC))))
+# Detect GCC from its version output, including cc and cross-compiler names
+GCC := $(findstring gcc version,$(shell $(CC) -v 2>&1))
 
 ifeq ($(UNAME_S),Darwin)
 STRIP ?= -Wl,-x
@@ -64,20 +64,10 @@ endif
 SRC_DIR = src
 SRCS = $(wildcard $(SRC_DIR)/*.c)
 HDRS = $(wildcard $(SRC_DIR)/*.h)
+HDRS += ../../src/inih_config.h
 
-# Load the application settings before the upstream source includes ini.h
-APP_SRC_DIR = ../../src
-APP_HEADER_LIBS = rational sha512 mem sqlite3
-APP_HDRS = $(wildcard $(APP_SRC_DIR)/*.h) $(foreach d,$(APP_HEADER_LIBS),$(wildcard ../$d/src/*.h))
-INCPATH += -I$(SRC_DIR) $(foreach d,$(APP_HEADER_LIBS),-I../$d/src)
-INCPATH += -include $(APP_SRC_DIR)/precizer.h
-
-ifeq ($(UNAME_S),Darwin)
-CFLAGS += -DEVIL_EMPIRE_OS
-INCPATH += $(shell pkg-config --cflags libpcre2-8)
-ARGP_PREFIX ?= $(shell brew --prefix argp-standalone 2>/dev/null)
-INCPATH += -I$(ARGP_PREFIX)/include
-endif
+# Load the shared parser settings before the upstream source includes ini.h
+CPPFLAGS += -include ../../src/inih_config.h
 
 # Object names corresponding to the source files
 OBJS = $(SRCS:$(SRC_DIR)/%.c=%.o)
@@ -227,14 +217,14 @@ all: debug production portable
 # Complete the clone before replacing sources and license in the library directory
 update:
 	@set -eu; \
-	upstream_staging_directory=$$(mktemp -d); \
-	trap 'rm -rf "$$upstream_staging_directory"' 0; \
+	upstream_dir=$$(mktemp -d); \
+	trap 'rm -rf "$$upstream_dir"' 0; \
 	trap 'exit 1' HUP INT TERM; \
 	git clone --depth 1 --branch master https://github.com/benhoyt/inih.git \
-		"$$upstream_staging_directory"; \
+		"$$upstream_dir"; \
 	mkdir -p "$(SRC_DIR)"; \
-	cp "$$upstream_staging_directory/ini.c" "$$upstream_staging_directory/ini.h" "$(SRC_DIR)/"; \
-	cp "$$upstream_staging_directory/LICENSE.txt" LICENSE.txt; \
+	cp "$$upstream_dir/ini.c" "$$upstream_dir/ini.h" "$(SRC_DIR)/"; \
+	cp "$$upstream_dir/LICENSE.txt" LICENSE.txt; \
 	printf 'Updated inih from master\n'
 
 #
@@ -257,8 +247,8 @@ $(DBG_SO): $(DBG_OBJS) | $(DBG_LIBDIR)
 	@$(CC) $(LDFLAGS) -shared $(DBG_LDFLAGS) -o $@ $^
 	@echo "$(call short_path,$@) prepared as debug shared library, not stripped"
 
-$(DBG_OBJDIR)/%.o: $(SRC_DIR)/%.c $(HDRS) $(APP_HDRS) Makefile | $(DBG_OBJDIR)
-	@$(CC) -c $(CPPFLAGS) -fPIC $(INCPATH) $(CFLAGS) $(DBG_CFLAGS) $(WFLAGS) $(C_STANDARD) -o $@ $<
+$(DBG_OBJDIR)/%.o: $(SRC_DIR)/%.c $(HDRS) | $(DBG_OBJDIR)
+	@$(CC) -c $(CPPFLAGS) -fPIC $(CFLAGS) $(DBG_CFLAGS) $(WFLAGS) $(C_STANDARD) -o $@ $<
 	@echo "$(call short_path,$<) compiled with debug flags"
 
 $(DBG_OBJDIR): | $(DBG_LIBDIR)
@@ -280,8 +270,8 @@ $(COV_SO): $(COV_OBJS) | $(COV_LIBDIR)
 	@$(CC) $(LDFLAGS) -shared $(COV_LDFLAGS) -o $@ $^
 	@echo "$(call short_path,$@) prepared as coverage shared library, not stripped"
 
-$(COV_OBJDIR)/%.o: $(SRC_DIR)/%.c $(HDRS) $(APP_HDRS) Makefile | $(COV_OBJDIR)
-	@$(CC) -c $(CPPFLAGS) -fPIC $(INCPATH) $(CFLAGS) $(COV_CFLAGS) $(WFLAGS) $(C_STANDARD) -o $@ $<
+$(COV_OBJDIR)/%.o: $(SRC_DIR)/%.c $(HDRS) | $(COV_OBJDIR)
+	@$(CC) -c $(CPPFLAGS) -fPIC $(CFLAGS) $(COV_CFLAGS) $(WFLAGS) $(C_STANDARD) -o $@ $<
 	@echo "$(call short_path,$<) compiled with coverage flags"
 
 $(COV_OBJDIR): | $(COV_LIBDIR)
@@ -303,8 +293,8 @@ $(SNTZ_SO): $(SNTZ_OBJS) | $(SNTZ_LIBDIR)
 	@$(CC) $(LDFLAGS) -shared $(SNTZ_LDFLAGS) -o $@ $^
 	@echo "$(call short_path,$@) prepared as sanitizer shared library, not stripped"
 
-$(SNTZ_OBJDIR)/%.o: $(SRC_DIR)/%.c $(HDRS) $(APP_HDRS) Makefile | $(SNTZ_OBJDIR)
-	@$(CC) -c $(CPPFLAGS) -fPIC $(INCPATH) $(WFLAGS) $(CFLAGS) $(SNTZ_CFLAGS) $(C_STANDARD) -o $@ $<
+$(SNTZ_OBJDIR)/%.o: $(SRC_DIR)/%.c $(HDRS) | $(SNTZ_OBJDIR)
+	@$(CC) -c $(CPPFLAGS) -fPIC $(WFLAGS) $(CFLAGS) $(SNTZ_CFLAGS) $(C_STANDARD) -o $@ $<
 	@echo "$(call short_path,$<) compiled with sanitizer flags"
 
 $(SNTZ_OBJDIR): | $(SNTZ_LIBDIR)
@@ -327,8 +317,8 @@ $(PROD_SO): $(PROD_OBJS) | $(PROD_LIBDIR)
 	@$(CC) $(LDFLAGS) -shared $(STRIP) $(PROD_LDFLAGS) -o $@ $^
 	@echo "$(call short_path,$@) prepared as release shared library, stripped"
 
-$(PROD_OBJDIR)/%.o: $(SRC_DIR)/%.c $(HDRS) $(APP_HDRS) Makefile | $(PROD_OBJDIR)
-	@$(CC) -c $(CPPFLAGS) -fPIC $(INCPATH) $(WFLAGS) $(PROD_WFLAGS) $(CFLAGS) $(PROD_CFLAGS) $(C_STANDARD) -o $@ $<
+$(PROD_OBJDIR)/%.o: $(SRC_DIR)/%.c $(HDRS) | $(PROD_OBJDIR)
+	@$(CC) -c $(CPPFLAGS) -fPIC $(WFLAGS) $(PROD_WFLAGS) $(CFLAGS) $(PROD_CFLAGS) $(C_STANDARD) -o $@ $<
 	@echo "$(call short_path,$<) compiled with release flags"
 
 $(PROD_OBJDIR): | $(PROD_LIBDIR)
@@ -350,8 +340,8 @@ $(DIST_SO): $(DIST_OBJS) | $(DIST_LIBDIR)
 	@$(CC) $(DIST_LDFLAGS) $(LDFLAGS) -shared -o $@ $^
 	@echo "$(call short_path,$@) prepared as distribution shared library, not stripped"
 
-$(DIST_OBJDIR)/%.o: $(SRC_DIR)/%.c $(HDRS) $(APP_HDRS) Makefile | $(DIST_OBJDIR)
-	@$(CC) -c $(CPPFLAGS) -fPIC $(INCPATH) $(WFLAGS) $(DIST_CFLAGS) $(CFLAGS) $(C_STANDARD) -o $@ $<
+$(DIST_OBJDIR)/%.o: $(SRC_DIR)/%.c $(HDRS) | $(DIST_OBJDIR)
+	@$(CC) -c $(CPPFLAGS) -fPIC $(WFLAGS) $(DIST_CFLAGS) $(CFLAGS) $(C_STANDARD) -o $@ $<
 	@echo "$(call short_path,$<) compiled with distribution flags"
 
 $(DIST_OBJDIR): | $(DIST_LIBDIR)
@@ -373,8 +363,8 @@ $(PRTB_SO): $(PRTB_OBJS) | $(PRTB_LIBDIR)
 	@$(CC) $(LDFLAGS) -shared $(STRIP) $(PRTB_LDFLAGS) -o $@ $^
 	@echo "$(call short_path,$@) prepared as portable shared library, stripped"
 
-$(PRTB_OBJDIR)/%.o: $(SRC_DIR)/%.c $(HDRS) $(APP_HDRS) Makefile | $(PRTB_OBJDIR)
-	@$(CC) -c $(CPPFLAGS) -fPIC $(INCPATH) $(WFLAGS) $(PRTB_WFLAGS) $(CFLAGS) $(PRTB_CFLAGS) $(C_STANDARD) -o $@ $<
+$(PRTB_OBJDIR)/%.o: $(SRC_DIR)/%.c $(HDRS) | $(PRTB_OBJDIR)
+	@$(CC) -c $(CPPFLAGS) -fPIC $(WFLAGS) $(PRTB_WFLAGS) $(CFLAGS) $(PRTB_CFLAGS) $(C_STANDARD) -o $@ $<
 	@echo "$(call short_path,$<) compiled with portable flags"
 
 $(PRTB_OBJDIR): | $(PRTB_LIBDIR)
@@ -465,8 +455,8 @@ clang-analyzer:
 	scan-build -V make debug
 
 # Optional preprocessor files
-$(SRC_DIR)/%.i: $(SRC_DIR)/%.c
-	@$(CC) -E -C $(CPPFLAGS) $(INCPATH) $(CFLAGS) $(C_STANDARD) -o $@ $<
+$(SRC_DIR)/%.i: $(SRC_DIR)/%.c $(HDRS)
+	@$(CC) -E -C $(CPPFLAGS) $(CFLAGS) $(C_STANDARD) -o $@ $<
 	@bcpp -na -s -i 4 $@ > $@.h
 	@sed -i 's/[ \t]*\# [[:digit:]]\+ \".*//g' $@.h
 

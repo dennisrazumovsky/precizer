@@ -323,7 +323,7 @@ git clone --depth=1 https://github.com/precizer/precizer.git
 cd precizer
 ```
 
-All build targets honor `CPPFLAGS`, `CFLAGS`, and `LDFLAGS` values supplied through the environment or command line. The required `-std=c2x` language standard is added separately and cannot be disabled by overriding `CFLAGS`
+All build targets honor `CPPFLAGS`, `CFLAGS`, and `LDFLAGS` values supplied through the environment or command line. The required `-std=gnu2x` language mode (C2x with GNU extensions) is added separately and cannot be disabled by overriding `CFLAGS`
 
 Previous builds and artifacts can be removed with the following command:
 
@@ -373,13 +373,13 @@ sudo apt -y install libpcre2-8-0 libsqlite3-0
 **Build tools and libraries:**
 
 ```sh
-sudo apk add --no-cache build-base pcre2-dev pcre2-static fts-dev argp-standalone sqlite-dev upx zip unzip
+sudo apk add --no-cache build-base pcre2-dev pcre2-static fts-dev sqlite-dev upx zip unzip
 ```
 
 **Dynamic build runtime dependencies:**
 
 ```sh
-sudo apk add --no-cache pcre2 sqlite-libs argp-standalone fts
+sudo apk add --no-cache pcre2 sqlite-libs fts
 ```
 
 ##### AlmaLinux/Rocky/Fedora Linux
@@ -467,7 +467,7 @@ Any distribution listed above can be specified instead of `-gentoo-`
 make dynamic-production
 ```
 
-The archive contains an ELF executable of about **50 kilobytes**. It is tuned for the local CPU and dynamically linked against libraries installed on the system; it is also self-extracting and UPX-compressed. It can be built and run on the local machine if libraries such as sqlite3, pcre2, argp, and fts are installed
+The archive contains an ELF executable of about **50 kilobytes**. It is tuned for the local CPU and dynamically linked against libraries installed on the system; it is also self-extracting and UPX-compressed. It can be built and run on the local machine if libraries such as sqlite3, pcre2, and fts are installed
 
 The binary is optimized for **maximum performance and minimal size**
 
@@ -509,7 +509,7 @@ The Xcode command-line tools and Homebrew dependencies are required for building
 
 ```sh
 xcode-select --install
-brew install llvm sqlite pcre2 argp-standalone
+brew install llvm sqlite pcre2
 ```
 
 ##### Build and installation
@@ -537,7 +537,7 @@ To run the program by name without specifying its path, place the extracted `pre
 Every macOS build variant is dynamically linked. The following Homebrew system libraries are required at runtime:
 
 ```sh
-brew install sqlite pcre2 argp-standalone
+brew install sqlite pcre2
 ```
 
 #### Windows
@@ -557,7 +557,7 @@ If the update requires closing the terminal, the **MSYS2 MSYS** terminal is reop
 Dependencies are installed with the following command:
 
 ```sh
-pacman -S --needed git gcc make libsqlite-devel pcre2-devel libargp-devel zip
+pacman -S --needed git gcc make libsqlite-devel pcre2-devel zip
 ```
 
 Obtaining the source code is described at the beginning of [Manual Build](#manual-build). All remaining commands run from the project root in the same terminal

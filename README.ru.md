@@ -321,7 +321,7 @@ git clone --depth=1 https://github.com/precizer/precizer.git
 cd precizer
 ```
 
-Все цели сборки учитывают переданные через окружение или командную строку переменные `CPPFLAGS`, `CFLAGS` и `LDFLAGS`. Обязательный стандарт языка `-std=c2x` добавляется отдельно и не отключается переопределением `CFLAGS`
+Все цели сборки учитывают переданные через окружение или командную строку переменные `CPPFLAGS`, `CFLAGS` и `LDFLAGS`. Обязательный режим языка `-std=gnu2x` (C2x с расширениями GNU) добавляется отдельно и не отключается переопределением `CFLAGS`
 
 При необходимости предыдущие сборки и артефакты удаляются командой:
 
@@ -371,13 +371,13 @@ sudo apt -y install libpcre2-8-0 libsqlite3-0
 **Инструменты и библиотеки для сборки:**
 
 ```sh
-sudo apk add --no-cache build-base pcre2-dev pcre2-static fts-dev argp-standalone sqlite-dev upx zip unzip
+sudo apk add --no-cache build-base pcre2-dev pcre2-static fts-dev sqlite-dev upx zip unzip
 ```
 
 **Для запуска динамической сборки:**
 
 ```sh
-sudo apk add --no-cache pcre2 sqlite-libs argp-standalone fts
+sudo apk add --no-cache pcre2 sqlite-libs fts
 ```
 
 ##### AlmaLinux/Rocky/Fedora Linux
@@ -465,7 +465,7 @@ make docker-gentoo-production
 make dynamic-production
 ```
 
-Архив содержит исполняемый файл размером около **50 килобайт** в формате ELF. Он будет заточен под локальный CPU, динамически слинкован с установленными в системе библиотеками, самораспаковывающийся, сжатый UPX. Этот файл может быть успешно собран и запущен на локальном компьютере, если в системе были предварительно установлены такие библиотеки, как sqlite3, pcre2, argp и fts
+Архив содержит исполняемый файл размером около **50 килобайт** в формате ELF. Он будет заточен под локальный CPU, динамически слинкован с установленными в системе библиотеками, самораспаковывающийся, сжатый UPX. Этот файл может быть успешно собран и запущен на локальном компьютере, если в системе были предварительно установлены такие библиотеки, как sqlite3, pcre2 и fts
 
 Файл оптимизирован под **максимальную производительность и минимальный размер**
 
@@ -507,7 +507,7 @@ make distribution
 
 ```sh
 xcode-select --install
-brew install llvm sqlite pcre2 argp-standalone
+brew install llvm sqlite pcre2
 ```
 
 ##### Сборка и установка
@@ -535,7 +535,7 @@ make dynamic-production
 На macOS все варианты сборки только динамические. Для запуска требуются системные библиотеки из Homebrew:
 
 ```sh
-brew install sqlite pcre2 argp-standalone
+brew install sqlite pcre2
 ```
 
 #### Windows
@@ -555,7 +555,7 @@ pacman -Syu
 Зависимости устанавливаются командой:
 
 ```sh
-pacman -S --needed git gcc make libsqlite-devel pcre2-devel libargp-devel zip
+pacman -S --needed git gcc make libsqlite-devel pcre2-devel zip
 ```
 
 Получение исходного кода описано в начале раздела [«Самостоятельная сборка»](#самостоятельная-сборка). Все следующие команды выполняются из корня проекта в том же терминале

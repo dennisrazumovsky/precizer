@@ -19,11 +19,14 @@ UNAME_S := $(shell uname -s)
 #
 # USE_LLD and AR are exported by the root Makefile when COMPILER=clang
 # to use LLVM's own linker and archiver, avoiding gold plugin version mismatch
-C_STANDARD := -std=c2x
+C_STANDARD := -std=gnu2x
 CPPFLAGS ?=
 CFLAGS ?= -finline-functions
 LDFLAGS ?=
 CFLAGS += -w
+
+# Detect GCC from its version output, including cc and cross-compiler names
+GCC := $(findstring gcc version,$(shell $(CC) -v 2>&1))
 
 # Detect the MSYS runtime target, independently of the active shell
 IS_MSYS := $(shell $(CC) $(CPPFLAGS) $(CFLAGS) -dM -E -x c /dev/null 2>/dev/null | awk '$$2 == "__MSYS__" { print 1; exit }')
@@ -168,6 +171,12 @@ PROD_LDFLAGS ?= $(USE_LLD) $(PROD_OPT_LDFLAGS)
 else
 PROD_OPT_LDFLAGS ?= $(LTO) -Wl,-O3 -Wl,--hash-style=gnu -Wl,--as-needed -Wl,--gc-sections
 PROD_LDFLAGS ?= $(USE_LLD) $(PROD_OPT_LDFLAGS) -Wl,-z,defs
+endif
+
+# Legacy compiler workaround for a GCC LTO false positive in SQLite.
+# Recheck with newer GCC versions on 2027-10-19 and remove if fixed
+ifneq ($(GCC),)
+PROD_LDFLAGS += -Wno-stringop-overread
 endif
 
 #

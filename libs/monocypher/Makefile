@@ -17,7 +17,7 @@ UNAME_S := $(shell uname -s)
 #
 # USE_LLD and AR are exported by the root Makefile when COMPILER=clang
 # to use LLVM's own linker and archiver, avoiding gold plugin version mismatch
-C_STANDARD := -std=c2x
+C_STANDARD := -std=gnu2x
 CPPFLAGS ?=
 CFLAGS ?= -finline-functions
 LDFLAGS ?=
@@ -28,8 +28,8 @@ IS_MSYS := $(shell $(CC) $(CPPFLAGS) $(CFLAGS) -dM -E -x c /dev/null 2>/dev/null
 SO = $(LIBNAME).so
 STATLIB = $(LIBNAME).a
 
-# Detect whether the compiler is GCC
-GCC := $(findstring gcc,$(notdir $(firstword $(CC))))
+# Detect GCC from its version output, including cc and cross-compiler names
+GCC := $(findstring gcc version,$(shell $(CC) -v 2>&1))
 
 ifeq ($(UNAME_S),Darwin)
 STRIP ?= -Wl,-x
@@ -437,7 +437,7 @@ clang-analyzer:
 	scan-build -V make debug
 
 # Optional preprocessor files
-$(SRC_DIR)/%.i: $(SRC_DIR)/%.c
+$(SRC_DIR)/%.i: $(SRC_DIR)/%.c $(HDRS)
 	@$(CC) -E -C $(CPPFLAGS) $(CFLAGS) $(C_STANDARD) -o $@ $<
 	@bcpp -na -s -i 4 $@ > $@.h
 	@sed -i 's/[ \t]*\# [[:digit:]]\+ \".*//g' $@.h
@@ -445,10 +445,8 @@ $(SRC_DIR)/%.i: $(SRC_DIR)/%.c
 #
 # Print of variables
 #
-# If you want to find out the value of a makefile variable, just:
-#make print-VARIABLE
-# and it will return:
-#VARIABLE = the_value_of_the_variable
+# Display a Makefile variable with make print-VARIABLE
+# Output format: VARIABLE = the_value_of_the_variable
 #
 print-%:
 	@echo '$* = $($*)'

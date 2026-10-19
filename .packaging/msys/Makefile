@@ -31,7 +31,7 @@ $(OUTPUT_EXE): $(PRECIZER_PAYLOAD) $(MSYS_RUNTIME) $(PROJECT_DIR)/src/version.h 
 		-i launcher.rc \
 		-o launcher.res
 	@"$(CC)" \
-		-std=c2x \
+		-std=gnu2x \
 		-O2 \
 		-Wall \
 		-Wextra \

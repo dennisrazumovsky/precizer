@@ -18,4 +18,4 @@ make debug
 
 Libraries are created at `.builds/debug/libs/libinih.a` and `.builds/debug/libs/libinih.so`. The public header is `src/ini.h`
 
-Builds use the shared parser settings from [`src/precizer.h`](../../src/precizer.h)
+The library and precizer use the same parser settings from [`src/inih_config.h`](../../src/inih_config.h) in the application source directory. This header is required to build the library

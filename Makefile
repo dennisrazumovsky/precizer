@@ -56,17 +56,50 @@ APP_VERSION := $(shell awk -F '"' '/define APP_VERSION / {print $$2}' src/versio
 short_path = $(if $(filter ./,$(dir $(1))),$(notdir $(1)),$(notdir $(patsubst %/,%,$(dir $(1))))/$(notdir $(1)))
 COMPILE_COMMANDS = $(BUILDDIR)/compile_commands.json
 
+# Clang
+# Find the highest-versioned clang binary available (clang-21, clang-20, …),
+# fall back to plain "clang" when no versioned binary exists
+CLANG := $(notdir $(or $(lastword $(sort $(wildcard $(addsuffix /clang-[0-9]*,$(subst :, ,$(PATH)))))),clang))
+# Extract the version suffix (e.g. "-20") so scan-build and other
+# LLVM tools with the same versioning scheme can be resolved too
+CLANG_SUFFIX := $(patsubst clang%,%,$(CLANG))
+SCAN_BUILD := scan-build$(CLANG_SUFFIX)
+
+# Set COMPILER=clang to build any target with the latest available clang:
+#   make COMPILER=clang production
+#   make COMPILER=clang dynamic-production
+#   COMPILER=clang make debug
+ifeq ($(COMPILER),clang)
+CC := $(CLANG)
+export CC
+$(info Using compiler: $(CLANG))
+# Use LLVM's own linker to avoid gold plugin version mismatch with LTO
+ifneq ($(shell which ld.lld$(CLANG_SUFFIX) 2>/dev/null),)
+USE_LLD := -fuse-ld=lld$(CLANG_SUFFIX)
+else ifneq ($(shell which ld.lld 2>/dev/null),)
+USE_LLD := -fuse-ld=lld
+endif
+export USE_LLD
+# Use LLVM's own archiver so ar can index LTO bitcode without the BFD plugin
+ifneq ($(shell which llvm-ar$(CLANG_SUFFIX) 2>/dev/null),)
+AR := llvm-ar$(CLANG_SUFFIX)
+else ifneq ($(shell which llvm-ar 2>/dev/null),)
+AR := llvm-ar
+endif
+export AR
+endif
+
 #
 # Compiler flags
 #
 
-C_STANDARD := -std=c2x
+C_STANDARD := -std=gnu2x
 CPPFLAGS ?=
 CFLAGS ?= -finline-functions
 LDFLAGS ?=
 
-LIBS = sha512 mem rational sqlite3 inih
-STATLIBS = sha512 mem rational inih
+LIBS = sha512 mem rational sqlite3 inih argp
+STATLIBS = sha512 mem rational inih argp
 LDLIBS = $(foreach d,$(LIBS),-l$d)
 
 UNAME_S := $(shell uname -s)
@@ -76,8 +109,8 @@ ifeq ($(UNAME_S),Darwin)
 CFLAGS += -DEVIL_EMPIRE_OS
 endif
 
-# Detect whether the compiler is GCC (covers names like arm-linux-gnu-gcc)
-GCC := $(findstring gcc,$(notdir $(firstword $(CC))))
+# Detect GCC from its version output, including cc and cross-compiler names
+GCC := $(findstring gcc version,$(shell $(CC) -v 2>&1))
 
 EXE = precizer
 ifeq ($(UNAME_S),Darwin)
@@ -142,53 +175,12 @@ ifeq ($(UNAME_S),Darwin)
 DYNAMIC_INCPATH += $(shell pkg-config --cflags libpcre2-8)
 INCPATH += $(shell pkg-config --cflags libpcre2-8)
 LDLIBS += $(shell pkg-config --libs libpcre2-8)
-ARGP_PREFIX ?= $(shell brew --prefix argp-standalone 2>/dev/null)
-DYNAMIC_INCPATH += -I$(ARGP_PREFIX)/include
-INCPATH += -I$(ARGP_PREFIX)/include
-LDPATH += -L$(ARGP_PREFIX)/lib
-LDLIBS += -largp
 else
 LDLIBS += -lpcre2-8
-# The MSYS runtime needs a separate argp library
-# Resolve IS_MSYS after the compiler selection below
-LDLIBS += $(if $(IS_MSYS),-largp)
 endif
 
 # Default build
 all: production
-
-# Clang
-# Find the highest-versioned clang binary available (clang-21, clang-20, …),
-# fall back to plain "clang" when no versioned binary exists
-CLANG := $(notdir $(or $(lastword $(sort $(wildcard $(addsuffix /clang-[0-9]*,$(subst :, ,$(PATH)))))),clang))
-# Extract the version suffix (e.g. "-20") so scan-build and other
-# LLVM tools with the same versioning scheme can be resolved too
-CLANG_SUFFIX := $(patsubst clang%,%,$(CLANG))
-SCAN_BUILD := scan-build$(CLANG_SUFFIX)
-
-# Set COMPILER=clang to build any target with the latest available clang:
-#   make COMPILER=clang production
-#   make COMPILER=clang dynamic-production
-#   COMPILER=clang make debug
-ifeq ($(COMPILER),clang)
-CC := $(CLANG)
-export CC
-$(info Using compiler: $(CLANG))
-# Use LLVM's own linker to avoid gold plugin version mismatch with LTO
-ifneq ($(shell which ld.lld$(CLANG_SUFFIX) 2>/dev/null),)
-USE_LLD := -fuse-ld=lld$(CLANG_SUFFIX)
-else ifneq ($(shell which ld.lld 2>/dev/null),)
-USE_LLD := -fuse-ld=lld
-endif
-export USE_LLD
-# Use LLVM's own archiver so ar can index LTO bitcode without the BFD plugin
-ifneq ($(shell which llvm-ar$(CLANG_SUFFIX) 2>/dev/null),)
-AR := llvm-ar$(CLANG_SUFFIX)
-else ifneq ($(shell which llvm-ar 2>/dev/null),)
-AR := llvm-ar
-endif
-export AR
-endif
 
 # Detect the MSYS runtime target after the compiler has been selected
 IS_MSYS := $(shell $(CC) $(CPPFLAGS) $(CFLAGS) -dM -E -x c /dev/null 2>/dev/null | awk '$$2 == "__MSYS__" { print 1; exit }')
@@ -196,7 +188,7 @@ IS_MSYS := $(shell $(CC) $(CPPFLAGS) $(CFLAGS) -dM -E -x c /dev/null 2>/dev/null
 SYS := $(shell $(CC) -dumpmachine 2>/dev/null)
 ifneq (, $(findstring alpine, $(SYS)))
 # Alpine Linux uses external libraries
-LDLIBS += -largp -lfts
+LDLIBS += -lfts
 endif
 
 #
@@ -358,6 +350,12 @@ PROD_LDFLAGS ?= $(USE_LLD) $(PROD_OPT_LDFLAGS)
 else
 PROD_OPT_LDFLAGS ?= $(LTO) -Wl,-O3 -Wl,--hash-style=gnu -Wl,--as-needed -Wl,--gc-sections
 PROD_LDFLAGS ?= $(USE_LLD) $(PROD_OPT_LDFLAGS) -Wl,-z,defs
+endif
+
+# Legacy compiler workaround for a GCC LTO false positive in SQLite.
+# Recheck with newer GCC versions on 2027-10-19 and remove if fixed
+ifneq ($(GCC),)
+PROD_LDFLAGS += -Wno-stringop-overread
 endif
 
 #
@@ -675,7 +673,7 @@ macos-zip: $(DIST_EXE)
 msys-build: CC = /usr/bin/gcc
 msys-build: WFLAGS =
 msys-build: LDFLAGS = -s
-msys-build: DIST_SHARED_LIBS = -l:libsqlite3.a -l:libpcre2-8.a -l:libargp.a
+msys-build: DIST_SHARED_LIBS = -l:libsqlite3.a -l:libpcre2-8.a
 msys-build: DIST_LIBRARY_MAKE_ARGS = CC="$(CC)" WFLAGS="$(WFLAGS)" LDFLAGS="$(LDFLAGS)"
 msys-build: $(DIST_EXE)
 

@@ -29,6 +29,7 @@ Return test_libtestitall_all(void)
 	HEADER("String Helpers");
 	TEST(test_libtestitall_0007,"Trailing EOL removal preserves libmem string invariants");
 	TEST(test_libtestitall_0008,"Memory string comparison produces the expected diff");
+	TEST(test_libtestitall_0010,"File placeholders are replaced without changing surrounding text");
 
 	RETURN_STATUS;
 }

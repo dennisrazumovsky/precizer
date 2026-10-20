@@ -182,46 +182,6 @@ static Return assert_output(
 }
 
 /**
- * @brief Check a rejected color argument against complete output templates
- *
- * @param arguments Command-line arguments containing an invalid or missing color value
- * @param stderr_pattern_file Full stderr template for the expected argument error
- * @return SUCCESS when the application exits with failure and both streams match
- */
-static Return assert_argument_error(
-	const char *arguments,
-	const char *stderr_pattern_file)
-{
-	/* Status returned by this function through deliver()
-	   Default value assumes successful completion */
-	Return status = SUCCESS;
-	const char *stdout_pattern_file = "templates/0040_003.txt";
-
-	m_create(char,stdout_result,MEMORY_STRING);
-	m_create(char,stderr_result,MEMORY_STRING);
-	m_create(char,stdout_pattern,MEMORY_STRING);
-	m_create(char,stderr_pattern,MEMORY_STRING);
-
-	/* Require the rejected command to finish with the expected failure status */
-	ASSERT(SUCCESS == set_environment_variable("TESTING","true"));
-	ASSERT(SUCCESS == runit(arguments,stdout_result,stderr_result,FAILURE,STDERR_ALLOW));
-
-	/* Compare application diagnostics and argument-parser errors in full */
-	ASSERT(SUCCESS == get_file_content(stdout_pattern_file,stdout_pattern));
-	ASSERT(SUCCESS == match_pattern(stdout_result,stdout_pattern,stdout_pattern_file));
-	ASSERT(SUCCESS == get_file_content(stderr_pattern_file,stderr_pattern));
-	ASSERT(SUCCESS == match_pattern(stderr_result,stderr_pattern,stderr_pattern_file));
-
-	/* Release both templates and captured streams even after a failed check */
-	call(m_del(stderr_pattern));
-	call(m_del(stdout_pattern));
-	call(m_del(stderr_result));
-	call(m_del(stdout_result));
-
-	deliver(status);
-}
-
-/**
  * @brief Check the test runner's forced color default without a color argument
  *
  * The runner sets TESTITALL_TEST_ENV_COLOR_MODE=always so captured golden
@@ -245,11 +205,11 @@ static Return test0040_1(void)
 }
 
 /**
- * @brief Check all long color mode arguments with captured output
+ * @brief Check all long color mode arguments and their configuration equivalents
  *
  * Each --color value must appear in the parsed configuration and produce the
  * expected output. Always retains styling; never and auto omit it from the
- * redirected stream
+ * redirected stream. Repeating the option must apply its last value
  *
  * @return Return describing success or failure
  */
@@ -264,6 +224,14 @@ static Return test0040_2(void)
 		"always",
 		true));
 
+	ASSERT(SUCCESS == copy_path("tests/templates/0040_001.conf","0040_001.conf"));
+	ASSERT(SUCCESS == assert_output(
+		"--config=0040_001.conf",
+		"templates/0040_001.txt",
+		"always",
+		true));
+	call(delete_path_if_present("0040_001.conf"));
+
 	/* Explicitly disabling styling must produce plain text */
 	ASSERT(SUCCESS == assert_output(
 		"--color=never " DRY_RUN_ARGUMENTS,
@@ -271,12 +239,42 @@ static Return test0040_2(void)
 		"never",
 		false));
 
+	ASSERT(SUCCESS == copy_path("tests/templates/0040_002.conf","0040_002.conf"));
+	ASSERT(SUCCESS == assert_output(
+		"--config=0040_002.conf",
+		"templates/0040_002.txt",
+		"never",
+		false));
+	call(delete_path_if_present("0040_002.conf"));
+
 	/* Auto must select its own mode while keeping redirected output plain */
 	ASSERT(SUCCESS == assert_output(
 		"--color=auto " DRY_RUN_ARGUMENTS,
 		"templates/0040_002.txt",
 		"auto",
 		false));
+
+	ASSERT(SUCCESS == copy_path("tests/templates/0040_010.conf","0040_010.conf"));
+	ASSERT(SUCCESS == assert_output(
+		"--config=0040_010.conf",
+		"templates/0040_002.txt",
+		"auto",
+		false));
+	call(delete_path_if_present("0040_010.conf"));
+
+	/* The last value replaces the earlier choice in either source */
+	ASSERT(SUCCESS == assert_output(
+		"--color=always --color=never " DRY_RUN_ARGUMENTS,
+		"templates/0040_002.txt",
+		"never",
+		false));
+	ASSERT(SUCCESS == copy_path("tests/templates/0040_002_1.conf","0040_002_1.conf"));
+	ASSERT(SUCCESS == assert_output(
+		"--config=0040_002_1.conf",
+		"templates/0040_002.txt",
+		"never",
+		false));
+	call(delete_path_if_present("0040_002_1.conf"));
 
 	RETURN_STATUS;
 }
@@ -557,7 +555,7 @@ static Return test0040_7(void)
 }
 
 /**
- * @brief Check that long and short color options reject unsupported and empty values
+ * @brief Check that CLI and configuration color options reject unsupported and empty values
  *
  * @return Return describing success or failure
  */
@@ -565,21 +563,31 @@ static Return test0040_8(void)
 {
 	INITTEST;
 
-	/* Both option spellings must reject an unsupported mode name */
-	ASSERT(SUCCESS == assert_argument_error(
-		"--color=invalid-value",
-		"templates/0040_004.txt"));
-	ASSERT(SUCCESS == assert_argument_error(
-		"-S invalid-value",
-		"templates/0040_004.txt"));
+	ASSERT(SUCCESS == set_environment_variable("TESTING","true"));
 
-	/* An explicitly empty value must also be rejected by both spellings */
-	ASSERT(SUCCESS == assert_argument_error(
-		"--color=",
-		"templates/0040_005.txt"));
-	ASSERT(SUCCESS == assert_argument_error(
-		"-S ''",
-		"templates/0040_005.txt"));
+	const struct argument_test_case cases[] = {
+		/* Both option spellings must reject an unsupported mode name */
+		{"--color=invalid-value",FAILURE,"templates/0040_003.txt","templates/0040_004.txt"},
+		{"-S invalid-value",FAILURE,"templates/0040_003.txt","templates/0040_004.txt"},
+
+		/* An explicitly empty value must also be rejected by both spellings */
+		{"--color=",FAILURE,"templates/0040_003.txt","templates/0040_005.txt"},
+		{"-S ''",FAILURE,"templates/0040_003.txt","templates/0040_005.txt"},
+		{0}
+	};
+
+	ASSERT(SUCCESS == run_and_match_templates(cases,NULL,NULL));
+
+	ASSERT(SUCCESS == copy_path("tests/templates/0040_004.conf","0040_004.conf"));
+	ASSERT(SUCCESS == copy_path("tests/templates/0040_005.conf","0040_005.conf"));
+	const struct argument_test_case file_cases[] = {
+		{"--config=0040_004.conf",FAILURE,"templates/0003_013.txt","templates/0040_004_1.txt"},
+		{"--config=0040_005.conf",FAILURE,"templates/0003_013.txt","templates/0040_005_1.txt"},
+		{0}
+	};
+	ASSERT(SUCCESS == run_and_match_templates(file_cases,NULL,NULL));
+	call(delete_path_if_present("0040_004.conf"));
+	call(delete_path_if_present("0040_005.conf"));
 
 	RETURN_STATUS;
 }
@@ -593,15 +601,17 @@ static Return test0040_9(void)
 {
 	INITTEST;
 
-	/* Check the parser diagnostic for a long option with no following value */
-	ASSERT(SUCCESS == assert_argument_error(
-		"--color",
-		"templates/0040_006.txt"));
+	ASSERT(SUCCESS == set_environment_variable("TESTING","true"));
 
-	/* Check the corresponding diagnostic for the short option */
-	ASSERT(SUCCESS == assert_argument_error(
-		"-S",
-		"templates/0040_007.txt"));
+	const struct argument_test_case cases[] = {
+		/* Check the parser diagnostic for a long option with no following value */
+		{"--color",FAILURE,"templates/0040_003.txt","templates/0040_006.txt"},
+		/* Check the corresponding diagnostic for the short option */
+		{"-S",FAILURE,"templates/0040_003.txt","templates/0040_007.txt"},
+		{0}
+	};
+
+	ASSERT(SUCCESS == run_and_match_templates(cases,NULL,NULL));
 
 	RETURN_STATUS;
 }

@@ -237,9 +237,9 @@ void show_file(
 	{
 		if(file->db->relative_path_was_in_db_before_processing == false)
 		{
-			slog_show(EVERY|UNDECOR,true,first_iteration,summary,"ignore & do not add %s\n",runtime_relative_path);
+			slog_show(EVERY|UNDECOR,true,first_iteration,summary,"ignored & not added %s\n",runtime_relative_path);
 		} else {
-			slog_show(EVERY|UNDECOR,true,first_iteration,summary,"ignored & do not update %s\n",runtime_relative_path);
+			slog_show(EVERY|UNDECOR,true,first_iteration,summary,"ignored & not updated %s\n",runtime_relative_path);
 		}
 
 	} else if(file->read_error == true){
@@ -258,19 +258,19 @@ void show_file(
 		{
 			if(file->include == true)
 			{
-				slog_show(EVERY|UNDECOR,true,first_iteration,summary,"add included %s\n",runtime_relative_path);
+				slog_show(EVERY|UNDECOR,true,first_iteration,summary,"added as included %s\n",runtime_relative_path);
 
 			} else if(file->locked_checksum_file == true){
 
-				slog_show(EVERY|UNDECOR,false,first_iteration,summary,"lock checksum %s\n",runtime_relative_path);
+				slog_show(EVERY|UNDECOR,false,first_iteration,summary,"locked checksum %s\n",runtime_relative_path);
 
 			} else if(file->zero_size_file == true){
 
-				slog_show(EVERY|UNDECOR,false,first_iteration,summary,"add as empty %s\n",runtime_relative_path);
+				slog_show(EVERY|UNDECOR,false,first_iteration,summary,"added as empty %s\n",runtime_relative_path);
 
 			} else {
 
-				slog_show(EVERY|UNDECOR,false,first_iteration,summary,"new %s\n",runtime_relative_path);
+				slog_show(EVERY|UNDECOR,false,first_iteration,summary,"added %s\n",runtime_relative_path);
 			}
 		}
 
@@ -293,7 +293,7 @@ void show_file(
 
 		} else if(file->db_record_updated == true && file->include == true){
 
-			slog_show(EVERY|UNDECOR,true,first_iteration,summary,"update included");
+			slog_show(EVERY|UNDECOR,true,first_iteration,summary,"updated as included");
 
 			print_changes(EVERY,file);
 
@@ -301,7 +301,7 @@ void show_file(
 
 		} else if(file->db_record_updated == true && file->zero_size_file == true){
 
-			slog_show(EVERY|UNDECOR,false,first_iteration,summary,"update as empty");
+			slog_show(EVERY|UNDECOR,false,first_iteration,summary,"updated as empty");
 
 			print_changes(EVERY,file);
 
@@ -311,36 +311,45 @@ void show_file(
 
 			if(file->rehashing_from_the_beginning == true)
 			{
-				slog_show(EVERY|UNDECOR,false,first_iteration,summary,"rehash from the beginning");
+				if(file->hash_interrupted == false)
+				{
+					slog_show(EVERY|UNDECOR,false,first_iteration,summary,"rehashed from the beginning");
 
-				print_changes(EVERY,file);
+					print_changes(EVERY,file);
 
-				slog_show(EVERY|UNDECOR,false,first_iteration,summary," %s\n",runtime_relative_path);
+					slog_show(EVERY|UNDECOR,false,first_iteration,summary," %s\n",runtime_relative_path);
+				}
 
 			} else if(file->db->saved_offset > 0){
 
-				slog_show(EVERY|UNDECOR,false,first_iteration,summary,"continue to rehash from %s %s\n",bkbmbgbtbpbeb((const size_t)file->db->saved_offset,FULL_VIEW),runtime_relative_path);
+				slog_show(EVERY|UNDECOR,false,first_iteration,summary,"rehash resumed from %s %s\n",bkbmbgbtbpbeb((const size_t)file->db->saved_offset,FULL_VIEW),runtime_relative_path);
 
 			} else if(file->locked_checksum_file == true){
 
-				slog_show(EVERY|UNDECOR,false,first_iteration,summary,"locked rehash ok");
+				if(file->hash_interrupted == false)
+				{
+					slog_show(EVERY|UNDECOR,false,first_iteration,summary,"rehashed & locked checksum matched");
 
-				print_changes(EVERY,file);
+					print_changes(EVERY,file);
 
-				slog_show(EVERY|UNDECOR,false,first_iteration,summary," %s\n",runtime_relative_path);
+					slog_show(EVERY|UNDECOR,false,first_iteration,summary," %s\n",runtime_relative_path);
+				}
 
 			} else if(file->db_record_updated == true){
 
-				slog_show(EVERY|UNDECOR,false,first_iteration,summary,"update & rehash");
+				if(file->hash_interrupted == false)
+				{
+					slog_show(EVERY|UNDECOR,false,first_iteration,summary,"rehashed");
 
-				print_changes(EVERY,file);
+					print_changes(EVERY,file);
 
-				slog_show(EVERY|UNDECOR,false,first_iteration,summary," %s\n",runtime_relative_path);
+					slog_show(EVERY|UNDECOR,false,first_iteration,summary," %s\n",runtime_relative_path);
+				}
 			}
 
 		} else if(file->db_record_updated == true){
 
-			slog_show(EVERY|UNDECOR,false,first_iteration,summary,"update stat");
+			slog_show(EVERY|UNDECOR,false,first_iteration,summary,"updated metadata");
 
 			print_changes(EVERY,file);
 
@@ -350,6 +359,6 @@ void show_file(
 
 	if(file->hash_interrupted == true)
 	{
-		slog_show(EVERY,false,first_iteration,summary,"SHA512 checksum for the file %s has been gracefully interrupted at byte: %s\n",runtime_relative_path,bkbmbgbtbpbeb((size_t)file->checksum_offset,FULL_VIEW));
+		slog_show(EVERY,false,first_iteration,summary,"hashing gracefully interrupted at %s %s\n",bkbmbgbtbpbeb((size_t)file->checksum_offset,FULL_VIEW),runtime_relative_path);
 	}
 }

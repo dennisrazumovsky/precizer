@@ -1,6 +1,7 @@
 \ATESTING:Configuration initialization is finished
 TESTING:rational_logger_mode=TESTING
-TESTING:argument:color=always
+(?:TESTING:argument:config=0027_001_3\.conf\n)?(?x)
+(?-x)TESTING:argument:color=always
 TESTING:argument:roots=tests/fixtures/diffs
 TESTING:argument:database=lock\.db
 TESTING:argument:db_file_name=lock\.db
@@ -43,7 +44,7 @@ TESTING:Database comparison mode is not enabled. Skipping comparison
 TESTING:The database lock\.db has already been created previously
 TESTING:The paths written against the database and the paths passed as arguments are completely identical
 TESTING:File system traversal initiated to calculate file count and storage usage
-TESTING:Total traversal size: \d+.*
+TESTING:Total traversal size: \d+[^\r\n]*
 TESTING:Total items: \d+
 TESTING:Directories: \d+
 TESTING:Files: \d+
@@ -52,8 +53,8 @@ TESTING:Update mode enabled for DB lock\.db
 TESTING:File traversal started for [^\r\n]+
 TESTING:(?:\x1B\[[0-9;]*m)*Changes reported during this scan against the DB lock\.db:(?:\x1B\[[0-9;]*m)*
 (?:\x1B\[[0-9;]*m)*checksum locked, data corruption detected(?:\x1B\[[0-9;]*m)* diff1/1/AAA/ZAW/A/b/c/a_file\.txt
-update & rehash diff2/2/AAA/BBB/CZC/a\.txt
-update & rehash diff2/3/AAA/BBB/CCC/a\.txt
+rehashed diff2/2/AAA/BBB/CZC/a\.txt
+rehashed diff2/3/AAA/BBB/CCC/a\.txt
 (?:\x1B\[[0-9;]*m)*checksum locked, data corruption detected(?:\x1B\[[0-9;]*m)* diff2/path1/AAA/BCB/CCC/b\.txt
 TESTING:File traversal complete
 TESTING:(?:\x1B\[[0-9;]*m)*Warning! Data corruption detected for checksum-locked file!(?:\x1B\[[0-9;]*m)*
@@ -63,7 +64,7 @@ TESTING:(?:\x1B\[[0-9;]*m)*Warnings and errors encountered:(?:\x1B\[[0-9;]*m)*
 (?:\x1B\[[0-9;]*m)*checksum locked, data corruption detected(?:\x1B\[[0-9;]*m)* diff2/path1/AAA/BCB/CCC/b\.txt
 TESTING:The database connection has been closed
 TESTING:Total runtime: [^,\r\n]+
-TESTING:Total traversal size: \d+.*
+TESTING:Total traversal size: \d+[^\r\n]*
 TESTING:Total items: \d+
 TESTING:Directories: \d+
 TESTING:Files: \d+

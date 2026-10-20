@@ -44,8 +44,8 @@ TESTING:The paths written against the database and the paths passed as arguments
 TESTING:Update mode enabled for DB database0009_5\.db
 TESTING:File traversal started for [^\r\n]+
 TESTING:(?:\x1B\[[0-9;]*m)*Changes reported during this scan against the DB database0009_5\.db:(?:\x1B\[[0-9;]*m)*
-ignore directory path2/AAA/ZAW/A
-ignore directory path2/AAA/ZAW/D
+ignored directory path2/AAA/ZAW/A
+ignored directory path2/AAA/ZAW/D
 TESTING:File traversal complete
 TESTING:Searching for files that no longer exist on the file system…
 TESTING:Missing file search finished
@@ -53,7 +53,7 @@ TESTING:The database connection has been closed
 TESTING:No changes were made. The primary database doesn't require vacuuming
 TESTING:(?:\x1B\[[0-9;]*m)*The database file database0009_5\.db has NOT been modified since the program was launched(?:\x1B\[[0-9;]*m)*
 TESTING:Total runtime: [^,\r\n]+
-TESTING:Total traversal size: \d+.*
+TESTING:Total traversal size: \d+[^\r\n]*
 TESTING:Total items: \d+
 TESTING:Directories: \d+
 TESTING:Files: \d+

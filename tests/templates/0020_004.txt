@@ -12,7 +12,7 @@ TESTING:Set signal SIGINT OK:pid:\d+
 TESTING:Set signal SIGTERM OK:pid:\d+
 TESTING:Signals initialized
 TESTING:Primary database file name: DisposableDB
-TESTING:Primary database file path: .*$
+TESTING:Primary database file path: [^\r\n]*$
 TESTING:Finished determining database name
 TESTING:Verify that the path \. exists
 TESTING:The path \. is exists and it is a directory
@@ -27,7 +27,7 @@ TESTING:The comparison of write_protected_database1\.db and database2\.db databa
 TESTING:Verify that the path write_protected_database1\.db exists
 TESTING:The path write_protected_database1\.db is exists and it is a file
 TESTING:Starting database file write_protected_database1\.db integrity check…
-ERROR:Can't open database .* unable to open database file
+ERROR:Can't open database [^\r\n]* unable to open database file
 TESTING:Returned db_integrity_check:\d+ status: FAILURE
 TESTING:Comparison of write_protected_database1\.db and database2\.db databases is complete
 TESTING:Returned db_compare:\d+ status: FAILURE

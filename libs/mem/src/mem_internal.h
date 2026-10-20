@@ -10,6 +10,7 @@
  * questions for byte strings and wider string element types alike:
  * "is this logical element a terminator" and "write one terminator here"
  */
+__attribute__((pure))
 bool mem_is_zero_element(
 	const unsigned char *element_view,
 	size_t              single_element_size);

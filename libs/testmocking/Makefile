@@ -23,7 +23,7 @@ endif
 #
 # USE_LLD and AR are exported by the root Makefile when COMPILER=clang
 # to use LLVM's own linker and archiver, avoiding gold plugin version mismatch
-C_STANDARD := -std=c2x
+C_STANDARD := -std=gnu2x
 CPPFLAGS ?=
 LDFLAGS ?=
 
@@ -33,8 +33,8 @@ LDFLAGS ?=
 BUILD_SHARED = no
 STATLIB = $(LIBNAME).a
 
-# Detect whether we're using GCC
-GCC := $(findstring gcc,$(notdir $(firstword $(CC))))
+# Detect GCC from its version output, including cc and cross-compiler names
+GCC := $(findstring gcc version,$(shell $(CC) -v 2>&1))
 
 ifeq ($(UNAME_S),Darwin)
 STRIP ?= -Wl,-x
@@ -74,7 +74,7 @@ SRC_DIR = src
 SRCS = $(wildcard $(SRC_DIR)/*.c)
 HDRS = $(wildcard $(SRC_DIR)/*.h)
 
-# Exclude a file
+# Object names corresponding to the source files
 OBJS = $(SRCS:$(SRC_DIR)/%.c=%.o)
 LIBDIR = $(patsubst lib%,%,$(LIBNAME))
 
@@ -324,22 +324,32 @@ clean: clean-compile-commands
 	@rm -rf $(SNTZ_STAT) $(SNTZ_OBJS)
 
 	@test -d $(DBG_OBJDIR) && rm -d $(DBG_OBJDIR) 2>/dev/null || true
+	@test -d $(DBG_LIBDIR)/obj && rm -d $(DBG_LIBDIR)/obj 2>/dev/null || true
 	@test -d $(DBG_LIBDIR) && rm -d $(DBG_LIBDIR) 2>/dev/null || true
 	@test -d $(DBG_DIR) && rm -d $(DBG_DIR) 2>/dev/null || true
 
 	@test -d $(COV_OBJDIR) && rm -d $(COV_OBJDIR) 2>/dev/null || true
+	@test -d $(COV_LIBDIR)/obj && rm -d $(COV_LIBDIR)/obj 2>/dev/null || true
 	@test -d $(COV_LIBDIR) && rm -d $(COV_LIBDIR) 2>/dev/null || true
 	@test -d $(COV_DIR) && rm -d $(COV_DIR) 2>/dev/null || true
 
 	@test -d $(SNTZ_OBJDIR) && rm -d $(SNTZ_OBJDIR) 2>/dev/null || true
+	@test -d $(SNTZ_LIBDIR)/obj && rm -d $(SNTZ_LIBDIR)/obj 2>/dev/null || true
 	@test -d $(SNTZ_LIBDIR) && rm -d $(SNTZ_LIBDIR) 2>/dev/null || true
 	@test -d $(SNTZ_DIR) && rm -d $(SNTZ_DIR) 2>/dev/null || true
 
 	@test -d $(PROD_OBJDIR) && rm -d $(PROD_OBJDIR) 2>/dev/null || true
+	@test -d $(PROD_LIBDIR)/obj && rm -d $(PROD_LIBDIR)/obj 2>/dev/null || true
 	@test -d $(PROD_LIBDIR) && rm -d $(PROD_LIBDIR) 2>/dev/null || true
 	@test -d $(PROD_DIR) && rm -d $(PROD_DIR) 2>/dev/null || true
 
+	@test -d $(DIST_OBJDIR) && rm -d $(DIST_OBJDIR) 2>/dev/null || true
+	@test -d $(DIST_LIBDIR)/obj && rm -d $(DIST_LIBDIR)/obj 2>/dev/null || true
+	@test -d $(DIST_LIBDIR) && rm -d $(DIST_LIBDIR) 2>/dev/null || true
+	@test -d $(DIST_DIR) && rm -d $(DIST_DIR) 2>/dev/null || true
+
 	@test -d $(PRTB_OBJDIR) && rm -d $(PRTB_OBJDIR) 2>/dev/null || true
+	@test -d $(PRTB_LIBDIR)/obj && rm -d $(PRTB_LIBDIR)/obj 2>/dev/null || true
 	@test -d $(PRTB_LIBDIR) && rm -d $(PRTB_LIBDIR) 2>/dev/null || true
 	@test -d $(PRTB_DIR) && rm -d $(PRTB_DIR) 2>/dev/null || true
 
@@ -374,7 +384,7 @@ $(COMPILE_COMMANDS):
 cppcheck: compile-commands
 	cppcheck --check-level=exhaustive --project=$(COMPILE_COMMANDS) --suppress=missingIncludeSystem --enable=all --platform=unix64 --std=c2x -q --force --inconclusive
 
-# Run clang static analyzer and view analysis results in a web browser when the build command completes
+# Run the Clang static analyzer and open its results in a web browser
 clang-analyzer: CC = clang
 clang-analyzer:
 	scan-build -V make debug

@@ -58,11 +58,14 @@ static Return test0011_1(void)
 }
 
 /**
+ * @brief Verify updates and the existing-database warning with progress enabled
+ *
  * The Example 2 from README
  * Updating the database:
  * Stage 1. Adding:
  * precizer --progress --database=database1.db tests/fixtures/diffs/diff1
- * Stage 2. Reuse previous example once agan. The first try. The warning message.
+ * Stage 2. Repeat the scan through CLI and configuration without --update.
+ * Both runs must show the same warning and leave the database unchanged:
  * precizer --progress --check-level=QUICK --database=database1.db tests/fixtures/diffs/diff1
  * Stage 3. Run of database update without making actual changes to disk:
  * precizer --update --check-level=QUICK --progress --database=database1.db tests/fixtures/diffs/diff1
@@ -115,15 +118,20 @@ static Return test0011_2(void)
 
 	filename = "templates/0011_002_2.txt";
 
-	ASSERT(SUCCESS == runit(arguments,result,NULL,WARNING,ALLOW_BOTH));
+	const struct argument_test_case cases[] = {
+		{arguments,WARNING,filename,STDERR_MUST_BE_EMPTY},
+		{0}
+	};
+	ASSERT(SUCCESS == run_and_match_templates(cases,NULL,NULL));
 
-	ASSERT(SUCCESS == get_file_content(filename,pattern));
-
-	ASSERT(SUCCESS == match_pattern(result,pattern,filename));
-
-	// Clean to use it iteratively
-	m_del(pattern);
-	m_del(result);
+	/* The rejected update leaves the same database ready for the configuration run */
+	ASSERT(SUCCESS == copy_path("tests/templates/0011_002_2.conf","0011_002_2.conf"));
+	const struct argument_test_case file_cases[] = {
+		{"--config=0011_002_2.conf",WARNING,filename,STDERR_MUST_BE_EMPTY},
+		{0}
+	};
+	ASSERT(SUCCESS == run_and_match_templates(file_cases,NULL,NULL));
+	call(delete_path_if_present("0011_002_2.conf"));
 
 	m_create(char,chunk,MEMORY_STRING);
 
@@ -163,6 +171,8 @@ static Return test0011_2(void)
 }
 
 /**
+ * @brief Verify silent output through CLI and configuration on an unchanged database
+ *
  * The Example 3 from README
  * Using the --silent mode. When this mode is enabled, the program suppresses
  * normal output after command execution. This makes sense when using the
@@ -180,48 +190,42 @@ static Return test0011_3(void)
 {
 	INITTEST;
 
-	// Create memory for the result
-	m_create(char,result,MEMORY_STRING);
-
 	ASSERT(SUCCESS == set_environment_variable("TESTING","false"));
 
 	const char *arguments = "--silent --update --check-level=QUICK --progress --database=database1.db "
 	        "tests/fixtures/diffs/diff1";
 
-	ASSERT(SUCCESS == runit(arguments,result,NULL,COMPLETED,ALLOW_BOTH));
-
 	// Verify that silent mode produced no stdout after command execution
-	ASSERT(result->length == 0);
+	const struct argument_test_case silent_cases[] = {
+		{arguments,COMPLETED,STDOUT_MUST_BE_EMPTY,STDERR_MUST_BE_EMPTY},
+		{0}
+	};
 
-#if 0
-	// Verify that silent mode produced no stdout after command execution
-	if(result->length != 0)
-	{
-		echo(STDERR,"ERROR: In silent mode stdout must be empty\n");
-		echo(STDERR,YELLOW "Output:\n>>" RESET "%s" YELLOW "<<\n" RESET,m_text(result));
-		status = FAILURE;
-	}
-#endif
-
-	call(m_del(result));
-
-	m_create(char,pattern,MEMORY_STRING);
+	ASSERT(SUCCESS == run_and_match_templates(silent_cases,NULL,NULL));
 
 	ASSERT(SUCCESS == set_environment_variable("TESTING","true"));
 
-	const char *filename = "templates/0011_003.txt";
+	const struct argument_test_case testing_cases[] = {
+		{arguments,COMPLETED,"templates/0011_003.txt",STDERR_MUST_BE_EMPTY},
+		{0}
+	};
 
-	ASSERT(SUCCESS == runit(arguments,result,NULL,COMPLETED,ALLOW_BOTH));
-	ASSERT(SUCCESS == get_file_content(filename,pattern));
-	ASSERT(SUCCESS == match_pattern(result,pattern,filename));
+	ASSERT(SUCCESS == run_and_match_templates(testing_cases,NULL,NULL));
 
-	m_del(pattern);
-	m_del(result);
+	/* The unchanged database and fixtures are ready for the configuration repeat */
+	ASSERT(SUCCESS == copy_path("tests/templates/0011_003.conf","0011_003.conf"));
+	const struct argument_test_case file_cases[] = {
+		{"--config=0011_003.conf",COMPLETED,"templates/0011_003.txt",STDERR_MUST_BE_EMPTY},
+		{0}
+	};
+	ASSERT(SUCCESS == run_and_match_templates(file_cases,NULL,NULL));
+	call(delete_path_if_present("0011_003.conf"));
 
 	RETURN_STATUS;
 }
 
 /**
+ * @brief Verify verbose output through CLI and configuration before fixture cleanup
  *
  * The Example 4 from README
  * Additional information with --verbose mode
@@ -231,26 +235,28 @@ static Return test0011_4(void)
 {
 	INITTEST;
 
-	// Create memory for the result
-	m_create(char,result,MEMORY_STRING);
-
-	m_create(char,pattern,MEMORY_STRING);
-
-	const char *filename = "templates/0011_004_1.txt";
-
 	ASSERT(SUCCESS == set_environment_variable("TESTING","false"));
 
 	const char *arguments = "--verbose --update --check-level=QUICK --progress --database=database1.db "
 	        "tests/fixtures/diffs/diff1";
 
-	ASSERT(SUCCESS == runit(arguments,result,NULL,COMPLETED,ALLOW_BOTH));
-	ASSERT(SUCCESS == get_file_content(filename,pattern));
-	ASSERT(SUCCESS == match_pattern(result,pattern,filename));
+	const struct argument_test_case cases[] = {
+		{arguments,COMPLETED,"templates/0011_004_1.txt",STDERR_MUST_BE_EMPTY},
+		{0}
+	};
+
+	ASSERT(SUCCESS == run_and_match_templates(cases,NULL,NULL));
+
+	/* Repeat the same unchanged update before the shared database is removed */
+	ASSERT(SUCCESS == copy_path("tests/templates/0011_004_1.conf","0011_004_1.conf"));
+	const struct argument_test_case file_cases[] = {
+		{"--config=0011_004_1.conf",COMPLETED,"templates/0011_004_1.txt",STDERR_MUST_BE_EMPTY},
+		{0}
+	};
+	ASSERT(SUCCESS == run_and_match_templates(file_cases,NULL,NULL));
+	call(delete_path_if_present("0011_004_1.conf"));
 
 	// Clean up test results
-	m_del(pattern);
-	m_del(result);
-
 	ASSERT(SUCCESS == delete_path("database1.db"));
 	ASSERT(SUCCESS == restore_mutable_fixture("tests/fixtures/diffs/diff1"));
 
@@ -258,11 +264,13 @@ static Return test0011_4(void)
 }
 
 /**
+ * @brief Verify depth zero through CLI and configuration before an unlimited update
  *
  * The Example 5 from README
  * Disable recursion with --maxdepth=0 option
  *
- *
+ * Both initial scans start without a database and use the same full output
+ * template. The resulting database is then updated without the depth limit
  */
 static Return test0011_5(void)
 {
@@ -270,27 +278,38 @@ static Return test0011_5(void)
 
 	ASSERT(SUCCESS == set_environment_variable("TESTING","true"));
 
-	const char *arguments = "--maxdepth=0 tests/fixtures/4";
-
-	const char *filename = "templates/0011_005_1.txt";
-
 	const char *template = "%DB_NAME%";
 
 	const char *replacement = getenv("DBNAME");  // Database name
 
 	ASSERT(replacement != NULL);
 
-	ASSERT(SUCCESS == match_app_output(arguments,filename,template,replacement,COMPLETED));
+	const struct argument_test_case cases[] = {
+		{"--maxdepth=0 tests/fixtures/4",COMPLETED,"templates/0011_005_1.txt",STDERR_MUST_BE_EMPTY},
+		{0}
+	};
 
-	/* At the second stage, the --maxdepth=0 option is not used.
-	   Therefore, all files that were not previously included
-	   will be added to the database. */
+	ASSERT(SUCCESS == run_and_match_templates(cases,template,replacement));
 
-	arguments = "--update --check-level=QUICK tests/fixtures/4";
+	/* Repeat the initial scan without a database, then retain its result for the update */
+	ASSERT(SUCCESS == delete_path(replacement));
+	ASSERT(SUCCESS == copy_path("tests/templates/0011_005_1.conf","0011_005_1.conf"));
+	const struct argument_test_case file_cases[] = {
+		{"--config=0011_005_1.conf",COMPLETED,"templates/0011_005_1.txt",STDERR_MUST_BE_EMPTY},
+		{0}
+	};
+	ASSERT(SUCCESS == run_and_match_templates(file_cases,template,replacement));
+	call(delete_path_if_present("0011_005_1.conf"));
 
-	filename = "templates/0011_005_2.txt";
+	const struct argument_test_case update_cases[] = {
+		/* At the second stage, the --maxdepth=0 option is not used.
+		   Therefore, all files that were not previously included
+		   will be added to the database */
+		{"--update --check-level=QUICK tests/fixtures/4",COMPLETED,"templates/0011_005_2.txt",STDERR_MUST_BE_EMPTY},
+		{0}
+	};
 
-	ASSERT(SUCCESS == match_app_output(arguments,filename,template,replacement,COMPLETED));
+	ASSERT(SUCCESS == run_and_match_templates(update_cases,template,replacement));
 
 	ASSERT(SUCCESS == delete_path(replacement));
 
@@ -310,23 +329,19 @@ static Return test0011_6(void)
 
 	ASSERT(SUCCESS == set_environment_variable("TESTING","false"));
 
-	const char *arguments = "--ignore=\"^diff1/1/.*\" tests/fixtures/diffs";
-
-	const char *filename = "templates/0011_006_1.txt";
-
 	const char *template = "%DB_NAME%";
 
 	const char *replacement = getenv("DBNAME");  // Database name
 
 	ASSERT(replacement != NULL);
 
-	ASSERT(SUCCESS == match_app_output(arguments,filename,template,replacement,COMPLETED));
+	const struct argument_test_case cases[] = {
+		{"--ignore=\"^diff1/1/.*\" tests/fixtures/diffs",COMPLETED,"templates/0011_006_1.txt",STDERR_MUST_BE_EMPTY},
+		{"--update --check-level=QUICK tests/fixtures/diffs",COMPLETED,"templates/0011_006_2.txt",STDERR_MUST_BE_EMPTY},
+		{0}
+	};
 
-	filename = "templates/0011_006_2.txt";
-
-	arguments = "--update --check-level=QUICK tests/fixtures/diffs";
-
-	ASSERT(SUCCESS == match_app_output(arguments,filename,template,replacement,COMPLETED));
+	ASSERT(SUCCESS == run_and_match_templates(cases,template,replacement));
 
 	RETURN_STATUS;
 }
@@ -356,7 +371,12 @@ static Return test0011_7(void)
 
 	ASSERT(replacement != NULL);
 
-	ASSERT(SUCCESS == match_app_output(arguments,filename,template,replacement,COMPLETED));
+	const struct argument_test_case cases[] = {
+		{arguments,COMPLETED,filename,STDERR_MUST_BE_EMPTY},
+		{0}
+	};
+
+	ASSERT(SUCCESS == run_and_match_templates(cases,template,replacement));
 
 	ASSERT(SUCCESS == delete_path(replacement));
 
@@ -369,7 +389,8 @@ static Return test0011_7(void)
  * Using the --ignore options together with --include
  * Also covers the compare example that narrows the reported comparison scope
  *
- *
+ * The cleanup update is repeated through configuration from the same saved
+ * database, retaining all ignore and include rules and the full output check
  */
 static Return test0011_8(void)
 {
@@ -399,12 +420,28 @@ static Return test0011_8(void)
 
 	ASSERT(replacement != NULL);
 
-	ASSERT(SUCCESS == match_app_output(arguments,filename,template,replacement,COMPLETED));
+	const struct argument_test_case update_cases[] = {
+		{arguments,COMPLETED,filename,STDERR_MUST_BE_EMPTY},
+		{0}
+	};
+
+	/* Preserve the prepared database before either cleanup update */
+	ASSERT(SUCCESS == copy_path(replacement,"0011_008_1.db"));
+
+	ASSERT(SUCCESS == run_and_match_templates(update_cases,template,replacement));
+
+	/* Repeat the same cleanup with all filtering rules supplied by configuration */
+	ASSERT(SUCCESS == copy_path("0011_008_1.db",replacement));
+	ASSERT(SUCCESS == copy_path("tests/templates/0011_008_1.conf","0011_008_1.conf"));
+	const struct argument_test_case file_cases[] = {
+		{"--config=0011_008_1.conf",COMPLETED,filename,STDERR_MUST_BE_EMPTY},
+		{0}
+	};
+	ASSERT(SUCCESS == run_and_match_templates(file_cases,template,replacement));
+	call(delete_path_if_present("0011_008_1.conf"));
+	call(delete_path_if_present("0011_008_1.db"));
 
 	ASSERT(SUCCESS == delete_path(replacement));
-
-	m_create(char,result,MEMORY_STRING);
-	m_create(char,pattern,MEMORY_STRING);
 
 	arguments = "--progress --database=database1.db tests/fixtures/diffs/diff1";
 
@@ -423,12 +460,12 @@ static Return test0011_8(void)
 
 	filename = "templates/0011_008_2.txt";
 
-	ASSERT(SUCCESS == runit(arguments,result,NULL,COMPLETED,ALLOW_BOTH));
-	ASSERT(SUCCESS == get_file_content(filename,pattern));
-	ASSERT(SUCCESS == match_pattern(result,pattern,filename));
+	const struct argument_test_case compare_cases[] = {
+		{arguments,COMPLETED,filename,STDERR_MUST_BE_EMPTY},
+		{0}
+	};
 
-	m_del(pattern);
-	m_del(result);
+	ASSERT(SUCCESS == run_and_match_templates(compare_cases,NULL,NULL));
 
 	ASSERT(SUCCESS == delete_path("database1.db"));
 	ASSERT(SUCCESS == delete_path("database2.db"));

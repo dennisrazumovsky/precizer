@@ -19,8 +19,18 @@
 Use tabs for indentation. Spaces may be used for alignment when needed, for example when a line with all function arguments would otherwise be too long, or inside function documentation blocks and multiline comments.
 
 # Change Policy
+
+## Request Interpretation
+
+- A question alone is not an instruction, approval of a solution, or authorization to change code or documentation
+- Questions about possible solutions are requests for explanation or continued exploration and comparison of alternatives. Discussed alternatives may conflict, so they must not be combined or implemented automatically
+- Changes to code or documentation require an explicit instruction, unambiguous approval of a specific change, or a clarification that directly requests the change
+- Without such authorization, only an explanation, analysis, or comparison is provided, and code and documentation remain unchanged
+
+## Approval and Implementation
+
 - Provide a numbered implementation plan for approval before making any code changes, and do not modify code until the plan is explicitly approved
-- If a change only affects function documentation or comments, including adding, updating, or refreshing them, no plan approval is required and the work should begin immediately
+- For an authorized change that only affects function documentation or comments, including adding, updating, or refreshing them, no separate plan approval is required and the work should begin immediately
 - This exception does not apply to `README.md` or `README.ru.md`
 - Perform file renames and deletions using git commands only (`git mv` and `git rm`)
 - If a build or test fails after a change, stop making further changes immediately, explain the cause, and propose possible solutions. Do not modify code or tests merely to work around the failure without explicit user approval. After a successful implementation, carefully review the changes and repeat the verification-and-correction cycle until the result is reliable and maintainable
@@ -38,8 +48,7 @@ Use tabs for indentation. Spaces may be used for alignment when needed, for exam
 - `.builds/`: generated build/test artifacts (do not commit)
 
 ## Build, Test, and Development Commands
-- For routine Codex verification after changes, run only `SLOWTEST=skip make tests-debug`. It uses debug flags, avoids sanitizer runtime constraints, and skips non-essential long-running tests
-- When a full test run is needed, run only `make tests-debug`. It includes the slow scenarios
+- For Codex verification after changes, run `make tests-debug`. It uses debug flags and runs the complete test suite, including slow scenarios
 - Do not run multiple test variants sequentially by default. Use `make tests` only when sanitizer verification is specifically requested or justified by the change
 - The main application Makefile and internal library Makefiles usually collect source files with `$(wildcard src/*.c)`, so newly added `.c` files are picked up automatically after creation or `git mv`
 - `make` or `make production`: default optimized build; creates a ZIP package in the project root
@@ -49,28 +58,30 @@ Use tabs for indentation. Spaces may be used for alignment when needed, for exam
 - `make macos-zip`: build and package the macOS release using the distribution build rules
 - `make debug`: build the application with debug flags.
 - `make sanitize`: build the application with ASan/UBSan.
-- `make tests-debug`: build and run the debug test suite, including slow scenarios unless `SLOWTEST=skip` is set.
+- `make tests-debug`: build and run the complete debug test suite, including slow scenarios
 - `make tests`: build and run the sanitizer-backed test suite via `tests/Makefile`; use it only when sanitizer verification is specifically needed.
 - `make coverage`: builds and runs the coverage-instrumented test suite, then generates the coverage report.
 - `make clean`: remove build outputs, ZIP packages, attestation bundles, and package staging directories
 - `make purge`: remove build artifacts in `.builds/` while preserving release packages in the project root
 
 ## Coding Style & Naming Conventions
-- Language standard is `C2x`; builds use strict warnings and `-Werror`.
+- Language mode is `GNU C2x` (`-std=gnu2x`); builds use strict warnings and `-Werror`
 - Formatting is enforced with `uncrustify` (`Uncrustify.cfg`)
 - Follow existing naming: lowercase snake_case for files/functions (for example `db_check_changes.c`, `parse_arguments`).
 - Keep changes localized; avoid broad refactors in feature PRs.
 - Variable, function, and struct names should be self-explanatory, even if that makes them long
+- Compare `bool` variables explicitly with `true` or `false` in conditions, including compound conditions: `if(value == true)`, `if(value == false)`, and `if(value == true && arg != NULL)`. Do not use `if(value)` or `if(!value)`
 
 ## Testing Guidelines
 - When an AI agent needs the application binary without running the test suite, prefer `make debug`, which produces `.builds/debug/precizer` with debug symbols
-- Default test command for agent changes: `SLOWTEST=skip make tests-debug`
-- Full test command when the change warrants slow scenarios or before opening a pull request: `make tests-debug`
-- Choose one test command based on the required coverage. Do not run the default and full commands consecutively
+- Test command for agent changes and before opening a pull request: `make tests-debug`. Run the complete suite, including slow scenarios
 - Add/adjust tests in `tests/src/` (pattern: `testXXXX.c`).
 - When creating new tests, look first for suitable shared helpers in `tests/src/helpers_db_utils.c` and `tests/src/helpers_file_utils.c`. Add local `static` helpers only when the shared helpers do not already provide the needed behavior
 - Update expected outputs in `tests/templates/` when behavior changes.
-- For output-oriented tests of the main application, prefer full golden templates in `tests/templates/` over inline partial regular expressions, and compare the complete output whenever practical
+- Output-oriented tests must use complete golden templates in `tests/templates/` for each checked nonempty stream. Matching selected lines or fragments is insufficient. Comparisons must cover the stream from beginning to end, including its expected line endings, and reject unexpected leading, trailing, or intermediate output
+- Golden regular expressions may accommodate variable values such as timestamps, paths, and sizes, but must preserve the expected output structure. Use whole-stream boundaries such as `\A` and `\z`, or `\Z` with explicit handling of the final newline. Line anchors `^` and `$` alone are insufficient. Do not use unrestricted wildcards to skip output: `match_pattern()` enables `PCRE2_DOTALL`, so `.*` can hide extra lines. Constrain variable fields to their intended content, using expressions such as `[^\r\n]+` for single-line values
+- Required empty stdout and stderr must be checked explicitly, using `STDOUT_MUST_BE_EMPTY` and `STDERR_MUST_BE_EMPTY` with `run_and_match_templates()`. A NULL template skips that stream and must not be treated as an empty-output check or complete output coverage
+- Do not remove output merely to make it match a golden template. An explicitly agreed source-specific difference, such as the configuration-path diagnostic, may be checked separately before comparing the remaining output against a shared full template; every excluded line must have its complete expected content and occurrence count verified
 - Add fixture data under `tests/fixtures/` only when needed for reproducible cases.
 
 ## Commit & Pull Request Guidelines

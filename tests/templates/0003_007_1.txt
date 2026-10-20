@@ -1,0 +1,3 @@
+\Aprecizer: ERROR: At least one scan path is required\. Specify a directory as a positional argument or with --path=PATH
+Usage: precizer \[OPTION\.\.\.\] \[PATH\.\.\.\]
+Try `precizer --help' or `precizer --usage' for more information\.\Z

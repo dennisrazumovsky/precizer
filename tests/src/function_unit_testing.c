@@ -29,6 +29,7 @@ Return function_unit_testing(void)
 	SUTE(test0042,"Timed file transactions");
 	SUTE(test0043,"show_statistics(): scan and hashing rates");
 	SUTE(test0044,"Missing-file cleanup transactions");
+	SUTE(test0045,"Configuration file reader");
 
 	RETURN_STATUS;
 }

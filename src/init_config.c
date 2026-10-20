@@ -28,6 +28,7 @@ void init_config(void)
 	   These settings do not depend on Config and apply to initialization
 	   diagnostics as well as later application output */
 
+#ifdef TESTITALL_TEST_HOOKS
 	// Define the comparison string
 	const char *compare_string = "true";
 
@@ -47,6 +48,9 @@ void init_config(void)
 		// Use normal application output when test diagnostics are not requested
 		rational_logger_mode = REGULAR;
 	}
+#else
+	rational_logger_mode = REGULAR;
+#endif
 
 	/* rational_color_mode controls whether terminal styling may be emitted.
 	   AUTO lets the output policy inspect each stream, NO_COLOR, and TERM when
@@ -59,14 +63,14 @@ void init_config(void)
 	   The test-only environment override applies to internal calls and is
 	   inherited by external runit and runit_background processes. Only builds
 	   with TESTITALL_TEST_HOOKS honor this override */
-	#ifdef TESTITALL_TEST_HOOKS
+#ifdef TESTITALL_TEST_HOOKS
 	const char *test_color_mode = getenv("TESTITALL_TEST_ENV_COLOR_MODE");
 
 	if(test_color_mode != NULL && 0 == strcmp(test_color_mode,"always"))
 	{
 		rational_color_mode = COLOR_MODE_ALWAYS;
 	}
-	#endif
+#endif
 
 	// Fill out with zeroes
 	memset(config,0,sizeof(Config));
@@ -97,6 +101,12 @@ void init_config(void)
 
 	// Show all compare output categories by default
 	config->compare_filter = CF_NONE_SPECIFIED;
+
+	// No configuration file selected
+	config->config_file_path = NULL;
+
+	// No configuration entry is being processed for option error reporting
+	config->config_file_error_line = -1;
 
 	// Managed array of root paths to traverse
 	config->roots = m_init(memory);

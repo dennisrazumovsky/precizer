@@ -9,7 +9,7 @@ MAKEFLAGS += --no-print-directory
 # Compiler flags
 #
 
-C_STANDARD := -std=c2x
+C_STANDARD := -std=gnu2x
 CPPFLAGS ?=
 CFLAGS ?= -finline-functions
 LDFLAGS ?=
@@ -31,7 +31,7 @@ BUILDDIR = ../.builds
 short_path = $(if $(filter ./,$(dir $(1))),$(notdir $(1)),$(notdir $(patsubst %/,%,$(dir $(1))))/$(notdir $(1)))
 TEST_BUILDDIR = $(BUILDDIR)/$(EXE)
 COMPILE_COMMANDS = $(BUILDDIR)/compile_commands.json
-LIBS = testitall testmocking mem sha512 rational sqlite3 xdiff monocypher
+LIBS = testitall testmocking mem sha512 rational sqlite3 xdiff monocypher inih argp
 
 TESTED_APP_NAME := $(shell awk '$$2 == "APP_NAME" && $$3 ~ /^"/ { gsub(/"/,"",$$3); print $$3; exit }' $(APP_SRC_DIR)/version.h)
 ifeq ($(TESTED_APP_NAME),)
@@ -42,8 +42,6 @@ endif
 LDLIBS += $(foreach d,$(LIBS),-l$d)
 ifeq ($(UNAME_S),Darwin)
 LDLIBS += $(shell pkg-config --libs libpcre2-8)
-ARGP_PREFIX ?= $(shell brew --prefix argp-standalone 2>/dev/null)
-LDPATH += -L$(ARGP_PREFIX)/lib
 else
 LDLIBS += -lpcre2-8
 endif
@@ -55,7 +53,7 @@ IS_MSYS := $(shell $(CC) $(CPPFLAGS) $(CFLAGS) -dM -E -x c /dev/null 2>/dev/null
 SYS := $(shell $(CC) -dumpmachine 2>/dev/null)
 ifneq (, $(findstring alpine, $(SYS)))
 # Alpine Linux uses external libraries
-LDLIBS += -largp -lfts
+LDLIBS += -lfts
 endif
 
 # Additional include paths for external libraries
@@ -65,15 +63,10 @@ INCPATH += -I$(APP_SRC_DIR)
 
 ifeq ($(UNAME_S),Darwin)
 INCPATH += $(shell pkg-config --cflags libpcre2-8)
-INCPATH += -I$(ARGP_PREFIX)/include
-LDLIBS += -largp
-else ifneq ($(IS_MSYS),)
-# The MSYS runtime needs a separate argp library
-LDLIBS += -largp
 endif
 
-# Detect whether we're using GCC
-GCC := $(findstring gcc,$(notdir $(firstword $(CC))))
+# Detect GCC from its version output, including cc and cross-compiler names
+GCC := $(findstring gcc version,$(shell $(CC) -v 2>&1))
 
 # Warning flags for additional checks
 WFLAGS += -Werror # Treat every warning as an error (-Werror stops the build)
@@ -495,7 +488,7 @@ CLANG := $(notdir $(or $(lastword $(sort $(wildcard $(addsuffix /clang-[0-9]*,$(
 CLANG_SUFFIX := $(patsubst clang%,%,$(CLANG))
 SCAN_BUILD := scan-build$(CLANG_SUFFIX)
 
-# Run clang static analyzer and view analysis results in a web browser when the build command completes
+# Run the Clang static analyzer and open its results in a web browser
 clang-analyzer: CC = $(CLANG)
 clang-analyzer:
 	@echo "Using compiler: $(CLANG), analyzer: $(SCAN_BUILD)"

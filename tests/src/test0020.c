@@ -9,98 +9,95 @@ Return test0020_1(void)
 {
 	INITTEST;
 
-	m_create(char,result,MEMORY_STRING);
-
-	m_create(char,pattern,MEMORY_STRING);
-
-	const char *filename = "templates/0020_001.txt";
-
 	ASSERT(SUCCESS == set_environment_variable("TESTING","true"));
 
 	const char *arguments = "--update --database=nonexistent_directory/database1.db "
 	        "tests/fixtures/diffs/diff1";
 
-	ASSERT(SUCCESS == runit(arguments,result,NULL,FAILURE,ALLOW_BOTH));
-
-	ASSERT(SUCCESS == get_file_content(filename,pattern));
+	const struct argument_test_case cases[] = {
+		{arguments,FAILURE,"templates/0020_001.txt",STDERR_MUST_BE_EMPTY},
+		{0}
+	};
 
 	// Match the result against the pattern
-	ASSERT(SUCCESS == match_pattern(result,pattern,filename));
-
-	// Clean to use it iteratively
-	m_del(pattern);
-	m_del(result);
+	ASSERT(SUCCESS == run_and_match_templates(cases,NULL,NULL));
 
 	RETURN_STATUS;
 }
 
 /**
+ * @brief Reject updating a missing database through CLI and configuration
  *
- * Testing attempt to open DB with --update when database is missing
+ * Both runs use the same full output template and must fail without creating
+ * the database
  *
+ * @return Return status for equivalent update failures
  */
 Return test0020_2(void)
 {
 	INITTEST;
-
-	m_create(char,result,MEMORY_STRING);
-
-	m_create(char,pattern,MEMORY_STRING);
-
-	const char *filename = "templates/0020_002.txt";
 
 	ASSERT(SUCCESS == set_environment_variable("TESTING","true"));
 
 	const char *arguments = "--update --database=nonexistent_database1.db "
 	        "tests/fixtures/diffs/diff1";
 
-	ASSERT(SUCCESS == runit(arguments,result,NULL,FAILURE,ALLOW_BOTH));
-
-	ASSERT(SUCCESS == get_file_content(filename,pattern));
+	const struct argument_test_case cases[] = {
+		{arguments,FAILURE,"templates/0020_002.txt",STDERR_MUST_BE_EMPTY},
+		{0}
+	};
 
 	// Match the result against the pattern
-	ASSERT(SUCCESS == match_pattern(result,pattern,filename));
+	ASSERT(SUCCESS == run_and_match_templates(cases,NULL,NULL));
 
-	// Clean to use it iteratively
-	m_del(pattern);
-	m_del(result);
+	/* Repeat the failure through configuration while the database is still absent */
+	ASSERT(SUCCESS == copy_path("tests/templates/0020_002.conf","0020_002.conf"));
+	const struct argument_test_case file_cases[] = {
+		{"--config=0020_002.conf",FAILURE,"templates/0020_002.txt",STDERR_MUST_BE_EMPTY},
+		{0}
+	};
+	ASSERT(SUCCESS == run_and_match_templates(file_cases,NULL,NULL));
+	call(delete_path_if_present("0020_002.conf"));
 
 	RETURN_STATUS;
 }
 
 /**
+ * @brief Reject database creation in a write-protected directory through CLI and configuration
  *
- * Testing DB creation in write protected directory
+ * Both runs use the same directory permissions and full output template
  *
+ * @return Return status for equivalent database creation failures
  */
 Return test0020_3(void)
 {
 	INITTEST;
 
-	m_create(char,result,MEMORY_STRING);
-
-	m_create(char,pattern,MEMORY_STRING);
-
 	ASSERT(SUCCESS == create_directory("write_protected_directory"));
 	ASSERT(SUCCESS == change_mode("write_protected_directory",0000));
-
-	const char *filename = "templates/0020_003.txt";
 
 	ASSERT(SUCCESS == set_environment_variable("TESTING","true"));
 
 	const char *arguments = "--database=write_protected_directory/database1.db "
 	        "tests/fixtures/diffs/diff1";
 
-	ASSERT(SUCCESS == runit(arguments,result,NULL,FAILURE,ALLOW_BOTH));
-
-	ASSERT(SUCCESS == get_file_content(filename,pattern));
+	const struct argument_test_case cases[] = {
+		{arguments,FAILURE,"templates/0020_003.txt",STDERR_MUST_BE_EMPTY},
+		{0}
+	};
 
 	// Match the result against the pattern
-	ASSERT(SUCCESS == match_pattern(result,pattern,filename));
+	ASSERT(SUCCESS == run_and_match_templates(cases,NULL,NULL));
 
-	// Clean to use it iteratively
-	m_del(pattern);
-	m_del(result);
+	/* Repeat the failure before restoring permissions on the database directory */
+	ASSERT(SUCCESS == copy_from_origin("tests/templates/0020_003.conf","0020_003.conf",REQUIRE_SOURCE_EXISTS));
+	const struct argument_test_case file_cases[] = {
+		{"--config=0020_003.conf",FAILURE,"templates/0020_003.txt",STDERR_MUST_BE_EMPTY},
+		{0}
+	};
+	ASSERT(SUCCESS == run_and_match_templates(file_cases,NULL,NULL));
+
+	call(delete_path_if_present("0020_003.conf"));
 
 	ASSERT(SUCCESS == change_mode("write_protected_directory",0777));
 	ASSERT(SUCCESS == delete_path("write_protected_directory"));
@@ -117,10 +114,6 @@ Return test0020_4(void)
 {
 	INITTEST;
 
-	m_create(char,result,MEMORY_STRING);
-
-	m_create(char,pattern,MEMORY_STRING);
-
 	ASSERT(SUCCESS == set_environment_variable("TESTING","true"));
 
 	const char *arguments = "--database=write_protected_database1.db "
@@ -134,20 +127,15 @@ Return test0020_4(void)
 
 	ASSERT(SUCCESS == change_mode("write_protected_database1.db",0000));
 
-	const char *filename = "templates/0020_004.txt";
-
 	arguments = "--compare write_protected_database1.db database2.db";
 
-	ASSERT(SUCCESS == runit(arguments,result,NULL,FAILURE,ALLOW_BOTH));
-
-	ASSERT(SUCCESS == get_file_content(filename,pattern));
+	const struct argument_test_case cases[] = {
+		{arguments,FAILURE,"templates/0020_004.txt",STDERR_MUST_BE_EMPTY},
+		{0}
+	};
 
 	// Match the result against the pattern
-	ASSERT(SUCCESS == match_pattern(result,pattern,filename));
-
-	// Clean to use it iteratively
-	m_del(pattern);
-	m_del(result);
+	ASSERT(SUCCESS == run_and_match_templates(cases,NULL,NULL));
 
 	ASSERT(SUCCESS == delete_path("database2.db"));
 
@@ -163,27 +151,18 @@ Return test0020_5(void)
 {
 	INITTEST;
 
-	m_create(char,result,MEMORY_STRING);
-
-	m_create(char,pattern,MEMORY_STRING);
-
 	ASSERT(SUCCESS == set_environment_variable("TESTING","true"));
-
-	const char *filename = "templates/0020_005.txt";
 
 	const char *arguments = "--update --database=write_protected_database1.db "
 	        "tests/fixtures/diffs/diff1";
 
-	ASSERT(SUCCESS == runit(arguments,result,NULL,FAILURE,ALLOW_BOTH));
-
-	ASSERT(SUCCESS == get_file_content(filename,pattern));
+	const struct argument_test_case cases[] = {
+		{arguments,FAILURE,"templates/0020_005.txt",STDERR_MUST_BE_EMPTY},
+		{0}
+	};
 
 	// Match the result against the pattern
-	ASSERT(SUCCESS == match_pattern(result,pattern,filename));
-
-	// Clean to use it iteratively
-	m_del(pattern);
-	m_del(result);
+	ASSERT(SUCCESS == run_and_match_templates(cases,NULL,NULL));
 
 	ASSERT(SUCCESS == change_mode("write_protected_database1.db",0666));
 	ASSERT(SUCCESS == delete_path("write_protected_database1.db"));
@@ -192,56 +171,56 @@ Return test0020_5(void)
 }
 
 /**
+ * @brief Reject changing the primary path without force through CLI and configuration
  *
- * Attempt to change the primary path in the database
+ * Both runs use the same prepared database and full output template. The warning
+ * leaves the database unchanged for the following test
  *
+ * @return Return status for equivalent path mismatch warnings
  */
 Return test0020_6(void)
 {
 	INITTEST;
 
-	m_create(char,result,MEMORY_STRING);
-
-	m_create(char,pattern,MEMORY_STRING);
-
-	const char *filename = "templates/0020_006.txt";
-
 	ASSERT(SUCCESS == set_environment_variable("TESTING","true"));
 
 	const char *arguments = "--database=database1.db tests/fixtures/diffs/diff1";
 
-	ASSERT(SUCCESS == runit(arguments,result,NULL,COMPLETED,ALLOW_BOTH));
+	ASSERT(SUCCESS == runit(arguments,NULL,NULL,COMPLETED,ALLOW_BOTH));
 
 	arguments = "--check-level=QUICK --update --database=database1.db tests/fixtures/diffs/diff2";
 
-	ASSERT(SUCCESS == runit(arguments,result,NULL,WARNING,ALLOW_BOTH));
-
-	ASSERT(SUCCESS == get_file_content(filename,pattern));
+	const struct argument_test_case cases[] = {
+		{arguments,WARNING,"templates/0020_006.txt",STDERR_MUST_BE_EMPTY},
+		{0}
+	};
 
 	// Match the result against the pattern
-	ASSERT(SUCCESS == match_pattern(result,pattern,filename));
+	ASSERT(SUCCESS == run_and_match_templates(cases,NULL,NULL));
 
-	// Clean to use it iteratively
-	m_del(pattern);
-	m_del(result);
+	/* Repeat the warning with force disabled in the configuration file */
+	ASSERT(SUCCESS == copy_path("tests/templates/0020_006.conf","0020_006.conf"));
+	const struct argument_test_case file_cases[] = {
+		{"--config=0020_006.conf",WARNING,"templates/0020_006.txt",STDERR_MUST_BE_EMPTY},
+		{0}
+	};
+	ASSERT(SUCCESS == run_and_match_templates(file_cases,NULL,NULL));
+	call(delete_path_if_present("0020_006.conf"));
 
 	RETURN_STATUS;
 }
 
 /**
+ * @brief Replace the primary path with force through CLI and configuration
  *
- * Replace the primary path in the database
+ * Both updates start from the same saved database and use the same full output
+ * template. File timestamps are prepared once before either update
  *
+ * @return Return status for equivalent forced path replacements
  */
 Return test0020_7(void)
 {
 	INITTEST;
-
-	m_create(char,result,MEMORY_STRING);
-
-	m_create(char,pattern,MEMORY_STRING);
-
-	const char *filename = "templates/0020_007.txt";
 
 	ASSERT(SUCCESS == set_environment_variable("TESTING","true"));
 
@@ -255,19 +234,30 @@ Return test0020_7(void)
 	ASSERT(SUCCESS == touch_file_mtime_with_reference_delta_ns("tests/fixtures/diffs/diff1/path1/AAA/ZAW/A/b/c/a_file.txt","tests/fixtures/diffs/diff2/path1/AAA/ZAW/A/b/c/a_file.txt",0));
 	ASSERT(SUCCESS == touch_file_mtime_with_reference_delta_ns("tests/fixtures/diffs/diff1/path2/AAA/ZAW/A/b/c/a_file.txt","tests/fixtures/diffs/diff2/path2/AAA/ZAW/A/b/c/a_file.txt",0));
 
+	/* Save the database before either update replaces its stored paths and records */
+	ASSERT(SUCCESS == copy_path("database1.db","0020_007.db"));
+
 	const char *arguments = "--check-level=QUICK --update --force --database=database1.db "
 	        "tests/fixtures/diffs/diff2";
 
-	ASSERT(SUCCESS == runit(arguments,result,NULL,COMPLETED,ALLOW_BOTH));
-
-	ASSERT(SUCCESS == get_file_content(filename,pattern));
+	const struct argument_test_case cases[] = {
+		{arguments,COMPLETED,"templates/0020_007.txt",STDERR_MUST_BE_EMPTY},
+		{0}
+	};
 
 	// Match the result against the pattern
-	ASSERT(SUCCESS == match_pattern(result,pattern,filename));
+	ASSERT(SUCCESS == run_and_match_templates(cases,NULL,NULL));
 
-	// Clean to use it iteratively
-	m_del(pattern);
-	m_del(result);
+	/* Restore only the database so configuration processes the same prepared files */
+	ASSERT(SUCCESS == copy_path("0020_007.db","database1.db"));
+	ASSERT(SUCCESS == copy_path("tests/templates/0020_007.conf","0020_007.conf"));
+	const struct argument_test_case file_cases[] = {
+		{"--config=0020_007.conf",COMPLETED,"templates/0020_007.txt",STDERR_MUST_BE_EMPTY},
+		{0}
+	};
+	ASSERT(SUCCESS == run_and_match_templates(file_cases,NULL,NULL));
+	call(delete_path_if_present("0020_007.conf"));
+	call(delete_path_if_present("0020_007.db"));
 
 	ASSERT(SUCCESS == delete_path("database1.db"));
 

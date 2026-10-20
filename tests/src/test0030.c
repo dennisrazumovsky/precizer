@@ -564,7 +564,8 @@ static Return test0030_4(void)
  * Creates a baseline database with the `path1/` subtree protected by `--lock-checksum`.
  * After one locked file gets a metadata-only timestamp change, the update run
  * with `--rehash-locked` and without `--watch-timestamps` must rehash the file,
- * finish successfully, and store the new timestamps without changing its checksum
+ * finish successfully, and store the new timestamps without changing its checksum.
+ * CLI and configuration runs repeat these checks from the same saved database
  */
 static Return test0030_5(void)
 {
@@ -583,6 +584,7 @@ static Return test0030_5(void)
 	 * whose timestamps will be changed without touching file contents
 	 */
 	const char *db_filename = "lock_s5.db";
+	const char *db_backup_filename = "0030_005_2.db";
 	const char *locked_relative_path = "path1/AAA/BCB/CCC/a.txt";
 	const char *locked_file_path = "tests/fixtures/diffs/diff1/path1/AAA/BCB/CCC/a.txt";
 
@@ -654,6 +656,9 @@ static Return test0030_5(void)
 	ASSERT(SUCCESS == get_file_stat(m_text(target_path),&file_stat_drift));
 	ASSERT(false == cmpctstat_matches_stat_timestamps(&db_stat_before,&file_stat_drift));
 
+	/* Save the database before either update synchronizes the changed timestamps */
+	ASSERT(SUCCESS == copy_path(db_filename,db_backup_filename));
+
 	/*
 	 * Run an update that rehashes locked files without timestamp watching.
 	 * The checksum match must make the timestamp-only drift safe to save
@@ -661,17 +666,17 @@ static Return test0030_5(void)
 	arguments = "--update --check-level=QUICK --rehash-locked --lock-checksum=\"^path1/.*\" "
 	        "--database=lock_s5.db tests/fixtures/diffs/diff1";
 
-	ASSERT(SUCCESS == runit(arguments,result,NULL,COMPLETED,ALLOW_BOTH));
-
 	/*
 	 * Verify the successful update output.
 	 * All locked files must be reported as successfully rehashed
 	 */
 	filename = "templates/0030_005_2.txt";
 
-	ASSERT(SUCCESS == get_file_content(filename,pattern));
-
-	ASSERT(SUCCESS == match_pattern(result,pattern,filename));
+	const struct argument_test_case update_cases[] = {
+		{arguments,COMPLETED,filename,STDERR_MUST_BE_EMPTY},
+		{0}
+	};
+	ASSERT(SUCCESS == run_and_match_templates(update_cases,NULL,NULL));
 
 	/*
 	 * Re-read the protected row and current file state after the update.
@@ -692,6 +697,28 @@ static Return test0030_5(void)
 	ASSERT(db_stat_before.st_ino == db_stat_after.st_ino);
 	ASSERT(offset_before == offset_after);
 	ASSERT(0 == memcmp(sha512_before,sha512_after,(size_t)SHA512_DIGEST_LENGTH));
+
+	/* Restore only the database, then repeat the update and every row check.
+	   The file retains the same timestamp drift for the configuration run */
+	ASSERT(SUCCESS == copy_path(db_backup_filename,db_filename));
+	ASSERT(SUCCESS == copy_path("tests/templates/0030_005_2.conf","0030_005_2.conf"));
+	const struct argument_test_case file_cases[] = {
+		{"--config=0030_005_2.conf",COMPLETED,filename,STDERR_MUST_BE_EMPTY},
+		{0}
+	};
+	ASSERT(SUCCESS == run_and_match_templates(file_cases,NULL,NULL));
+	ASSERT(SUCCESS == db_read_cmpctstat_by_relative_path(db_filename,locked_relative_path,&db_stat_after));
+	ASSERT(SUCCESS == read_final_sha512_from_db(db_filename,locked_relative_path,&offset_after,sha512_after));
+	ASSERT(SUCCESS == get_file_stat(m_text(target_path),&file_stat_after));
+	ASSERT(cmpctstat_matches_stat_timestamps(&db_stat_after,&file_stat_after));
+	ASSERT(db_stat_before.st_size == db_stat_after.st_size);
+	ASSERT(db_stat_before.st_blocks == db_stat_after.st_blocks);
+	ASSERT(db_stat_before.st_dev == db_stat_after.st_dev);
+	ASSERT(db_stat_before.st_ino == db_stat_after.st_ino);
+	ASSERT(offset_before == offset_after);
+	ASSERT(0 == memcmp(sha512_before,sha512_after,(size_t)SHA512_DIGEST_LENGTH));
+	call(delete_path_if_present("0030_005_2.conf"));
+	call(delete_path_if_present(db_backup_filename));
 
 	/*
 	 * Remove the test database and restore the mutable fixture.
@@ -919,7 +946,8 @@ static Return test0030_6(void)
  * Creates a baseline database with the `path1/` subtree protected by `--lock-checksum`.
  * After bytes inside one locked file change on disk, the update run with
  * `--rehash-locked` must detect the checksum mismatch, report corruption,
- * and keep the original database row untouched
+ * and keep the original database row untouched.
+ * CLI and configuration runs use the same saved database and corrupted file
  */
 static Return test0030_7(void)
 {
@@ -938,6 +966,7 @@ static Return test0030_7(void)
 	 * whose on-disk bytes will be changed without changing its logical size
 	 */
 	const char *db_filename = "lock_s7.db";
+	const char *db_backup_filename = "0030_007_2.db";
 	const char *locked_relative_path = "path1/AAA/ZAW/A/b/c/a_file.txt";
 	const char *locked_file_path = "tests/fixtures/diffs/diff1/path1/AAA/ZAW/A/b/c/a_file.txt";
 
@@ -1009,6 +1038,9 @@ static Return test0030_7(void)
 	ASSERT(0 != memcmp(file_sha512_before,file_sha512_after_tamper,(size_t)SHA512_DIGEST_LENGTH));
 	ASSERT(0 != memcmp(db_sha512_before,file_sha512_after_tamper,(size_t)SHA512_DIGEST_LENGTH));
 
+	/* Preserve the database before either update checks the corrupted file */
+	ASSERT(SUCCESS == copy_path(db_filename,db_backup_filename));
+
 	/*
 	 * Run an update with deep locked-file verification enabled.
 	 * The content mismatch must be reported as a warning, not saved to the DB
@@ -1016,17 +1048,17 @@ static Return test0030_7(void)
 	arguments = "--update --check-level=QUICK --rehash-locked --lock-checksum=\"^path1/.*\" "
 	        "--database=lock_s7.db tests/fixtures/diffs/diff1";
 
-	ASSERT(SUCCESS == runit(arguments,result,NULL,WARNING,ALLOW_BOTH));
-
 	/*
 	 * Verify the warning output against the real scenario.
 	 * The changed locked file must be reported as checksum corruption
 	 */
 	filename = "templates/0030_007_2.txt";
 
-	ASSERT(SUCCESS == get_file_content(filename,pattern));
-
-	ASSERT(SUCCESS == match_pattern(result,pattern,filename));
+	const struct argument_test_case update_cases[] = {
+		{arguments,WARNING,filename,STDERR_MUST_BE_EMPTY},
+		{0}
+	};
+	ASSERT(SUCCESS == run_and_match_templates(update_cases,NULL,NULL));
 
 	/*
 	 * Re-read the same protected row after the warning run.
@@ -1038,6 +1070,24 @@ static Return test0030_7(void)
 	ASSERT(offset_before == offset_after);
 	ASSERT(0 == memcmp(db_sha512_before,db_sha512_after,(size_t)SHA512_DIGEST_LENGTH));
 	ASSERT(0 != memcmp(db_sha512_after,file_sha512_after_tamper,(size_t)SHA512_DIGEST_LENGTH));
+
+	/* Restore only the database, then repeat the warning and protected-row checks.
+	   The same corrupted contents remain in place for the configuration run */
+	ASSERT(SUCCESS == copy_path(db_backup_filename,db_filename));
+	ASSERT(SUCCESS == copy_path("tests/templates/0030_007_2.conf","0030_007_2.conf"));
+	const struct argument_test_case file_cases[] = {
+		{"--config=0030_007_2.conf",WARNING,filename,STDERR_MUST_BE_EMPTY},
+		{0}
+	};
+	ASSERT(SUCCESS == run_and_match_templates(file_cases,NULL,NULL));
+	ASSERT(SUCCESS == db_read_cmpctstat_by_relative_path(db_filename,locked_relative_path,&db_stat_after));
+	ASSERT(SUCCESS == read_final_sha512_from_db(db_filename,locked_relative_path,&offset_after,db_sha512_after));
+	ASSERT(0 == memcmp(&db_stat_before,&db_stat_after,sizeof(CmpctStat)));
+	ASSERT(offset_before == offset_after);
+	ASSERT(0 == memcmp(db_sha512_before,db_sha512_after,(size_t)SHA512_DIGEST_LENGTH));
+	ASSERT(0 != memcmp(db_sha512_after,file_sha512_after_tamper,(size_t)SHA512_DIGEST_LENGTH));
+	call(delete_path_if_present("0030_007_2.conf"));
+	call(delete_path_if_present(db_backup_filename));
 
 	/*
 	 * Remove the test database and restore the mutable fixture.

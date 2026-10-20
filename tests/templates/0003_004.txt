@@ -1,5 +1,5 @@
 \ATESTING:Configuration initialization is finished
-Usage: precizer \[OPTION\.\.\.\] PATH
+Usage: precizer \[OPTION\.\.\.\] \[PATH\.\.\.\]
 [\s\S]*? Compare databases options:
 [\s\S]*?  -c, --compare[^\n]*
 [\s\S]*?  -F, --compare-filter=checksum-mismatch\|first-source\|second-source[ \t]*
@@ -9,6 +9,7 @@ Usage: precizer \[OPTION\.\.\.\] PATH
 [\s\S]*?  -l, --check-level=FULL\|QUICK[^\n]*
 [\s\S]*?  -m, --maxdepth=NUMBER[^\n]*
 [\s\S]*?  -n, --dry-run\[=MODE\][^\n]*
+[\s\S]*?  -P, --path=PATH[^\n]*
 [\s\S]*?  -T, --watch-timestamps[^\n]*
 [\s\S]*?  -u, --update[^\n]*
 [\s\S]*?  -x, --one-file-system[^\n]*
@@ -21,6 +22,7 @@ Usage: precizer \[OPTION\.\.\.\] PATH
 [\s\S]*?  -e, --ignore=PCRE2_REGEXP[^\n]*
 [\s\S]*?  -i, --include=PCRE2_REGEXP[^\n]*
 [\s\S]*? Visualizations options:
+[\s\S]*?  -g, --config=FILE[^\n]*
 [\s\S]*?  -h, -\?, --help[^\n]*
 [\s\S]*?  -p, --progress[^\n]*
 [\s\S]*?  -q, --quiet-ignored[^\n]*

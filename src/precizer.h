@@ -13,6 +13,11 @@
 #include "sha512.h"
 #include "mem.h"
 #include "sqlite3.h"
+
+/* Shared inih settings for the application and bundled parser */
+#include "inih_config.h"
+#include "ini.h"
+
 // Application name and current code version
 #include "version.h"
 
@@ -330,6 +335,13 @@ typedef struct {
 
 	/// Bitmask of enabled --compare output filters
 	unsigned int compare_filter;
+
+	/// Selected configuration path, or NULL for CLI-only parsing.
+	/// Borrows storage from argv or a static string; no allocation is owned
+	const char *config_file_path;
+
+	/// Current configuration line for option errors, or -1 outside a file entry
+	int config_file_error_line;
 
 	/// Managed array of root paths to traverse
 	memory roots;
@@ -697,7 +709,7 @@ typedef enum FileAccessStatus : unsigned int
 
 } FileAccessStatus;
 
-FileAccessStatus file_access_status(const int);
+FileAccessStatus file_access_status(const int) __attribute__ ((const));
 
 FileAccessStatus directory_open(
 	const memory *,
@@ -831,15 +843,62 @@ Return stat_copy(
 	const struct stat *,
 	CmpctStat *);
 
-size_t blocks_to_bytes(blkcnt_t);
+size_t blocks_to_bytes(blkcnt_t) __attribute__ ((const));
 
 Changed file_compare_metadata_equivalence(
 	const CmpctStat *,
 	const CmpctStat *) __attribute__ ((pure));
 
+/**
+ * @brief Share temporary state for choosing and parsing a settings source
+ *
+ * Supports choosing CLI arguments or a configuration file, detecting source
+ * conflicts, and checking whether the file supplied settings. Application
+ * settings themselves are stored in Config
+ */
+typedef struct {
+	/** Whether the selected file must exist */
+	bool config_required;
+	/** Whether CLI contains arguments other than --config/-g */
+	bool has_other_arguments;
+	/** Whether help, usage, or version was requested through CLI */
+	bool information_mode_requested;
+	/** Whether the file contains recognized settings, including false flags */
+	bool config_has_entries;
+	/** State retaining the program name and error stream between argp passes */
+	struct argp_state diagnostic_state;
+} ArgumentParseContext;
+
+error_t parse_source_option(
+	int,
+	char *,
+	struct argp_state *);
+
+Return select_settings_source(
+	const int,
+	error_t,
+	ArgumentParseContext *);
+
 Return parse_arguments(
 	const int,
 	char **);
+
+error_t parse_opt(
+	int,
+	char *,
+	struct argp_state *);
+
+Return read_config_file(
+	const char *,
+	bool,
+	bool *,
+	struct argp_state *);
+
+#ifdef TESTITALL_TEST_HOOKS
+void show_testing_diagnostics(void);
+#endif
+
+void show_verbose_diagnostics(void);
 
 void about(void);
 

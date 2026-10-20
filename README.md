@@ -25,6 +25,7 @@ A tiny, high-performance application for verifying file integrity
 		- [macOS](#macos-1)
 		- [Windows](#windows-1)
 	- [Testing](#testing)
+- [Configuration file](#configuration-file)
 - [Usage examples](#usage-examples)
 - [Main command-line options](#main-command-line-options)
 - [Troubleshooting](#troubleshooting)
@@ -56,6 +57,15 @@ A tiny, high-performance application for verifying file integrity
 [![OpenSSF Best Practices](https://www.bestpractices.dev/projects/12159/badge)](https://www.bestpractices.dev/projects/12159)  
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/precizer/precizer/badge)](https://scorecard.dev/viewer/?uri=github.com/precizer/precizer)
 
+### Bages
+<a href='https://www.saashub.com/precizer?utm_source=badge&utm_campaign=badge&utm_content=precizer&badge_variant=neutral&badge_kind=approved' target='_blank'><img src="https://cdn-b.saashub.com/img/badges/approved-neutral.png?v=1" alt="precizer badge" style="max-width: 150px;"/></a>
+<a href="https://alternativeto.net/software/precizer-verify-file-checksums-at-scale/about/?utm_source=badge&utm_medium=referral" target="_blank">
+  <img src="https://alternativeto.net/static/badges/badge-compact-light.svg"
+       alt="precizer | AlternativeTo"
+       width="171" height="58"
+       style="width: 171px; height: 58px;" />
+</a>
+
 ## ABOUT THE PROGRAM
 
 ### Overview
@@ -63,6 +73,8 @@ A tiny, high-performance application for verifying file integrity
 **precizer** is a lightweight, high-performance CLI tool written in pure C. It’s designed for file integrity verification and comparison, making it especially useful for validating synchronization results. The program walks directory trees and builds a database of files and their checksums for fast, repeatable comparisons.
 
 Built for embedded systems and large-scale clustered environments, **precizer** detects synchronization drift by comparing files and checksums across sources. It can also analyze historical changes by comparing databases captured from the same source at different points in time.
+
+Run settings can be saved in a [configuration file](#configuration-file) so paths and options do not have to be entered again for repeated runs
 
 ### Basic Example
 
@@ -311,7 +323,7 @@ git clone --depth=1 https://github.com/precizer/precizer.git
 cd precizer
 ```
 
-All build targets honor `CPPFLAGS`, `CFLAGS`, and `LDFLAGS` values supplied through the environment or command line. The required `-std=c2x` language standard is added separately and cannot be disabled by overriding `CFLAGS`
+All build targets honor `CPPFLAGS`, `CFLAGS`, and `LDFLAGS` values supplied through the environment or command line. The required `-std=gnu2x` language mode (C2x with GNU extensions) is added separately and cannot be disabled by overriding `CFLAGS`
 
 Previous builds and artifacts can be removed with the following command:
 
@@ -361,13 +373,13 @@ sudo apt -y install libpcre2-8-0 libsqlite3-0
 **Build tools and libraries:**
 
 ```sh
-sudo apk add --no-cache build-base pcre2-dev pcre2-static fts-dev argp-standalone sqlite-dev upx zip unzip
+sudo apk add --no-cache build-base pcre2-dev pcre2-static fts-dev sqlite-dev upx zip unzip
 ```
 
 **Dynamic build runtime dependencies:**
 
 ```sh
-sudo apk add --no-cache pcre2 sqlite-libs argp-standalone fts
+sudo apk add --no-cache pcre2 sqlite-libs fts
 ```
 
 ##### AlmaLinux/Rocky/Fedora Linux
@@ -455,7 +467,7 @@ Any distribution listed above can be specified instead of `-gentoo-`
 make dynamic-production
 ```
 
-The archive contains an ELF executable of about **50 kilobytes**. It is tuned for the local CPU and dynamically linked against libraries installed on the system; it is also self-extracting and UPX-compressed. It can be built and run on the local machine if libraries such as sqlite3, pcre2, argp, and fts are installed
+The archive contains an ELF executable of about **50 kilobytes**. It is tuned for the local CPU and dynamically linked against libraries installed on the system; it is also self-extracting and UPX-compressed. It can be built and run on the local machine if libraries such as sqlite3, pcre2, and fts are installed
 
 The binary is optimized for **maximum performance and minimal size**
 
@@ -497,7 +509,7 @@ The Xcode command-line tools and Homebrew dependencies are required for building
 
 ```sh
 xcode-select --install
-brew install llvm sqlite pcre2 argp-standalone
+brew install llvm sqlite pcre2
 ```
 
 ##### Build and installation
@@ -525,7 +537,7 @@ To run the program by name without specifying its path, place the extracted `pre
 Every macOS build variant is dynamically linked. The following Homebrew system libraries are required at runtime:
 
 ```sh
-brew install sqlite pcre2 argp-standalone
+brew install sqlite pcre2
 ```
 
 #### Windows
@@ -545,7 +557,7 @@ If the update requires closing the terminal, the **MSYS2 MSYS** terminal is reop
 Dependencies are installed with the following command:
 
 ```sh
-pacman -S --needed git gcc make libsqlite-devel pcre2-devel libargp-devel zip
+pacman -S --needed git gcc make libsqlite-devel pcre2-devel zip
 ```
 
 Obtaining the source code is described at the beginning of [Manual Build](#manual-build). All remaining commands run from the project root in the same terminal
@@ -609,6 +621,78 @@ make tests
 
 The complete list of system packages and installation commands is provided under [“System packages for testing”](CONTRIBUTING.md#system-packages-for-testing).
 
+## CONFIGURATION FILE
+
+A configuration file saves the settings for a task: which folders to scan, where to store the database, and which files to exclude. Separate files can be prepared for different tasks
+
+### Running with saved settings
+
+For an initial scan, a folder path in `precizer.conf` is enough. This example also enables progress reporting:
+
+```ini
+path = /mnt/storage
+progress = true
+```
+
+Starting the program from the folder containing this file requires no arguments:
+
+```sh
+precizer
+```
+
+The program scans `/mnt/storage` and its subfolders. The database is created in the launch folder, using the computer name followed by `.db`. Adding `update = true` to the file allows an existing database to be updated. At least one `path` is required for scanning
+
+A different configuration file can be selected with either of these equivalent commands:
+
+```sh
+precizer --config=/path/to/task.conf
+precizer -g /path/to/task.conf
+```
+
+Relative paths inside the configuration are resolved from the program's launch folder, even when the configuration file is stored elsewhere
+
+The sample [precizer.conf](precizer.conf) in the repository contains setting descriptions, defaults, and examples. All entries are commented out: removing the `#` immediately before a setting name activates that line
+
+### Configuration and the command line
+
+> **Run settings must come from one source: the command line or a configuration file**
+
+Settings and paths supplied through CLI disable automatic reading of `precizer.conf`. When a file is explicitly selected with `--config` (`-g`), all settings belong in that file; adding other settings or paths to the command line causes an error
+
+Requests for `--help`, `--usage`, `--version`, and their short forms do not read configuration files. For example, `precizer --config=task.conf --help` displays help without opening the file
+
+When no arguments are supplied and `precizer.conf` is absent or contains no settings, a short usage message is displayed. Errors in the selected file stop the run; a missing or unreadable file explicitly selected with `--config` is also an error
+
+### Settings format
+
+Setting names match long CLI option names without the leading `--`, such as `database`, `progress`, and `ignore`. Names retain their case and hyphens. The name and value are separated by `=`; `:` is also accepted. The `help`, `usage`, `version`, and `config` options are available only on the command line
+
+Boolean settings accept all of the following values, regardless of letter case:
+
+| Action | Values |
+|---|---|
+| Enable | `true`, `yes`, `on`, `y`, `1` |
+| Disable | `false`, `no`, `off`, `n`, `0` |
+
+For a setting with a single value, the last entry takes effect: for example, `progress = false` after `progress = true` turns progress off. Entries for lists such as `ignore` and `include` accumulate. Repeated names and continuation lines can be combined:
+
+```ini
+ignore = "^cache/"
+ignore = "^tmp/"
+    "^build/"
+```
+
+This defines three exclusion rules. A nonempty indented line, other than a comment, adds another value to the preceding key. New keys are written without indentation
+
+A value can be enclosed in matching single or double quotes. Only the outer pair is removed; spaces and backslashes inside are preserved. For example, `ignore = "\.log$"` and `ignore = \.log$` define the same rule. An unclosed quote causes an error with the line number. Variables such as `$HOME` remain literal text
+
+Within a value, `#` starts a comment when preceded by a space or tab; otherwise, it remains part of the value. Quotes do not change this rule
+
+```ini
+database = archive.db # comment
+database = archive#1.db
+```
+
 ## USAGE EXAMPLES
 
 ### Example 1
@@ -641,25 +725,6 @@ path2/AAA/BCB/CCC/a.txt
 Comparison of database1.db and database2.db databases is complete  
 The precizer completed its execution without any issues  
 </sub>
-
-#### Filtering comparison report categories
-
-By default, `--compare` prints all three difference categories: paths that exist only in the first database named in the command; paths that exist only in the second database named in the command; and paths that exist in both databases but have different SHA512 checksums. The `--compare-filter` option limits the report to one or more categories and works only together with `--compare`. The `checksum-mismatch` value leaves only SHA512 differences. The `first-source` value leaves only paths from the first database. The `second-source` value leaves only paths from the second database
-
-```sh
-precizer --compare --compare-filter=checksum-mismatch database1.db database2.db
-
-precizer --compare --compare-filter=first-source database1.db database2.db
-
-precizer --compare \
-	--compare-filter=first-source \
-	--compare-filter=second-source \
-	database1.db database2.db
-```
-
-When `--compare-filter` is specified more than once, precizer combines the selected categories. The last example prints only paths that are present in one database and missing from the other, while SHA512 differences for common paths are not shown
-
-In `--compare` mode, `--ignore` and `--include` limit the relative-path scope used to build the comparison report. If filters hide part of the differences, the equality messages apply only to the remaining filtered scope. Any path brought back with `--include` participates again in both the difference lists and the final summaries
 
 ### Example 2
 Database Update
@@ -1171,11 +1236,50 @@ precizer --help
 
 ### Comparing databases
 
-- `--compare`, `-c` — Compare two databases by relative paths and checksums, for example `precizer --compare first.db second.db`
+#### Selecting databases for comparison
 
-- `--compare-filter=TYPE`, `-F TYPE` — Select report categories: `checksum-mismatch` for different checksums, `first-source` for files only in the first database, or `second-source` for files only in the second. Requires `--compare`; repeat the option to combine categories
+The `--compare` (`-c`) option compares two databases by relative paths and checksums. On the command line, it is followed by paths to two database files:
 
-Without `--compare-filter`, all three categories are reported. See [Filtering comparison report categories](#filtering-comparison-report-categories) for a detailed example
+```sh
+precizer --compare database1.db database2.db
+```
+
+In `precizer.conf`, each path uses a separate `compare` entry:
+
+```ini
+compare = database1.db
+compare = database2.db
+```
+
+The second path can also be written on an indented continuation line:
+
+```ini
+compare = database1.db
+    database2.db
+```
+
+File names can contain spaces, for example: `compare = my database.db`
+
+#### Filtering comparison report categories
+
+By default, comparison shows all three difference categories. The `compare-filter` option selects the desired categories: `checksum-mismatch` for files with the same relative paths but different checksums; `first-source` for files present in the first database and missing from the second; and `second-source` for files present in the second database and missing from the first. The option can be specified multiple times in any combination: the report includes all selected categories. It is used in comparison mode
+
+On the command line, the value is supplied with `--compare-filter=TYPE` or `-F TYPE`:
+
+```sh
+precizer --compare --compare-filter=checksum-mismatch database1.db database2.db
+
+precizer --compare --compare-filter=first-source database1.db database2.db
+
+precizer --compare \
+	--compare-filter=first-source \
+	--compare-filter=second-source \
+	database1.db database2.db
+```
+
+The last example prints only paths that are present in one database and missing from the other, while SHA512 differences for common paths are not shown
+
+In `--compare` mode, `--ignore` and `--include` limit the relative-path scope used to build the comparison report. If filters hide part of the differences, the equality messages apply only to the remaining filtered scope. Any path brought back with `--include` participates again in both the difference lists and the final summaries
 
 ### Selecting files and traversal depth
 

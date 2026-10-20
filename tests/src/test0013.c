@@ -39,41 +39,31 @@ static Return test0013_1(void)
 }
 
 /**
- * In dry-run mode with checksums, files are hashed but DB is still not modified
+ * @brief Check output from both dry-run modes and verify that neither creates a database
+ *
+ * Repeat both CLI runs through configuration files and check the same output
+ * and database absence after each pair of runs
+ *
+ * @return Return status for output comparisons and database absence checks
  */
 static Return test0013_2(void)
 {
 	INITTEST;
 
-	m_create(char,result,MEMORY_STRING);
-	m_create(char,pattern,MEMORY_STRING);
 	m_create(char,path,MEMORY_STRING);
 	bool file_exists = false;
 
 	ASSERT(SUCCESS == set_environment_variable("TESTING","true"));
 
-	const char *arguments = "--dry-run --database=dry_run_regular.db tests/fixtures/diffs/diff1";
-	ASSERT(SUCCESS == runit(arguments,result,NULL,COMPLETED,ALLOW_BOTH));
+	const struct argument_test_case cases[] = {
+		{"--dry-run --database=dry_run_regular.db tests/fixtures/diffs/diff1",COMPLETED,"templates/0013_001_1.txt",STDERR_MUST_BE_EMPTY},
+		{"--dry-run=with-checksums --database=dry_run_with_checksums.db tests/fixtures/diffs/diff1",COMPLETED,"templates/0013_001_2.txt",STDERR_MUST_BE_EMPTY},
+		{0}
+	};
 
-	const char *filename = "templates/0013_001_1.txt";
-	ASSERT(SUCCESS == get_file_content(filename,pattern));
-	ASSERT(SUCCESS == match_pattern(result,pattern,filename));
+	ASSERT(SUCCESS == run_and_match_templates(cases,NULL,NULL));
 
-	m_del(pattern);
-	m_del(result);
-
-	arguments = "--dry-run=with-checksums --database=dry_run_with_checksums.db tests/fixtures/diffs/diff1";
-	ASSERT(SUCCESS == runit(arguments,result,NULL,COMPLETED,ALLOW_BOTH));
-
-	filename = "templates/0013_001_2.txt";
-	ASSERT(SUCCESS == get_file_content(filename,pattern));
-	ASSERT(SUCCESS == match_pattern(result,pattern,filename));
-
-	m_del(pattern);
-	m_del(result);
-	m_del(path);
-
-	/* Dry-run should not create either DB file. */
+	/* Dry-run should not create either DB file */
 	ASSERT(SUCCESS == construct_path("dry_run_regular.db",path));
 	ASSERT(SUCCESS == check_file_exists(&file_exists,m_text(path)));
 	ASSERT(file_exists == false);
@@ -85,38 +75,71 @@ static Return test0013_2(void)
 
 	m_del(path);
 
+	/* Repeat both modes without creating databases or changing the fixtures */
+	ASSERT(SUCCESS == copy_path("tests/templates/0013_001_1.conf","0013_001_1.conf"));
+	ASSERT(SUCCESS == copy_path("tests/templates/0013_001_2.conf","0013_001_2.conf"));
+	const struct argument_test_case file_cases[] = {
+		{"--config=0013_001_1.conf",COMPLETED,"templates/0013_001_1.txt",STDERR_MUST_BE_EMPTY},
+		{"--config=0013_001_2.conf",COMPLETED,"templates/0013_001_2.txt",STDERR_MUST_BE_EMPTY},
+		{0}
+	};
+	ASSERT(SUCCESS == run_and_match_templates(file_cases,NULL,NULL));
+
+	ASSERT(SUCCESS == construct_path("dry_run_regular.db",path));
+	ASSERT(SUCCESS == check_file_exists(&file_exists,m_text(path)));
+	ASSERT(file_exists == false);
+
+	m_del(path);
+	ASSERT(SUCCESS == construct_path("dry_run_with_checksums.db",path));
+	ASSERT(SUCCESS == check_file_exists(&file_exists,m_text(path)));
+	ASSERT(file_exists == false);
+
+	m_del(path);
+	call(delete_path_if_present("0013_001_1.conf"));
+	call(delete_path_if_present("0013_001_2.conf"));
+
 	RETURN_STATUS;
 }
 
 /**
- * Invalid dry-run mode should fail with error in stderr
+ * @brief Reject an invalid dry-run mode with the expected stderr diagnostic
+ *
+ * Check both CLI and configuration input, including the configuration line number
+ *
+ * @return Return status for the expected exit code and stderr comparison
  */
 static Return test0013_3(void)
 {
 	INITTEST;
 
-	m_create(char,result,MEMORY_STRING);
-	m_create(char,pattern,MEMORY_STRING);
-
 	ASSERT(SUCCESS == set_environment_variable("TESTING","true"));
 
-	const char *arguments = "--dry-run=bad-mode --database=dry_run_invalid.db tests/fixtures/diffs/diff1";
+	const struct argument_test_case cases[] = {
+		{"--dry-run=bad-mode --database=dry_run_invalid.db tests/fixtures/diffs/diff1",FAILURE,"templates/0018_005_1.txt","templates/0013_001_3.txt"},
+		{0}
+	};
 
-	ASSERT(SUCCESS == runit(arguments,NULL,result,FAILURE,STDERR_ALLOW));
+	ASSERT(SUCCESS == run_and_match_templates(cases,NULL,NULL));
 
-	const char *filename = "templates/0013_001_3.txt";
-
-	ASSERT(SUCCESS == get_file_content(filename,pattern));
-	ASSERT(SUCCESS == match_pattern(result,pattern,filename));
-
-	m_del(pattern);
-	m_del(result);
+	ASSERT(SUCCESS == copy_path("tests/templates/0013_001_3.conf","0013_001_3.conf"));
+	const struct argument_test_case file_cases[] = {
+		{"--config=0013_001_3.conf",FAILURE,"templates/0003_013.txt","templates/0013_001_3_1.txt"},
+		{0}
+	};
+	ASSERT(SUCCESS == run_and_match_templates(file_cases,NULL,NULL));
+	call(delete_path_if_present("0013_001_3.conf"));
 
 	RETURN_STATUS;
 }
 
 /**
- * The db file should not be updated in the Dry Run mode
+ * @brief Verify that dry-run leaves an existing database unchanged
+ *
+ * Repeat the ignored-path scenario through a configuration file using the same
+ * prepared database and modified fixtures. Check the same output and unchanged
+ * database metadata after both runs
+ *
+ * @return Return status for output comparisons and database identity checks
  */
 static Return test0013_4(void)
 {
@@ -178,27 +201,27 @@ static Return test0013_4(void)
 	// removal of ignored files from the database
 	ASSERT(SUCCESS == set_environment_variable("TESTING","true"));
 
-	arguments = "--check-level=QUICK --dry-run --ignore=\"^1/AAA/ZAW/.*\" --update "
-	        "--database=database1.db tests/fixtures/diffs/diff1";
-
-	ASSERT(SUCCESS == runit(arguments,result,NULL,COMPLETED,ALLOW_BOTH));
-
-	#if 0
-	echo(STDOUT,"%s\n",m_text(result));
-	#endif
-
-	const char *filename = "templates/0013_002_1.txt";
-
-	ASSERT(SUCCESS == get_file_content(filename,pattern));
-	ASSERT(SUCCESS == match_pattern(result,pattern,filename));
-
-	m_del(pattern);
-
-	m_del(result);
+	const struct argument_test_case cases[] = {
+		{"--check-level=QUICK --dry-run --ignore=\"^1/AAA/ZAW/.*\" --update "
+		 "--database=database1.db tests/fixtures/diffs/diff1",COMPLETED,"templates/0013_002_1.txt",STDERR_MUST_BE_EMPTY},
+		{0}
+	};
+	ASSERT(SUCCESS == run_and_match_templates(cases,NULL,NULL));
 
 	ASSERT(SUCCESS == get_file_stat(m_text(path),&stat2));
 
 	ASSERT(SUCCESS == check_file_identity(&stat1,&stat2));
+
+	/* Dry-run preserves the database, so the same state is ready for the file run */
+	ASSERT(SUCCESS == copy_path("tests/templates/0013_002_1.conf","0013_002_1.conf"));
+	const struct argument_test_case file_cases[] = {
+		{"--config=0013_002_1.conf",COMPLETED,"templates/0013_002_1.txt",STDERR_MUST_BE_EMPTY},
+		{0}
+	};
+	ASSERT(SUCCESS == run_and_match_templates(file_cases,NULL,NULL));
+	ASSERT(SUCCESS == get_file_stat(m_text(path),&stat2));
+	ASSERT(SUCCESS == check_file_identity(&stat1,&stat2));
+	call(delete_path_if_present("0013_002_1.conf"));
 
 	// Dry Run mode permanent deletion of all ignored file
 	// references from the database
@@ -214,7 +237,7 @@ static Return test0013_4(void)
 	echo(STDOUT,"%s\n",m_text(result));
 	#endif
 
-	filename = "templates/0013_002_2.txt";
+	const char *filename = "templates/0013_002_2.txt";
 
 	ASSERT(SUCCESS == get_file_content(filename,pattern));
 

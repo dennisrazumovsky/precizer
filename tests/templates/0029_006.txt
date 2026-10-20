@@ -1,6 +1,7 @@
 \ATESTING:Configuration initialization is finished
 TESTING:rational_logger_mode=TESTING
-TESTING:argument:color=always
+(?:TESTING:argument:config=0029_006\.conf\n)?(?x)
+(?-x)TESTING:argument:color=always
 TESTING:argument:roots=tests/fixtures/diffs/diff1
 TESTING:argument:database=database6\.db
 TESTING:argument:db_file_name=database6\.db
@@ -45,7 +46,7 @@ TESTING:The paths written against the database and the paths passed as arguments
 TESTING:Update mode enabled for DB database6\.db
 TESTING:File traversal started for [^\r\n]+
 TESTING:(?:\x1B\[[0-9;]*m)*Changes reported during this scan against the DB database6\.db:(?:\x1B\[[0-9;]*m)*
-ignored \& do not update 1/AAA/ZAW/D/e/f/b_file\.txt
+ignored \& not updated 1/AAA/ZAW/D/e/f/b_file\.txt
 TESTING:File traversal complete
 TESTING:Searching for files that no longer exist on the file system…
 TESTING:Missing file search finished
@@ -53,7 +54,7 @@ TESTING:The database connection has been closed
 TESTING:No changes were made. The primary database doesn't require vacuuming
 TESTING:(?:\x1B\[[0-9;]*m)*The database file database6\.db has NOT been modified since the program was launched(?:\x1B\[[0-9;]*m)*
 TESTING:Total runtime: [^,\r\n]+
-TESTING:Total traversal size: \d+.*
+TESTING:Total traversal size: \d+[^\r\n]*
 TESTING:Total items: \d+
 TESTING:Directories: \d+
 TESTING:Files: \d+

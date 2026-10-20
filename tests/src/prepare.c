@@ -47,7 +47,6 @@ Return prepare(void)
 	call(m_del(path));
 
 	ASSERT(SUCCESS == create_directory("tests/fixtures/diffs"));
-	ASSERT(SUCCESS == create_directory("tests/templates"));
 	ASSERT(SUCCESS == create_directory(".builds"));
 	ASSERT(SUCCESS == copy_from_origin("tests/fixtures/diffs/diff1","tests/fixtures/diffs/diff1",REQUIRE_SOURCE_EXISTS));
 	ASSERT(SUCCESS == copy_from_origin("tests/fixtures/diffs/diff2","tests/fixtures/diffs/diff2",REQUIRE_SOURCE_EXISTS));
@@ -56,11 +55,7 @@ Return prepare(void)
 	ASSERT(SUCCESS == copy_from_origin("tests/fixtures/levels","tests/fixtures/levels",REQUIRE_SOURCE_EXISTS));
 	ASSERT(SUCCESS == copy_from_origin("tests/fixtures/4","tests/fixtures/4",REQUIRE_SOURCE_EXISTS));
 	ASSERT(SUCCESS == copy_from_origin("tests/fixtures/ignore_include_cases","tests/fixtures/ignore_include_cases",REQUIRE_SOURCE_EXISTS));
-	ASSERT(SUCCESS == copy_from_origin("tests/templates/0015_database_v0.db","tests/templates/0015_database_v0.db",REQUIRE_SOURCE_EXISTS));
-	ASSERT(SUCCESS == copy_from_origin("tests/templates/0015_database_v1.db","tests/templates/0015_database_v1.db",REQUIRE_SOURCE_EXISTS));
-	ASSERT(SUCCESS == copy_from_origin("tests/templates/0015_database_v2.db","tests/templates/0015_database_v2.db",REQUIRE_SOURCE_EXISTS));
-	ASSERT(SUCCESS == copy_from_origin("tests/templates/0015_database_v3 это база данных с пробелами и символами UTF-8.db","tests/templates/0015_database_v3 это база данных с пробелами и символами UTF-8.db",REQUIRE_SOURCE_EXISTS));
-	ASSERT(SUCCESS == copy_from_origin("tests/templates/0015_database_v4 это база данных с пробелами и символами UTF-8.db","tests/templates/0015_database_v4 это база данных с пробелами и символами UTF-8.db",REQUIRE_SOURCE_EXISTS));
+	ASSERT(SUCCESS == copy_from_origin("tests/templates","tests/templates",REQUIRE_SOURCE_EXISTS));
 	ASSERT(SUCCESS == copy_from_origin("tests/fixtures/long","tests/fixtures/long",ALLOW_MISSING_SOURCE));
 	ASSERT(SUCCESS == m_copy_literal(environment_build_path,".builds/"));
 	ASSERT(SUCCESS == m_concat_string(environment_build_path,environment_name));

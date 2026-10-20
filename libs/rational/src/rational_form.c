@@ -92,7 +92,13 @@ static const char *form_uintmax_with_sign_r(
 	return result;
 }
 
-static size_t form_grouped_uintmax_len(uintmax_t val)
+/**
+ * @brief Count decimal digits and comma separators for an unsigned integer
+ *
+ * @param val Integer whose formatted length is needed
+ * @return Number of characters excluding the terminating null byte
+ */
+static size_t __attribute__ ((const)) form_grouped_uintmax_len(uintmax_t val)
 {
 	size_t digits = 1U;
 

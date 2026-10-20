@@ -16,6 +16,25 @@
 #define FILE_WRITE_APPEND  ((unsigned int)1U)
 #define FILE_WRITE_REPLACE ((unsigned int)2U)
 
+/* Require the corresponding output stream to contain no bytes */
+#define STDOUT_MUST_BE_EMPTY "\\A\\z"
+#define STDERR_MUST_BE_EMPTY "\\A\\z"
+
+/* Arguments and expected results for one application run */
+struct argument_test_case {
+	const char *arguments;
+	int expected_return_code;
+	const char *stdout_template;
+	const char *stderr_template;
+};
+
+Return init_config_and_check_output(void);
+
+Return run_and_match_templates(
+	const struct argument_test_case *cases,
+	const char *template,
+	const char *replacement);
+
 Return open_db_from_tmpdir(
 	const char *db_filename,
 	const int  open_flags,
@@ -140,7 +159,7 @@ Return db_read_cmpctstat_by_relative_path(
 
 bool cmpctstat_matches_stat_timestamps(
 	const CmpctStat   *db_stat,
-	const struct stat *file_stat);
+	const struct stat *file_stat) __attribute__ ((pure));
 
 /**
  * @brief Read final offset and SHA512 checksum for one file from files table

@@ -96,7 +96,8 @@ static Return db_create_abort_on_second_stat_update_trigger(const char *db_filen
 /**
  * @brief Reject using a legacy v0 DB as the primary database without --update
  *
- * Verify the run fails and prints the expected warning for the upgrade path
+ * Verify CLI and configuration runs select QUICK verification and print the
+ * same upgrade warning. The rejected upgrade leaves the fixture unchanged
  */
 Return test0015_1(void)
 {
@@ -106,22 +107,23 @@ Return test0015_1(void)
 	ASSERT(SUCCESS == copy_path("tests/templates/0015_database_v0.db","0015_database_v0.db"));
 
 	const char *arguments = "--check-level=QUICK --database=./0015_database_v0.db tests/fixtures/diffs/diff1";
-
-	m_create(char,result,MEMORY_STRING);
-	m_create(char,pattern,MEMORY_STRING);
-
 	const char *filename = "templates/0015_001.txt";
-
-	ASSERT(SUCCESS == runit(arguments,result,NULL,WARNING,ALLOW_BOTH));
-
-	ASSERT(SUCCESS == get_file_content(filename,pattern));
+	const struct argument_test_case cases[] = {
+		{arguments,WARNING,filename,STDERR_MUST_BE_EMPTY},
+		{0}
+	};
 
 	// Match the result against the pattern
-	ASSERT(SUCCESS == match_pattern(result,pattern,filename));
+	ASSERT(SUCCESS == run_and_match_templates(cases,NULL,NULL));
 
-	// Clean to use it iteratively
-	m_del(pattern);
-	m_del(result);
+	/* The rejected upgrade leaves the same database ready for the configuration run */
+	ASSERT(SUCCESS == copy_path("tests/templates/0015_001.conf","0015_001.conf"));
+	const struct argument_test_case file_cases[] = {
+		{"--config=0015_001.conf",WARNING,filename,STDERR_MUST_BE_EMPTY},
+		{0}
+	};
+	ASSERT(SUCCESS == run_and_match_templates(file_cases,NULL,NULL));
+	call(delete_path_if_present("0015_001.conf"));
 
 	// Clean up test results
 	ASSERT(SUCCESS == delete_path("0015_database_v0.db"));
@@ -240,7 +242,9 @@ Return test0015_4(void)
 /**
  * @brief Create a fresh DB with the default generated filename
  *
- * Verify the application reports the generated DB name in the expected output
+ * Verify CLI and file-supplied roots produce the same generated DB name and
+ * match the same complete output template. The template allows the additional
+ * configuration-path diagnostic for the file run
  */
 Return test0015_5(void)
 {
@@ -258,7 +262,24 @@ Return test0015_5(void)
 
 	ASSERT(replacement != NULL);
 
-	ASSERT(SUCCESS == match_app_output(arguments,filename,template,replacement,COMPLETED));
+	const struct argument_test_case cases[] = {
+		{arguments,COMPLETED,filename,STDERR_MUST_BE_EMPTY},
+		{0}
+	};
+
+	ASSERT(SUCCESS == run_and_match_templates(cases,template,replacement));
+
+	/* Repeat the target creation from the same initial state. The resulting
+	   database remains available to the following comparison tests */
+	ASSERT(SUCCESS == delete_path(replacement));
+	ASSERT(SUCCESS == copy_from_origin("tests/templates/0015_004.conf",
+		"tests/templates/0015_004.conf",REQUIRE_SOURCE_EXISTS));
+	const struct argument_test_case file_cases[] = {
+		{"--config=tests/templates/0015_004.conf",COMPLETED,filename,STDERR_MUST_BE_EMPTY},
+		{0}
+	};
+	ASSERT(SUCCESS == run_and_match_templates(file_cases,template,replacement));
+	call(delete_path_if_present("tests/templates/0015_004.conf"));
 
 	RETURN_STATUS;
 }
@@ -285,7 +306,12 @@ Return test0015_6(void)
 
 	ASSERT(replacement != NULL);
 
-	ASSERT(SUCCESS == match_app_output(arguments,filename,template,replacement,WARNING));
+	const struct argument_test_case cases[] = {
+		{arguments,WARNING,filename,STDERR_MUST_BE_EMPTY},
+		{0}
+	};
+
+	ASSERT(SUCCESS == run_and_match_templates(cases,template,replacement));
 
 	RETURN_STATUS;
 }
@@ -300,6 +326,7 @@ Return test0015_7(void)
 	INITTEST;
 
 	ASSERT(SUCCESS == set_environment_variable("TESTING","true"));
+	ASSERT(SUCCESS == copy_path("0015_database_v0.db","0015_006.db"));
 
 	// Run the comparison and upgrade flow
 	const char *arguments = "--check-level=QUICK --compare --update $DBNAME 0015_database_v0.db";
@@ -311,7 +338,24 @@ Return test0015_7(void)
 
 	ASSERT(replacement != NULL);
 
-	ASSERT(SUCCESS == match_app_output(arguments,filename,template,replacement,COMPLETED));
+	const struct argument_test_case cases[] = {
+		{arguments,COMPLETED,filename,STDERR_MUST_BE_EMPTY},
+		{0}
+	};
+
+	ASSERT(SUCCESS == run_and_match_templates(cases,template,replacement));
+
+	/* Restore the legacy database so the file run performs the same upgrade */
+	ASSERT(SUCCESS == copy_path("0015_006.db","0015_database_v0.db"));
+	ASSERT(SUCCESS == copy_path("tests/templates/0015_006.conf","0015_006.conf"));
+	ASSERT(SUCCESS == replace_placeholder_in_file("$TMPDIR/0015_006.conf","%DB_NAME%","$DBNAME"));
+	const struct argument_test_case file_cases[] = {
+		{"--config=0015_006.conf",COMPLETED,filename,STDERR_MUST_BE_EMPTY},
+		{0}
+	};
+	ASSERT(SUCCESS == run_and_match_templates(file_cases,template,replacement));
+	call(delete_path_if_present("0015_006.conf"));
+	call(delete_path_if_present("0015_006.db"));
 
 	// Clean up test results
 	ASSERT(SUCCESS == delete_path("0015_database_v0.db"));
@@ -413,7 +457,12 @@ Return test0015_10(void)
 
 	ASSERT(replacement != NULL);
 
-	ASSERT(SUCCESS == match_app_output(arguments,filename,template,replacement,COMPLETED));
+	const struct argument_test_case cases[] = {
+		{arguments,COMPLETED,filename,STDERR_MUST_BE_EMPTY},
+		{0}
+	};
+
+	ASSERT(SUCCESS == run_and_match_templates(cases,template,replacement));
 
 	// Clean up test results
 	ASSERT(SUCCESS == delete_path("0015_database_v1.db"));
@@ -481,7 +530,12 @@ Return test0015_12(void)
 
 	ASSERT(replacement != NULL);
 
-	ASSERT(SUCCESS == match_app_output(arguments,filename,template,replacement,COMPLETED));
+	const struct argument_test_case cases[] = {
+		{arguments,COMPLETED,filename,STDERR_MUST_BE_EMPTY},
+		{0}
+	};
+
+	ASSERT(SUCCESS == run_and_match_templates(cases,template,replacement));
 
 	// Clean up test results
 	ASSERT(SUCCESS == delete_path(replacement));
@@ -494,6 +548,10 @@ Return test0015_12(void)
  * @brief Upgrade a legacy v3 DB whose filename contains UTF-8 characters
  *
  * Verify the primary DB upgrade works with spaces and non-ASCII characters
+ * through CLI and configuration. Both runs start from the same v3 fixture
+ * and use the same full output template
+ *
+ * @return Return status for the CLI and configuration upgrade checks
  */
 Return test0015_13(void)
 {
@@ -505,26 +563,27 @@ Return test0015_13(void)
 
 	const char *arguments = "--check-level=QUICK --update --database=\"0015_database_v3 это база данных с пробелами и символами UTF-8.db\" "
 	        "tests/fixtures/diffs/diff1";
-
-	m_create(char,result,MEMORY_STRING);
-
-	ASSERT(SUCCESS == runit(arguments,result,NULL,COMPLETED,ALLOW_BOTH));
-
 	const char *filename = "templates/0015_012.txt";
-
-	m_create(char,pattern,MEMORY_STRING);
-
-	ASSERT(SUCCESS == get_file_content(filename,pattern));
+	const struct argument_test_case cases[] = {
+		{arguments,COMPLETED,filename,STDERR_MUST_BE_EMPTY},
+		{0}
+	};
 
 	// Match the result against the pattern
-	ASSERT(SUCCESS == match_pattern(result,pattern,filename));
+	ASSERT(SUCCESS == run_and_match_templates(cases,NULL,NULL));
+
+	/* Restore the original v3 database before repeating the upgrade through configuration */
+	ASSERT(SUCCESS == copy_path("tests/templates/0015_database_v3 это база данных с пробелами и символами UTF-8.db","0015_database_v3 это база данных с пробелами и символами UTF-8.db"));
+	ASSERT(SUCCESS == copy_path("tests/templates/0015_013.conf","0015_013.conf"));
+	const struct argument_test_case file_cases[] = {
+		{"--config=0015_013.conf",COMPLETED,filename,STDERR_MUST_BE_EMPTY},
+		{0}
+	};
+	ASSERT(SUCCESS == run_and_match_templates(file_cases,NULL,NULL));
 
 	// Clean up test results
+	call(delete_path_if_present("0015_013.conf"));
 	ASSERT(SUCCESS == delete_path("0015_database_v3 это база данных с пробелами и символами UTF-8.db"));
-
-	// Clean to use it iteratively
-	m_del(pattern);
-	m_del(result);
 
 	RETURN_STATUS;
 }

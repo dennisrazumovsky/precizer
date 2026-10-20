@@ -1,4 +1,5 @@
 #include "precizer.h"
+#include <stdarg.h>
 #include <sysexits.h>
 
 /**
@@ -48,12 +49,12 @@ static char doc[] =
         "See the project README for additional technical details.";
 
 /* Positional-argument description for argp */
-static char args_doc[] = "PATH";
+static char args_doc[] = "[PATH...]";
 
 static bool information_mode_requested = false;
 
 /* Supported command-line options for argp */
-static struct argp_option options[] = {
+const struct argp_option options[] = {
 	{ 0,0,0,0,"Locked Checksum Protection:",3},
 	{"lock-checksum",'k',"PCRE2_REGEXP",0,"Relative path to be treated as immutable archival data. PCRE2 regular expressions can be used to "
 	 "select files or directories whose checksums are written once to the database and never updated "
@@ -117,6 +118,7 @@ static struct argp_option options[] = {
 	{"force",'f',0,0,"Use this option only in case when the PATHs that were written into the database as a result of the last scanning really need to be renewed. Warning! If this option will be used in incorrect way, information about files and their checksums against the database would be lost.",0},
 	{"update",'u',0,0,"Updates the database to reflect file system changes (new, modified and deleted files). Must be used with the same initial PATH that was used when creating the database, as existing records will be replaced with data from the specified location. This option modifies database consistency. Use with caution, especially in automated scripts, as incorrect usage may lead to loss of file checksums and metadata.",0 },
 	{"database",'d',"FILE",0,"Database filename. Defaults to ${HOST}.db, where HOST is the local hostname.",0 },
+	{"path",'P',"PATH",0,"Filesystem root to scan. May be repeated and combined with positional PATH arguments.",0},
 	{"check-level",'l',"FULL|QUICK",0,"Select database validation level: 'quick' for basic structure check, 'full' (default) for comprehensive integrity verification.",0 },
 	{ 0,0,0,0,"Compare databases options:",1},
 	{"compare",'c',0,0,"Compare two databases from different sources. Requires two additional arguments specifying paths to database files, e.g.:\n" BOLD APP_NAME " --compare database1.db database2.db" RESET "\n"
@@ -134,6 +136,7 @@ static struct argp_option options[] = {
 	{"verbose",'v',0,0,"Produce verbose output.",0 },
 	{"progress",'p',0,0,"Enabling this option displays progress information but requires an initial count of files and the space they occupy to estimate execution time. The program first traverses all specified directories, counting files, folders, and symlinks before proceeding with file analysis. This initial traversal may take a significant amount of time. It is strongly recommended not to use this option when calling the program from a script.",0 },
 	{"color",'S',"auto|always|never",0,"Choose when to apply color and text styling (-S means style). Use auto for terminal output, always to preserve styling in files and pipes, or never to disable it. The default is auto",-1},
+	{"config",'g',"FILE",0,"Read settings from FILE. Help, usage, and version requests ignore FILE. Otherwise, cannot be combined with other CLI arguments. With no CLI arguments, read " APP_NAME ".conf in the current directory if present",-1},
 	{"help",'h',0,0,"Give this help list",-1 },
 	{0,'?',0,OPTION_ALIAS,0,-1 },
 	{"usage",'z',0,0,"Give a short usage message",-1 },
@@ -169,19 +172,100 @@ static const char *argp_error_to_text(const error_t parse_error)
 }
 
 /**
- * @brief Handle a single argp parser event
+ * @brief Report an option error with its configuration line when present
+ * @param state Parser or diagnostic state supplying the program name and error stream
+ * @param error_number Error number to append as system text, or zero
+ * @param format Printf-style diagnostic format without the ERROR: prefix
+ * @param ... Values referenced by the diagnostic format
+ */
+__attribute__((format(printf,3,4)))
+static void report_option_error(
+	const struct argp_state *state,
+	int                     error_number,
+	const char              *format,
+	...)
+{
+	char *message = NULL;
+	va_list args;
+	va_start(args,format);
+	int message_length = vasprintf(&message,format,args);
+	va_end(args);
+
+	const char *message_text = "Cannot format option diagnostic";
+	if(message_length >= 0)
+	{
+		message_text = message;
+	} else {
+		error_number = errno;
+	}
+
+	if(config->config_file_error_line > 0)
+	{
+		/* File errors retain the same program name and stream as CLI errors */
+		argp_failure(state,0,error_number,"ERROR: Line %d in config file: %s",config->config_file_error_line,message_text);
+	} else {
+		argp_failure(state,0,error_number,"ERROR: %s",message_text);
+	}
+
+	if(message_length >= 0)
+	{
+		free(message);
+	}
+}
+
+/**
+ * @brief Apply a named option or handle an argp parser event
  * @param key Current option key or argp event key
- * @param arg Optional value for the current option
- * @param state Current argp parser state
+ * @param arg Optional option value; file flags use NULL for true and "false" for false
+ * @param state CLI state with ArgumentParseContext in input, or a diagnostic state for file options
  * @return EX_OK on success, EX_USAGE for invalid usage, or errno-style error code
  */
-static error_t parse_opt(
+error_t parse_opt(
 	int               key,
 	char              *arg,
 	struct argp_state *state)
 {
-	char *ptr = NULL;
+	/* Points to the unparsed suffix after strtol() reads the number */
+	char *number_suffix = NULL;
+
+	/* Parsed --maxdepth value before range validation and conversion to short int */
 	long int argument_value = -1;
+
+	/* Both CLI options and configuration records reach this handler.
+	   config_file_error_line is -1 for CLI calls. While applying a file entry,
+	   read_config_entry() sets it to the current line for error reporting and
+	   resets it afterward. A positive line also identifies a file value here.
+
+	   Before calling parse_opt(), read_config_entry() recognizes boolean
+	   spellings without regard to letter case and converts them as follows:
+	     true / yes / on / y / 1  -> arg is NULL, just like a CLI flag;
+	     false / no / off / n / 0 -> arg points to the normalized string "false".
+	   Thus, "0", "no", and the other false spellings never reach this comparison.
+
+	   The || conditions are evaluated from left to right:
+	     1. A CLI call enables the flag regardless of arg. Optional arguments,
+	        such as --dry-run=MODE, are still validated in their switch branch.
+	     2. A configuration call with arg == NULL enables the flag.
+	     3. Otherwise, the normalized string "false" disables the flag.
+	   Short-circuit evaluation prevents strcmp() from receiving a NULL pointer.
+
+	   dry-run also accepts the named mode "with-checksums", which reaches this
+	   handler unchanged and enables the flag. Its branch validates the mode
+	   and updates the checksum setting. In CLI, --dry-run=false still reaches
+	   that validation and is rejected as an unsupported mode.
+
+	   Flag branches below assign this boolean to Config fields, so a later
+	   false record can turn off a previously enabled flag. Options with ordinary
+	   string or numeric arguments do not use this value */
+	const bool value = config->config_file_error_line < 0 || arg == NULL || strcmp(arg,"false") != 0;
+
+	/* Reject argp-marked -- before accepting operands or checking required paths.
+	   Error and cleanup events must not repeat the diagnostic */
+	if(state->quoted != 0 && (key == ARGP_KEY_ARG || key == ARGP_KEY_NO_ARGS || key == ARGP_KEY_END))
+	{
+		argp_failure(state,0,0,"ERROR: Unsupported use of --");
+		return(EX_USAGE);
+	}
 
 	switch(key)
 	{
@@ -190,7 +274,7 @@ static error_t parse_opt(
 			// Store full path to the DB file
 			if(CRITICAL & m_copy_string(conf(db_primary_file_path),arg))
 			{
-				argp_failure(state,0,ENOMEM,"ERROR: Memory allocation for db_file_path failed");
+				report_option_error(state,ENOMEM,"Memory allocation for db_file_path failed");
 				return(ENOMEM);
 			}
 
@@ -200,7 +284,7 @@ static error_t parse_opt(
 			if(tmp == NULL)
 			{
 				(void)m_del(conf(db_primary_file_path));
-				argp_failure(state,0,ENOMEM,"ERROR: Memory allocation for db_file_name failed");
+				report_option_error(state,ENOMEM,"Memory allocation for db_file_name failed");
 				return(ENOMEM);
 			}
 
@@ -210,7 +294,7 @@ static error_t parse_opt(
 			{
 				free(tmp);
 				(void)m_del(conf(db_primary_file_path));
-				argp_failure(state,0,0,"ERROR: Failed to determine database base name from path '%s'",arg);
+				report_option_error(state,0,"Failed to determine database base name from path '%s'",arg);
 				return(EINVAL);
 			}
 
@@ -218,7 +302,7 @@ static error_t parse_opt(
 			{
 				free(tmp);
 				(void)m_del(conf(db_primary_file_path));
-				argp_failure(state,0,ENOMEM,"ERROR: Memory allocation for db_file_name failed");
+				report_option_error(state,ENOMEM,"Memory allocation for db_file_name failed");
 				return(ENOMEM);
 			}
 
@@ -229,16 +313,22 @@ static error_t parse_opt(
 			(void)add_string_to_array(&config->ignore,arg);
 			break;
 		case 'n':
-			config->dry_run = true;
+			config->dry_run = value;
 
-			if(arg != NULL)
+			/* Each file value selects the complete dry-run mode */
+			if(config->config_file_error_line > 0)
+			{
+				config->dry_run_with_checksums = false;
+			}
+
+			if(value == true && arg != NULL)
 			{
 				if(0 == strcasecmp(arg,"with-checksums"))
 				{
 					config->dry_run_with_checksums = true;
 
 				} else {
-					argp_failure(state,0,0,"ERROR: Unsupported --dry-run mode '%s'. Supported mode: with-checksums. See --help for more information",arg);
+					report_option_error(state,0,"Unsupported --dry-run mode '%s'. Supported mode: with-checksums. See --help for more information",arg);
 					return(EINVAL);
 				}
 			}
@@ -252,10 +342,10 @@ static error_t parse_opt(
 			(void)add_string_to_array(&config->lock_checksum,arg);
 			break;
 		case 'r':
-			config->rehash_locked = true;
+			config->rehash_locked = value;
 			break;
 		case 'c':
-			config->compare = true;
+			config->compare = value;
 			break;
 		case 'F':
 			if(arg != NULL && 0 == strcmp(arg,"checksum-mismatch"))
@@ -266,49 +356,49 @@ static error_t parse_opt(
 			} else if(arg != NULL && 0 == strcmp(arg,"second-source")){
 				config->compare_filter |= CF_SECOND_SOURCE;
 			} else {
-				argp_failure(state,0,0,"ERROR: Unsupported --compare-filter value '%s'. Supported values: checksum-mismatch, first-source, second-source. See --help for more information",arg == NULL ? "" : arg);
+				report_option_error(state,0,"Unsupported --compare-filter value '%s'. Supported values: checksum-mismatch, first-source, second-source. See --help for more information",arg);
 				return(EINVAL);
 			}
 			break;
 		case 'o': // This legacy can be removed in 2036 (10-year Long-Term Support)
 		case 'x':
-			config->one_file_system = true;
+			config->one_file_system = value;
 			break;
 		case 'C':
-			config->db_drop_ignored = true;
+			config->db_drop_ignored = value;
 			break;
 		case 'X':
-			config->db_drop_inaccessible = true;
+			config->db_drop_inaccessible = value;
 			break;
 		case 'm':
-			argument_value = strtol(arg,&ptr,10);
+			argument_value = strtol(arg,&number_suffix,10);
 
 			// Accept only non-negative integer values that fit into short int
 			// and reject strings with trailing non-numeric characters
-			if(ptr != arg && argument_value >= 0 && argument_value <= 32767 && *ptr == '\0')
+			if(number_suffix != arg && argument_value >= 0 && argument_value <= 32767 && *number_suffix == '\0')
 			{
 				config->maxdepth = (short int)argument_value;
 			} else {
-				argp_failure(state,0,0,"ERROR: Wrong --maxdepth (-m) value. Should be an integer from 0 to 32767. See --help for more information");
+				report_option_error(state,0,"Wrong --maxdepth (-m) value. Should be an integer from 0 to 32767. See --help for more information");
 				return(EINVAL);
 			}
 			break;
 		case 'p':
-			config->progress = true;
+			config->progress = value;
 			/*
 			 * Progress output can push important warning lines out of the visible terminal area.
-			 * Enable final replay before traversal starts so remembered warnings collected later are shown again near exit
+			 * Set final replay together with progress before traversal starts so warnings can be shown again near exit
 			 */
-			config->show_remembered_messages_at_exit = true;
+			config->show_remembered_messages_at_exit = value;
 			break;
 		case 'T':
-			config->watch_timestamps = true;
+			config->watch_timestamps = value;
 			break;
 		case 'u':
-			config->update = true;
+			config->update = value;
 			break;
 		case 'f':
-			config->force = true;
+			config->force = value;
 			break;
 		case 'l':
 			if(0 == strcasecmp(arg,"QUICK"))
@@ -317,21 +407,52 @@ static error_t parse_opt(
 			} else if(0 == strcasecmp(arg,"FULL")){
 				config->db_check_level = FULL;
 			} else {
-				argp_failure(state,0,0,"ERROR: Unsupported --check-level value '%s'. Supported values: FULL or QUICK",arg);
+				report_option_error(state,0,"Unsupported --check-level value '%s'. Supported values: FULL or QUICK",arg);
 				return(EINVAL);
 			}
 			break;
 		case 's':
 			// Set global logger mode
-			rational_logger_mode = SILENT;
+			if(value == true)
+			{
+				rational_logger_mode = SILENT;
+			} else if(rational_logger_mode == SILENT){
+				/* Restore the startup mode only when disabling the active output mode */
+				rational_logger_mode = REGULAR;
+
+#ifdef TESTITALL_TEST_HOOKS
+				const char *testing = getenv("TESTING");
+
+				if(testing != NULL && strcasecmp(testing,"true") == 0)
+				{
+					rational_logger_mode = TESTING;
+				}
+#endif
+			}
 			break;
 		case 'q':
-			config->quiet_ignored = true;
+			config->quiet_ignored = value;
 			break;
 		case 'v':
+			config->verbose = value;
+
 			// Set global logger mode
-			rational_logger_mode = VERBOSE;
-			config->verbose = true;
+			if(value == true)
+			{
+				rational_logger_mode = VERBOSE;
+			} else if(rational_logger_mode == VERBOSE){
+				/* Restore the startup mode only when disabling the active output mode */
+				rational_logger_mode = REGULAR;
+
+#ifdef TESTITALL_TEST_HOOKS
+				const char *testing = getenv("TESTING");
+
+				if(testing != NULL && strcasecmp(testing,"true") == 0)
+				{
+					rational_logger_mode = TESTING;
+				}
+#endif
+			}
 			break;
 		case 'S':
 			if(0 == strcmp(arg,"auto"))
@@ -342,7 +463,7 @@ static error_t parse_opt(
 			} else if(0 == strcmp(arg,"never")){
 				rational_color_mode = COLOR_MODE_NEVER;
 			} else {
-				argp_failure(state,0,0,"ERROR: Unsupported --color value '%s'. Supported values: auto, always, or never",arg);
+				report_option_error(state,0,"Unsupported --color value '%s'. Supported values: auto, always, or never",arg);
 				return(EINVAL);
 			}
 			break;
@@ -358,45 +479,96 @@ static error_t parse_opt(
 			information_mode_requested = true;
 			argp_state_help(state,state->out_stream,ARGP_HELP_USAGE);
 			break;
+		case 'g':
+			/* Source selection and file reading precede this main pass */
+			break;
 		case ARGP_KEY_NO_ARGS:
+			/* Help, usage, and version requests do not require paths */
 			if(information_mode_requested == true)
 			{
 				break;
 			}
 
-			if(state->argc == 1)
+			/* Argp sends this event after parsing options if no positional
+			   CLI arguments were processed. For example, --path=/mnt/data stores
+			   a root in Config.roots without supplying a positional argument.
+			   Configuration entries can also supply paths before this pass.
+			   Continue when paths for the selected mode are already present;
+			   ARGP_KEY_END checks that comparison has exactly two database paths.
+			   Scan roots cannot satisfy the comparison path requirement */
+			if((config->compare == false && config->roots.length != 0) ||
+			   (config->compare == true && config->db_file_paths.length != 0))
+			{
+				break;
+			}
+
+			/* A bare invocation displays usage only when the optional file has
+			   no settings. A false flag still counts as a configuration entry */
+			if(state->argc == 1 && ((const ArgumentParseContext *)state->input)->config_has_entries == false)
 			{
 				information_mode_requested = true;
 				argp_usage(state);
 				break;
 			}
 
+			/* Options were supplied, but the paths required for this mode are missing */
+			if(config->compare == false)
+			{
+				/* Explain how to supply scan roots in the selected settings source */
+				const char *path_hint = "Specify a directory as a positional argument or with --path=PATH";
+				if(config->config_file_path != NULL)
+				{
+					path_hint = "Add 'path = /path/to/directory' to the configuration file";
+				}
+				argp_failure(state,0,0,"ERROR: At least one scan path is required. %s",path_hint);
+			}
 			argp_usage(state);
 			return(EX_USAGE);
 			break;
+		case 'P':
 		case ARGP_KEY_ARG:
 		{
+			/* Status returned by the path append operation.
+			   Assigned in either branch below before the shared result check */
 			Return status;
 
 			/*
-			 * This event receives one positional command-line argument.
+			 * This branch receives a --path value or one positional argument.
+			 * Both cases share the empty-path check and append to Config.roots
+			 * when handling scan roots.
 			 * Argp normally processes options before positional arguments, so
-			 * `--compare` has already selected the intended mode by this point.
+			 * `--compare` has selected the intended mode when a positional
+			 * argument arrives.
+			 * The configuration reader also uses ARGP_KEY_ARG for each compare
+			 * entry after enabling comparison and rejecting an empty path.
 			 *
 			 * In compare mode, positional arguments are database file paths.
-			 * In normal scan mode, positional arguments are filesystem roots
-			 * that will be traversed later
+			 * Named paths and positional arguments in scan mode are filesystem
+			 * roots. Named roots are cleared before comparison
 			 */
-			if(config->compare == true)
+			if(key == ARGP_KEY_ARG && config->compare == true)
 			{
 				status = m_string_array_append(conf(db_file_paths),char,arg);
 			} else {
+				if(arg[0] == '\0')
+				{
+					report_option_error(state,0,"Filesystem root path must not be empty. See --help for more information");
+					return(EINVAL);
+				}
+
 				status = m_string_array_append(conf(roots),char,arg);
 			}
 
 			if((TRIUMPH & status) == 0)
 			{
-				argp_failure(state,0,ENOMEM,"ERROR: Memory allocation for positional argument failed");
+				/* Paths can come from CLI or a configuration file. The shared error
+				   handler includes the line number for paths supplied by the file */
+				if(key == 'P')
+				{
+					report_option_error(state,ENOMEM,"Memory allocation for --path failed");
+				} else {
+					report_option_error(state,ENOMEM,"Memory allocation for positional argument failed");
+				}
 				return(ENOMEM);
 			}
 			break;
@@ -417,10 +589,10 @@ static error_t parse_opt(
 			{
 				if(config->db_file_paths.length < 2)
 				{
-					argp_failure(state,0,0,"ERROR: Too few arguments\n--compare require two arguments with paths to database files. See --help for more information");
+					argp_failure(state,0,0,"ERROR: Too few arguments. --compare require two arguments with paths to database files. See --help for more information");
 					return(EX_USAGE);
 				} else if(config->db_file_paths.length > 2){
-					argp_failure(state,0,0,"ERROR: Too many arguments\n--compare require just two arguments with paths to database files. See --help for more information");
+					argp_failure(state,0,0,"ERROR: Too many arguments. --compare require just two arguments with paths to database files. See --help for more information");
 					return(EX_USAGE);
 				}
 			}
@@ -448,396 +620,16 @@ static struct argp argp = {
 };
 
 /**
- * @brief Return the selected color mode name for configuration diagnostics
+ * @brief Select and parse one settings source, then finalize configuration state
  *
- * The name describes the configured policy, not whether a particular output
- * stream currently permits terminal styling
- *
- * @return Static mode name, or "unknown" for an unsupported mode value
- */
-static const char *parse_arguments_color_mode_name(void)
-{
-	switch(rational_color_mode)
-	{
-		case COLOR_MODE_AUTO:
-			return("auto");
-		case COLOR_MODE_ALWAYS:
-			return("always");
-		case COLOR_MODE_NEVER:
-			return("never");
-		default:
-			return("unknown");
-	}
-}
-
-/* Attribute helper diagnostics to parse_arguments() in logger output */
-#define parse_arguments_slog(level,...) rational_logger((level),__FILE__,__LINE__,"parse_arguments",__VA_ARGS__)
-
-/**
- * @brief Show parsed configuration details for TESTING logger output
- *
- * @details
- * Test templates use these lines as stable key-value diagnostics. The function
- * prints only options that were explicitly set or values that are useful for
- * validating argument parsing behavior
- */
-static void parse_arguments_show_testing_diagnostics(void)
-{
-	parse_arguments_slog(TESTING,"rational_logger_mode=%s\n",rational_reconvert(rational_logger_mode));
-	parse_arguments_slog(TESTING,"argument:color=%s\n",parse_arguments_color_mode_name());
-
-	if(config->roots.length != 0)
-	{
-		bool first_root = true;
-
-		parse_arguments_slog(TESTING,"argument:roots=");
-
-		m_string_array_foreach(conf(roots),root)
-		{
-			parse_arguments_slog(TESTING|UNDECOR,first_root == true ? "%s" : ", %s",m_text(root));
-			first_root = false;
-		}
-		parse_arguments_slog(TESTING|UNDECOR,"\n");
-	}
-
-	// Print configured database path when available
-	if(conf(db_primary_file_path)->string_length > 0)
-	{
-		parse_arguments_slog(TESTING,"argument:database=%s\n",confstr(db_primary_file_path));
-	}
-
-	// Print configured database file name when available
-	if(conf(db_file_name)->string_length > 0)
-	{
-		parse_arguments_slog(TESTING,"argument:db_file_name=%s\n",confstr(db_file_name));
-	}
-
-	if(config->db_file_paths.length != 0)
-	{
-		bool first_db_file_path = true;
-
-		parse_arguments_slog(TESTING,"argument:db_file_paths=");
-
-		m_string_array_foreach(conf(db_file_paths),db_file_path)
-		{
-			parse_arguments_slog(TESTING|UNDECOR,first_db_file_path == true ? "%s" : ", %s",m_text(db_file_path));
-			first_db_file_path = false;
-		}
-		parse_arguments_slog(TESTING|UNDECOR,"\n");
-	}
-
-	if(config->db_file_names != NULL)
-	{
-		parse_arguments_slog(TESTING,"argument:db_file_names=");
-
-		for(int i = 0; config->db_file_names[i]; i++)
-		{
-			parse_arguments_slog(TESTING|UNDECOR,i == 0 ? "%s" : ", %s",config->db_file_names[i]);
-		}
-		parse_arguments_slog(TESTING|UNDECOR,"\n");
-	}
-
-	if(config->ignore != NULL)
-	{
-		parse_arguments_slog(TESTING,"argument:ignore=");
-
-		// Print string-array contents
-		for(int i = 0; config->ignore[i] != NULL; ++i)
-		{
-			parse_arguments_slog(TESTING|UNDECOR,i == 0 ? "%s" : ", %s",config->ignore[i]);
-		}
-		parse_arguments_slog(TESTING|UNDECOR,"\n");
-	}
-
-	if(config->include != NULL)
-	{
-		parse_arguments_slog(TESTING,"argument:include=");
-
-		// Print string-array contents
-		for(int i = 0; config->include[i] != NULL; ++i)
-		{
-			parse_arguments_slog(TESTING|UNDECOR,i == 0 ? "%s" : ", %s",config->include[i]);
-		}
-		parse_arguments_slog(TESTING|UNDECOR,"\n");
-	}
-
-	if(config->lock_checksum != NULL)
-	{
-		parse_arguments_slog(TESTING,"argument:lock-checksum=");
-
-		// Print string-array contents
-		for(int i = 0; config->lock_checksum[i] != NULL; ++i)
-		{
-			parse_arguments_slog(TESTING|UNDECOR,i == 0 ? "%s" : ", %s",config->lock_checksum[i]);
-		}
-		parse_arguments_slog(TESTING|UNDECOR,"\n");
-	}
-
-	if(config->db_check_level != FULL)
-	{
-		parse_arguments_slog(TESTING,"argument:check-level=%s\n",config->db_check_level == QUICK ? "QUICK" : "FULL");
-	}
-
-	if(config->maxdepth > 0)
-	{
-		parse_arguments_slog(TESTING,"argument:maxdepth=%d\n",config->maxdepth);
-	}
-
-	if(config->verbose)
-	{
-		parse_arguments_slog(TESTING,"argument:verbose=%s\n",config->verbose ? "yes" : "no");
-	}
-
-	if(config->quiet_ignored)
-	{
-		parse_arguments_slog(TESTING,"argument:quiet-ignored=%s\n",config->quiet_ignored ? "yes" : "no");
-	}
-
-	if(config->watch_timestamps)
-	{
-		parse_arguments_slog(TESTING,"argument:watch-timestamps=%s\n",config->watch_timestamps ? "yes" : "no");
-	}
-
-	if(config->rehash_locked == true)
-	{
-		parse_arguments_slog(TESTING,"argument:rehash-locked=%s\n",config->rehash_locked ? "yes" : "no");
-	}
-
-	if(config->force)
-	{
-		parse_arguments_slog(TESTING,"argument:force=%s\n",config->force ? "yes" : "no");
-	}
-
-	if(config->update)
-	{
-		parse_arguments_slog(TESTING,"argument:update=%s\n",config->update ? "yes" : "no");
-	}
-
-	if(config->progress)
-	{
-		parse_arguments_slog(TESTING,"argument:progress=%s\n",config->progress ? "yes" : "no");
-	}
-
-	if(config->compare)
-	{
-		parse_arguments_slog(TESTING,"argument:compare=%s\n",config->compare ? "yes" : "no");
-	}
-
-	if(config->compare_filter)
-	{
-		bool first_compare_filter = true;
-
-		parse_arguments_slog(TESTING,"argument:compare-filter=");
-
-		if((config->compare_filter & CF_CHECKSUM_MISMATCH) != 0u)
-		{
-			parse_arguments_slog(TESTING|UNDECOR,"%schecksum-mismatch",first_compare_filter ? "" : ", ");
-			first_compare_filter = false;
-		}
-
-		if((config->compare_filter & CF_FIRST_SOURCE) != 0u)
-		{
-			parse_arguments_slog(TESTING|UNDECOR,"%sfirst-source",first_compare_filter ? "" : ", ");
-			first_compare_filter = false;
-		}
-
-		if((config->compare_filter & CF_SECOND_SOURCE) != 0u)
-		{
-			parse_arguments_slog(TESTING|UNDECOR,"%ssecond-source",first_compare_filter ? "" : ", ");
-		}
-
-		parse_arguments_slog(TESTING|UNDECOR,"\n");
-	}
-
-	if(config->db_drop_ignored)
-	{
-		parse_arguments_slog(TESTING,"argument:db-drop-ignored=%s\n",config->db_drop_ignored ? "yes" : "no");
-	}
-
-	if(config->db_drop_inaccessible)
-	{
-		parse_arguments_slog(TESTING,"argument:db-drop-inaccessible=%s\n",config->db_drop_inaccessible ? "yes" : "no");
-	}
-
-	if(config->dry_run)
-	{
-		parse_arguments_slog(TESTING,"argument:dry-run=%s\n",config->dry_run_with_checksums ? "with-checksums" : "yes");
-	}
-
-	if(config->one_file_system)
-	{
-		parse_arguments_slog(TESTING,"argument:one-file-system=%s\n",config->one_file_system ? "yes" : "no");
-	}
-}
-
-/**
- * @brief Show parsed configuration details for verbose user output
- *
- * @details
- * Verbose output is a compact, single-line configuration summary for people
- * running the program interactively. It reports the same configuration values
- * as the TESTING diagnostics
- */
-static void parse_arguments_show_verbose_diagnostics(void)
-{
-	parse_arguments_slog(VERBOSE,"Configuration: ");
-	parse_arguments_slog(VERBOSE|UNDECOR,"rational_logger_mode=%s\n",rational_reconvert(rational_logger_mode));
-
-	if(config->roots.length != 0)
-	{
-		bool first_root = true;
-
-		parse_arguments_slog(VERBOSE|UNDECOR,"roots=");
-
-		m_string_array_foreach(conf(roots),root)
-		{
-			parse_arguments_slog(VERBOSE|UNDECOR,first_root == true ? "%s" : ", %s",m_text(root));
-			first_root = false;
-		}
-		parse_arguments_slog(VERBOSE|UNDECOR,"; ");
-	}
-
-	// Print configured database path when available
-	if(conf(db_primary_file_path)->string_length > 0)
-	{
-		parse_arguments_slog(VERBOSE|UNDECOR,"database=%s; ",confstr(db_primary_file_path));
-	}
-
-	// Print configured database file name when available
-	if(conf(db_file_name)->string_length > 0)
-	{
-		parse_arguments_slog(VERBOSE|UNDECOR,"db_file_name=%s; ",confstr(db_file_name));
-	}
-
-	if(config->db_file_paths.length != 0)
-	{
-		bool first_db_file_path = true;
-
-		parse_arguments_slog(VERBOSE|UNDECOR,"db_file_paths=");
-
-		m_string_array_foreach(conf(db_file_paths),db_file_path)
-		{
-			parse_arguments_slog(VERBOSE|UNDECOR,first_db_file_path == true ? "%s" : ", %s",m_text(db_file_path));
-			first_db_file_path = false;
-		}
-		parse_arguments_slog(VERBOSE|UNDECOR,"; ");
-	}
-
-	if(config->db_file_names != NULL)
-	{
-		parse_arguments_slog(VERBOSE|UNDECOR,"db_file_names=");
-
-		for(int i = 0; config->db_file_names[i]; i++)
-		{
-			parse_arguments_slog(VERBOSE|UNDECOR,i == 0 ? "%s" : ", %s",config->db_file_names[i]);
-		}
-		parse_arguments_slog(VERBOSE|UNDECOR,"; ");
-	}
-
-	if(config->ignore != NULL)
-	{
-		parse_arguments_slog(VERBOSE|UNDECOR,"ignore=");
-
-		// Print string-array contents
-		for(int i = 0; config->ignore[i] != NULL; ++i)
-		{
-			parse_arguments_slog(VERBOSE|UNDECOR,i == 0 ? "%s" : ", %s",config->ignore[i]);
-		}
-		parse_arguments_slog(VERBOSE|UNDECOR,"; ");
-	}
-
-	if(config->include != NULL)
-	{
-		parse_arguments_slog(VERBOSE|UNDECOR,"include=");
-
-		// Print string-array contents
-		for(int i = 0; config->include[i] != NULL; ++i)
-		{
-			parse_arguments_slog(VERBOSE|UNDECOR,i == 0 ? "%s" : ", %s",config->include[i]);
-		}
-		parse_arguments_slog(VERBOSE|UNDECOR,"; ");
-	}
-
-	if(config->lock_checksum != NULL)
-	{
-		parse_arguments_slog(VERBOSE|UNDECOR,"lock-checksum=");
-
-		// Print string-array contents
-		for(int i = 0; config->lock_checksum[i] != NULL; ++i)
-		{
-			parse_arguments_slog(VERBOSE|UNDECOR,i == 0 ? "%s" : ", %s",config->lock_checksum[i]);
-		}
-		parse_arguments_slog(VERBOSE|UNDECOR,"; ");
-	}
-
-	const char *dry_run_mode = "no";
-
-	if(config->dry_run == true)
-	{
-		if(config->dry_run_with_checksums == true)
-		{
-			dry_run_mode = "with-checksums";
-		} else {
-			dry_run_mode = "yes";
-		}
-	}
-
-	parse_arguments_slog(VERBOSE|UNDECOR,"verbose=%s; maxdepth=%d; silent=no; quiet-ignored=%s; force=%s; update=%s; watch-timestamps=%s; rehash-locked=%s; progress=%s; compare=%s, db-drop-ignored=%s, db-drop-inaccessible=%s, dry-run=%s, one-file-system=%s, check-level=%s, rational_logger_mode=%s, color=%s",
-		config->verbose ? "yes" : "no",
-		config->maxdepth,
-		config->quiet_ignored ? "yes" : "no",
-		config->force ? "yes" : "no",
-		config->update ? "yes" : "no",
-		config->watch_timestamps ? "yes" : "no",
-		config->rehash_locked ? "yes" : "no",
-		config->progress ? "yes" : "no",
-		config->compare ? "yes" : "no",
-		config->db_drop_ignored ? "yes" : "no",
-		config->db_drop_inaccessible ? "yes" : "no",
-		dry_run_mode,
-		config->one_file_system ? "yes" : "no",
-		config->db_check_level == QUICK ? "QUICK" : "FULL",
-		rational_reconvert(rational_logger_mode),
-		parse_arguments_color_mode_name());
-
-	if(config->compare_filter)
-	{
-		bool first_compare_filter = true;
-
-		parse_arguments_slog(VERBOSE|UNDECOR,"; compare-filter=");
-
-		if((config->compare_filter & CF_CHECKSUM_MISMATCH) != 0u)
-		{
-			parse_arguments_slog(VERBOSE|UNDECOR,"%schecksum-mismatch",first_compare_filter ? "" : ", ");
-			first_compare_filter = false;
-		}
-
-		if((config->compare_filter & CF_FIRST_SOURCE) != 0u)
-		{
-			parse_arguments_slog(VERBOSE|UNDECOR,"%sfirst-source",first_compare_filter ? "" : ", ");
-			first_compare_filter = false;
-		}
-
-		if((config->compare_filter & CF_SECOND_SOURCE) != 0u)
-		{
-			parse_arguments_slog(VERBOSE|UNDECOR,"%ssecond-source",first_compare_filter ? "" : ", ");
-		}
-	}
-
-	parse_arguments_slog(VERBOSE|UNDECOR,"\n");
-}
-
-#undef parse_arguments_slog
-
-/**
- * @brief Parse command-line arguments and finalize parse-related configuration state
- *
- * In normal scan mode, positional arguments become traversal roots. In
+ * In normal scan mode, --path values and positional arguments become roots. In
  * `--compare` mode, the two positional arguments become database paths and
  * their file names are used in user-facing messages
  *
  * init_config() must initialize the configuration and global output settings
- * before this function applies command-line overrides
+ * before this function applies settings. A preliminary argp pass selects a
+ * file or CLI-only parsing. File settings are applied before the main argp
+ * pass performs the shared final checks; file and CLI settings are never mixed
  *
  * For example, `precizer src tests` creates two traversal roots, while
  * `precizer --compare first.db second.db` creates two compare database paths
@@ -853,12 +645,83 @@ Return parse_arguments(
 	/* Status returned by this function through provide()
 	   Default value assumes successful completion */
 	Return status = SUCCESS;
+
+	/* Return errors without exiting and leave informational options
+	   to the application's handlers */
 	unsigned int parse_flags = ARGP_NO_EXIT | ARGP_NO_HELP;
 
+	/* Reset informational-mode and source-selection state for this invocation */
 	information_mode_requested = false;
+	config->config_file_path = NULL;
 
-	/* Parse arguments and route each parser event through parse_opt */
-	error_t parse_error = argp_parse(&argp,argc,argv,parse_flags,0,0);
+	/* Local source-selection state shared by both argp passes and file reading.
+	   The preliminary pass stores the program name and error stream in its
+	   embedded diagnostic_state for diagnostics between passes */
+	ArgumentParseContext context = {0};
+
+	/*
+	 * Stage 1: Preliminary CLI parsing and source selection
+	 *
+	 * Identify the config path, other arguments, and information requests to
+	 * choose a settings source without applying working options
+	 */
+
+	/* Copy the parser descriptor; the option table and help text remain shared.
+	   Changing the callback below affects only this copy, so the main parser
+	   keeps parse_opt() as its handler */
+	struct argp preliminary_argp = argp;
+
+	/* Collect the config path and record other arguments and information requests.
+	   This callback does not apply working options such as --progress or --database */
+	preliminary_argp.parser = parse_source_option;
+
+	/* Scan CLI arguments without printing diagnostics or exiting on errors.
+	   The callback updates context and config->config_file_path. The return code lets
+	   source selection discard incomplete results; the main pass reports CLI
+	   errors and handles help, usage, and version output */
+	error_t preliminary_error = argp_parse(&preliminary_argp,argc,argv,ARGP_SILENT,0,&context);
+
+	/* A conflict stops before reading. Information requests and preliminary
+	   syntax errors select no file; output stays in the main CLI parser */
+	run(select_settings_source(argc,preliminary_error,&context));
+
+	/*
+	 * Stage 2: Configuration file parsing
+	 *
+	 * Read a file only when source selection succeeded and selected a path.
+	 * config_required makes a missing explicitly selected file an error, while
+	 * a missing default file is allowed. Reading applies settings to Config and
+	 * records recognized entries in config_has_entries, including false flags,
+	 * so the main pass can distinguish an empty file from incomplete settings
+	 */
+
+	if(SUCCESS == status && config->config_file_path != NULL)
+	{
+		run(read_config_file(config->config_file_path,context.config_required,&context.config_has_entries,&context.diagnostic_state));
+	}
+
+	if(CRITICAL & status)
+	{
+		provide(status);
+	}
+
+	/*
+	 * Stage 3: Main CLI parsing and final validation
+	 *
+	 * Route parser events through parse_opt() to apply CLI settings when CLI
+	 * is the selected source, or finalize settings already read from the file.
+	 * Report CLI errors and handle help, usage, and version requests here.
+	 * File settings and CLI working options are never combined
+	 */
+
+	error_t parse_error = argp_parse(&argp,argc,argv,parse_flags,0,&context);
+
+	/* Even if a transient preliminary error does not recur, it must prevent
+	   the operation from starting after source selection was abandoned */
+	if(parse_error == EX_OK && preliminary_error != EX_OK)
+	{
+		parse_error = preliminary_error;
+	}
 
 	if(parse_error != EX_OK)
 	{
@@ -867,8 +730,14 @@ Return parse_arguments(
 		provide(INFO | HALTED);
 	}
 
+	/* Discard scan roots before comparison path handling and diagnostics */
+	if((SUCCESS & status) && config->compare == true)
+	{
+		run(m_array_del(conf(roots)));
+	}
+
 	/*
-	 * Normal scan mode stores positional arguments as traversal roots.
+	 * Normal scan mode stores named and positional paths as traversal roots.
 	 * Normalize those roots after argp has finished collecting them, so later
 	 * code can compare paths without treating `dir` and `dir/` as different
 	 * user input
@@ -950,11 +819,13 @@ Return parse_arguments(
 		provide(status);
 	}
 
+#ifdef TESTITALL_TEST_HOOKS
 	/* Show key-value diagnostics consumed by test templates */
-	parse_arguments_show_testing_diagnostics();
+	show_testing_diagnostics();
+#endif
 
 	/* Show compact configuration summary for verbose user output */
-	parse_arguments_show_verbose_diagnostics();
+	show_verbose_diagnostics();
 
 	slog(TRACE,"Argument parsing is finished\n");
 

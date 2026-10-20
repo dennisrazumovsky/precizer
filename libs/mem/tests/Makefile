@@ -12,7 +12,7 @@ MAKEFLAGS += --no-print-directory
 # Compiler flags
 #
 
-C_STANDARD := -std=c2x
+C_STANDARD := -std=gnu2x
 CPPFLAGS ?=
 CFLAGS ?= -finline-functions
 LDFLAGS ?=
@@ -75,8 +75,8 @@ ifeq ($(UNAME_S),Darwin)
 INCPATH += $(shell pkg-config --cflags libpcre2-8)
 endif
 
-# Detect whether GCC is in use
-GCC := $(findstring gcc,$(notdir $(firstword $(CC))))
+# Detect GCC from its version output, including cc and cross-compiler names
+GCC := $(findstring gcc version,$(shell $(CC) -v 2>&1))
 
 # Warning flags for additional checks
 WFLAGS += -Werror # Treat every warning as an error (-Werror stops the build)

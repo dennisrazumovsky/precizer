@@ -12,15 +12,17 @@ void mocks_fread_set_errno(int);
 
 void mocks_fread_reset(void);
 
-size_t mocks_fread_call_count(void);
+size_t mocks_fread_call_count(void) __attribute__ ((pure));
 
 void mocks_ferror_enable(bool);
+
+void mocks_ferror_set_target_suffix(const char *);
 
 void mocks_ferror_set_errno(int);
 
 void mocks_ferror_reset(void);
 
-size_t mocks_ferror_call_count(void);
+size_t mocks_ferror_call_count(void) __attribute__ ((pure));
 
 void mocks_openat_set_target_suffix(const char *);
 
@@ -30,7 +32,7 @@ void mocks_openat_set_errno(int);
 
 void mocks_openat_reset(void);
 
-size_t mocks_openat_call_count(void);
+size_t mocks_openat_call_count(void) __attribute__ ((pure));
 
 void mocks_fdopen_set_target_suffix(const char *);
 
@@ -40,7 +42,7 @@ void mocks_fdopen_set_errno(int);
 
 void mocks_fdopen_reset(void);
 
-size_t mocks_fdopen_call_count(void);
+size_t mocks_fdopen_call_count(void) __attribute__ ((pure));
 
 void mocks_remove_set_target_suffix(const char *);
 
@@ -50,7 +52,7 @@ void mocks_remove_set_errno(int);
 
 void mocks_remove_reset(void);
 
-size_t mocks_remove_call_count(void);
+size_t mocks_remove_call_count(void) __attribute__ ((pure));
 
 void mocks_access_set_target_suffix(const char *);
 
@@ -60,6 +62,6 @@ void mocks_access_set_errno(int);
 
 void mocks_access_reset(void);
 
-size_t mocks_access_call_count(void);
+size_t mocks_access_call_count(void) __attribute__ ((pure));
 
 #endif /* _TEST_MOCKS_H */

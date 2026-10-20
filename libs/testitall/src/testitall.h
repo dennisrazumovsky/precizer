@@ -265,6 +265,11 @@ Return replace_placeholder(
 	const char *,
 	const char *);
 
+Return replace_placeholder_in_file(
+	const char *filename,
+	const char *placeholder,
+	const char *replacement);
+
 Return write_to_temp_file(const char *);
 
 Return check_file_exists(

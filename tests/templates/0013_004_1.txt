@@ -1,4 +1,7 @@
-\A-TESTING:argument:dry-run=yes
+\A-\Q(?:TESTING:argument:config=0013_002_1\.conf\n)?(?x)\E
+-\Q(?-x)TESTING:argument:color=always\E
+\+TESTING:argument:color=always
+-TESTING:argument:dry-run=yes
 -TESTING:Final value for config->sqlite_open_flag: SQLITE_OPEN_READONLY
 \+TESTING:Final value for config->sqlite_open_flag: SQLITE_OPEN_READWRITE
 -TESTING:Dry-run mode is enabled. The primary database will remain unchanged

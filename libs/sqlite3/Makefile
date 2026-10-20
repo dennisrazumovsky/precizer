@@ -1,6 +1,9 @@
 # Name of the library
 LIBNAME=libsqlite3
 
+# SQLite amalgamation version used by the update target
+SQLITE_VERSION ?= 3540000
+
 # Defaults to a local .builds when running `make` from this directory.
 # When the umbrella project drives the build, BUILDDIR is overridden via the
 # library dispatcher Makefile to point at the project-wide .builds
@@ -16,11 +19,14 @@ UNAME_S := $(shell uname -s)
 #
 # USE_LLD and AR are exported by the root Makefile when COMPILER=clang
 # to use LLVM's own linker and archiver, avoiding gold plugin version mismatch
-C_STANDARD := -std=c2x
+C_STANDARD := -std=gnu2x
 CPPFLAGS ?=
 CFLAGS ?= -finline-functions
 LDFLAGS ?=
 CFLAGS += -w
+
+# Detect GCC from its version output, including cc and cross-compiler names
+GCC := $(findstring gcc version,$(shell $(CC) -v 2>&1))
 
 # Detect the MSYS runtime target, independently of the active shell
 IS_MSYS := $(shell $(CC) $(CPPFLAGS) $(CFLAGS) -dM -E -x c /dev/null 2>/dev/null | awk '$$2 == "__MSYS__" { print 1; exit }')
@@ -71,7 +77,7 @@ SRC_DIR = src
 SRCS = $(wildcard $(SRC_DIR)/*.c)
 HDRS = $(wildcard $(SRC_DIR)/*.h)
 
-# Exclude a file
+# Object names corresponding to the source files
 OBJS = $(SRCS:$(SRC_DIR)/%.c=%.o)
 LIBDIR = $(patsubst lib%,%,$(LIBNAME))
 
@@ -109,8 +115,7 @@ COV_OBJDIR = $(COV_LIBDIR)/obj/$(LIBDIR)
 COV_SO = $(COV_LIBDIR)/$(SO)
 COV_STAT = $(COV_LIBDIR)/$(STATLIB)
 COV_OBJS = $(addprefix $(COV_OBJDIR)/, $(OBJS))
-# This coverage target intentionally does not add gcov instrumentation.
-# This keeps coverage statistics focused on files whose coverage has strategic value
+# Vendored sources are excluded from gcov instrumentation
 # Callers may replace these defaults through COV_OPT_CFLAGS and
 # COV_OPT_LDFLAGS. Coverage optimization flags follow CFLAGS and LDFLAGS and
 # win conflicts
@@ -168,6 +173,12 @@ PROD_OPT_LDFLAGS ?= $(LTO) -Wl,-O3 -Wl,--hash-style=gnu -Wl,--as-needed -Wl,--gc
 PROD_LDFLAGS ?= $(USE_LLD) $(PROD_OPT_LDFLAGS) -Wl,-z,defs
 endif
 
+# Legacy compiler workaround for a GCC LTO false positive in SQLite.
+# Recheck with newer GCC versions on 2027-10-19 and remove if fixed
+ifneq ($(GCC),)
+PROD_LDFLAGS += -Wno-stringop-overread
+endif
+
 #
 # Distribution package build settings
 #
@@ -213,7 +224,7 @@ PRTB_LDFLAGS ?= $(USE_LLD) $(PRTB_OPT_LDFLAGS) -Wl,-z,defs
 endif
 
 .PHONY: all purge clean debug production prod distribution portable sanitize gcc-analyzer compile-commands
-.PHONY: coverage memtest tests test tests-sanitize tests-debug tests-coverage format print-%
+.PHONY: coverage memtest tests test tests-sanitize tests-debug tests-coverage format update print-%
 
 define SQLITE_WARN_ONCE
 $(if $(SQLITE_WARNING_PRINTED),,\
@@ -223,6 +234,16 @@ endef
 
 # Default build
 all: debug production portable
+
+update:
+	@echo Downloading...
+	@wget "https://sqlite.org/2026/sqlite-amalgamation-$(SQLITE_VERSION).zip" \
+		-O "sqlite-amalgamation-$(SQLITE_VERSION).zip"
+	@echo Extracting...
+# Extract the source and header into src without subdirectories, overwriting existing files
+	@unzip -joqq "sqlite-amalgamation-$(SQLITE_VERSION).zip" \
+		"sqlite-amalgamation-$(SQLITE_VERSION)/sqlite3.c" \
+		"sqlite-amalgamation-$(SQLITE_VERSION)/sqlite3.h" -d "$(SRC_DIR)"
 
 #
 # GCC Static Analysis
@@ -386,7 +407,6 @@ $(PRTB_LIBDIR):
 
 purge:
 	@test -d $(BUILDDIR) && rm -rf $(BUILDDIR) 2>/dev/null || true
-	@test -f $(EXE) && rm $(EXE) 2>/dev/null || true
 	@echo $(LIBNAME) artifacts cleared
 
 clean:
@@ -398,22 +418,32 @@ clean:
 	@rm -rf $(SNTZ_SO) $(SNTZ_STAT) $(SNTZ_OBJS)
 
 	@test -d $(DBG_OBJDIR) && rm -d $(DBG_OBJDIR) 2>/dev/null || true
+	@test -d $(DBG_LIBDIR)/obj && rm -d $(DBG_LIBDIR)/obj 2>/dev/null || true
 	@test -d $(DBG_LIBDIR) && rm -d $(DBG_LIBDIR) 2>/dev/null || true
 	@test -d $(DBG_DIR) && rm -d $(DBG_DIR) 2>/dev/null || true
 
 	@test -d $(COV_OBJDIR) && rm -d $(COV_OBJDIR) 2>/dev/null || true
+	@test -d $(COV_LIBDIR)/obj && rm -d $(COV_LIBDIR)/obj 2>/dev/null || true
 	@test -d $(COV_LIBDIR) && rm -d $(COV_LIBDIR) 2>/dev/null || true
 	@test -d $(COV_DIR) && rm -d $(COV_DIR) 2>/dev/null || true
 
 	@test -d $(SNTZ_OBJDIR) && rm -d $(SNTZ_OBJDIR) 2>/dev/null || true
+	@test -d $(SNTZ_LIBDIR)/obj && rm -d $(SNTZ_LIBDIR)/obj 2>/dev/null || true
 	@test -d $(SNTZ_LIBDIR) && rm -d $(SNTZ_LIBDIR) 2>/dev/null || true
 	@test -d $(SNTZ_DIR) && rm -d $(SNTZ_DIR) 2>/dev/null || true
 
 	@test -d $(PROD_OBJDIR) && rm -d $(PROD_OBJDIR) 2>/dev/null || true
+	@test -d $(PROD_LIBDIR)/obj && rm -d $(PROD_LIBDIR)/obj 2>/dev/null || true
 	@test -d $(PROD_LIBDIR) && rm -d $(PROD_LIBDIR) 2>/dev/null || true
 	@test -d $(PROD_DIR) && rm -d $(PROD_DIR) 2>/dev/null || true
 
+	@test -d $(DIST_OBJDIR) && rm -d $(DIST_OBJDIR) 2>/dev/null || true
+	@test -d $(DIST_LIBDIR)/obj && rm -d $(DIST_LIBDIR)/obj 2>/dev/null || true
+	@test -d $(DIST_LIBDIR) && rm -d $(DIST_LIBDIR) 2>/dev/null || true
+	@test -d $(DIST_DIR) && rm -d $(DIST_DIR) 2>/dev/null || true
+
 	@test -d $(PRTB_OBJDIR) && rm -d $(PRTB_OBJDIR) 2>/dev/null || true
+	@test -d $(PRTB_LIBDIR)/obj && rm -d $(PRTB_LIBDIR)/obj 2>/dev/null || true
 	@test -d $(PRTB_LIBDIR) && rm -d $(PRTB_LIBDIR) 2>/dev/null || true
 	@test -d $(PRTB_DIR) && rm -d $(PRTB_DIR) 2>/dev/null || true
 

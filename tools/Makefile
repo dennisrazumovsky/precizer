@@ -7,7 +7,7 @@ CC := gcc
 #
 # Compiler flags
 #
-C_STANDARD := -std=c2x
+C_STANDARD := -std=gnu2x
 CPPFLAGS ?=
 CFLAGS ?= -finline-functions
 LDFLAGS ?=
@@ -18,8 +18,8 @@ TOOL_CFLAGS ?= $(OPT_CFLAGS)
 OPT_LDFLAGS ?=
 TOOL_LDFLAGS ?= $(OPT_LDFLAGS)
 
-# Detect whether we're using GCC
-GCC := $(findstring gcc,$(notdir $(firstword $(CC))))
+# Detect GCC from its version output, including cc and cross-compiler names
+GCC := $(findstring gcc version,$(shell $(CC) -v 2>&1))
 
 # Warning flags for additional checks
 WFLAGS += -Werror

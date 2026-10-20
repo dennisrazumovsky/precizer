@@ -1,0 +1,1 @@
+\Aprecizer: ERROR: Too few arguments\. --compare require two arguments with paths to database files\. See --help for more information\Z

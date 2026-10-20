@@ -3,12 +3,12 @@
 MAKEFLAGS += --no-print-directory
 CONFIG += ordered
 
-C_STANDARD := -std=c2x
+C_STANDARD := -std=gnu2x
 CPPFLAGS ?=
 CFLAGS ?= -finline-functions
 LDFLAGS ?=
 
-SUBDIRS  = sqlite3 rational sha512 mem xdiff testitall monocypher
+SUBDIRS  = sqlite3 rational sha512 mem xdiff testitall monocypher inih argp
 PURGE_SUBDIRS = $(SUBDIRS) testmocking
 
 TOPTARGETS := all clean debug prod production distribution portable sanitize test tests-debug tests-sanitize tests-coverage gcc-analyzer format coverage compile-commands purge

@@ -20,6 +20,8 @@ static int mock_fread_errno = EIO;
 static bool mock_ferror_enabled = true;
 static size_t mock_ferror_calls = 0;
 static int mock_ferror_errno = EIO;
+static const char *mock_ferror_target_suffix = NULL;
+static FILE *mock_ferror_target_stream = NULL;
 static bool mock_openat_enabled = false;
 static size_t mock_openat_calls = 0;
 static const char *mock_openat_target_suffix = NULL;
@@ -424,13 +426,29 @@ void mocks_fread_set_errno(int err)
 }
 
 /**
- * @brief Enable or disable mocked ferror confirmation after a mocked zero read
+ * @brief Enable or disable mocked ferror failures
  *
  * @param[in] enabled true to make ferror report the pending read error
  */
 void mocks_ferror_enable(bool enabled)
 {
 	mock_ferror_enabled = enabled;
+}
+
+/**
+ * @brief Report a read error on the next ferror check of the selected file
+ *
+ * The target must be selected before fopen opens the file. The mock tracks
+ * the returned stream and reports an error on its next ferror check. This
+ * does not require a mocked fread failure, so successfully read settings
+ * can be applied first
+ *
+ * @param[in] suffix Path suffix to match, or NULL to disable this failure
+ */
+void mocks_ferror_set_target_suffix(const char *suffix)
+{
+	mock_ferror_target_suffix = suffix;
+	mock_ferror_target_stream = NULL;
 }
 
 /**
@@ -441,6 +459,8 @@ void mocks_ferror_reset(void)
 	mock_ferror_enabled = true;
 	mock_ferror_calls = 0;
 	mock_ferror_errno = EIO;
+	mock_ferror_target_suffix = NULL;
+	mock_ferror_target_stream = NULL;
 }
 
 /**
@@ -674,7 +694,7 @@ FILE *__real_fopen(
 	const char *mode);
 
 /**
- * @brief Track the stream for the configured fread target while delegating fopen
+ * @brief Track streams for the configured fread and ferror targets while delegating fopen
  *
  * @param[in] path Path passed to fopen
  * @param[in] mode Mode passed to fopen
@@ -691,6 +711,14 @@ FILE *__wrap_fopen(
 		if(mock_path_matches_suffix(path,mock_fread_target_suffix))
 		{
 			mock_fread_target_stream = stream;
+		}
+	}
+
+	if(stream != NULL && mock_ferror_target_suffix != NULL)
+	{
+		if(mock_path_matches_suffix(path,mock_ferror_target_suffix) == true)
+		{
+			mock_ferror_target_stream = stream;
 		}
 	}
 
@@ -736,13 +764,24 @@ size_t __wrap_fread(
 int __real_ferror(FILE *stream);
 
 /**
- * @brief Report a pending mocked fread error exactly once for the tracked stream
+ * @brief Report a selected stream error or a pending mocked fread error once
  *
  * @param[in] stream Stream passed to `ferror()`
  * @return `1` for the pending mocked error or the real `ferror()` result otherwise
  */
 int __wrap_ferror(FILE *stream)
 {
+	if(mock_ferror_enabled == true
+	        && stream != NULL
+	        && stream == mock_ferror_target_stream)
+	{
+		mock_ferror_calls++;
+		mock_ferror_target_suffix = NULL;
+		mock_ferror_target_stream = NULL;
+		errno = mock_ferror_errno;
+		return 1;
+	}
+
 	if(stream != NULL
 	        && mock_stream_matches_fread_target(stream)
 	        && mock_fread_zero_seen)

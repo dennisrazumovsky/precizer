@@ -57,7 +57,8 @@ static Return test0029_1(void)
  *
  * Makes one file and one directory inaccessible, enables
  * `--db-drop-inaccessible`, and verifies that their database records are
- * removed during the update
+ * removed during the update. CLI and configuration runs use the same saved
+ * database and access restrictions, then check the same full output
  */
 static Return test0029_2(void)
 {
@@ -65,7 +66,7 @@ static Return test0029_2(void)
 
 	// Create memory for the result
 	m_create(char,result,MEMORY_STRING);
-	m_create(char,pattern,MEMORY_STRING);
+	const char *db_backup_filename = "0029_002.db";
 
 	// Preparation for tests
 	ASSERT(SUCCESS == prepare_mutable_fixture("tests/fixtures/diffs/diff1"));
@@ -81,19 +82,32 @@ static Return test0029_2(void)
 	ASSERT(SUCCESS == change_mode("tests/fixtures/diffs/diff1/1/AAA/ZAW/D/e/f/b_file.txt",0000));
 	ASSERT(SUCCESS == change_mode("tests/fixtures/diffs/diff1/2/AAA/BBB/CZC",0000));
 
+	/* Preserve the prepared database before either update removes inaccessible records */
+	ASSERT(SUCCESS == copy_path("database2.db",db_backup_filename));
+
 	ASSERT(SUCCESS == set_environment_variable("TESTING","true"));
 
 	arguments = "--update --check-level=QUICK --db-drop-inaccessible --database=database2.db "
 	        "tests/fixtures/diffs/diff1";
 
-	ASSERT(SUCCESS == runit(arguments,result,NULL,COMPLETED,ALLOW_BOTH));
-
 	const char *filename = "templates/0029_002.txt";
+	const struct argument_test_case cases[] = {
+		{arguments,COMPLETED,filename,STDERR_MUST_BE_EMPTY},
+		{0}
+	};
+	ASSERT(SUCCESS == run_and_match_templates(cases,NULL,NULL));
 
-	ASSERT(SUCCESS == get_file_content(filename,pattern));
-	ASSERT(SUCCESS == match_pattern(result,pattern,filename));
+	/* Restore only the database; access restrictions remain for the configuration run */
+	ASSERT(SUCCESS == copy_path(db_backup_filename,"database2.db"));
+	ASSERT(SUCCESS == copy_path("tests/templates/0029_002.conf","0029_002.conf"));
+	const struct argument_test_case file_cases[] = {
+		{"--config=0029_002.conf",COMPLETED,filename,STDERR_MUST_BE_EMPTY},
+		{0}
+	};
+	ASSERT(SUCCESS == run_and_match_templates(file_cases,NULL,NULL));
+	call(delete_path_if_present("0029_002.conf"));
+	call(delete_path_if_present(db_backup_filename));
 
-	m_del(pattern);
 	m_del(result);
 
 	// Clean up test results
@@ -252,14 +266,12 @@ static Return test0029_4(void)
  * Forces the first of two traversal roots to fail during root opening. The
  * unavailable root must be reported immediately and shown again in the final
  * warning summary, while a file from the second root must still be written to
- * the database
+ * the database. A configuration-file run repeats both checks with the same
+ * access failure after removing the database created by the CLI run
  */
 static Return test0029_5(void)
 {
 	INITTEST;
-
-	m_create(char,result,MEMORY_STRING);
-	m_create(char,pattern,MEMORY_STRING);
 
 	const char *db_filename = "database5.db";
 	const char *filename = "templates/0029_005.txt";
@@ -272,19 +284,31 @@ static Return test0029_5(void)
 
 	const char *arguments = "--database=database5.db "
 	        "tests/fixtures/diffs/diff1/1 tests/fixtures/diffs/diff1/4";
+	const struct argument_test_case cases[] = {
+		{arguments,COMPLETED,filename,STDERR_MUST_BE_EMPTY},
+		{0}
+	};
 
-	ASSERT(SUCCESS == runit(arguments,result,NULL,COMPLETED,ALLOW_BOTH));
-
-	ASSERT(SUCCESS == get_file_content(filename,pattern));
-	ASSERT(SUCCESS == match_pattern(result,pattern,filename));
+	ASSERT(SUCCESS == run_and_match_templates(cases,NULL,NULL));
 	ASSERT(SUCCESS == db_relative_path_exists(db_filename,available_relative_path,&available_path_exists));
 	ASSERT(available_path_exists == true);
 
+	/* Preserve the unavailable-root condition for the configuration-file repeat */
+	ASSERT(SUCCESS == delete_path(db_filename));
+	ASSERT(SUCCESS == copy_from_origin("tests/templates/0029_005.conf",
+		"0029_005.conf",REQUIRE_SOURCE_EXISTS));
+	const struct argument_test_case file_cases[] = {
+		{"--config=0029_005.conf",COMPLETED,filename,STDERR_MUST_BE_EMPTY},
+		{0}
+	};
+	ASSERT(SUCCESS == run_and_match_templates(file_cases,NULL,NULL));
+	available_path_exists = false;
+	ASSERT(SUCCESS == db_relative_path_exists(db_filename,available_relative_path,&available_path_exists));
+	ASSERT(available_path_exists == true);
+	call(delete_path_if_present("0029_005.conf"));
+
 	ASSERT(SUCCESS == set_environment_variable("TESTITALL_TEST_ENV_FILE_ACCESS_SUFFIX",""));
 	ASSERT(SUCCESS == set_environment_variable("TESTITALL_TEST_ENV_FILE_ACCESS_STATUS",""));
-
-	m_del(pattern);
-	m_del(result);
 
 	ASSERT(SUCCESS == delete_path(db_filename));
 
@@ -296,14 +320,14 @@ static Return test0029_5(void)
  *
  * Makes one file inaccessible and ignores the same relative path during update.
  * Even with --db-drop-inaccessible, the ignored non-locked row must stay in the
- * DB and must not be reported through inaccessible cleanup
+ * DB and must not be reported through inaccessible cleanup. CLI and configuration
+ * runs check the same full output and preserve the same database record
  */
 static Return test0029_6(void)
 {
 	INITTEST;
 
 	m_create(char,result,MEMORY_STRING);
-	m_create(char,pattern,MEMORY_STRING);
 
 	const char *db_filename = "database6.db";
 	const char *ignored_relative_path = "1/AAA/ZAW/D/e/f/b_file.txt";
@@ -324,16 +348,27 @@ static Return test0029_6(void)
 		"--ignore=\"^1/AAA/ZAW/D/e/f/b_file\\.txt$\" "
 		"--database=database6.db tests/fixtures/diffs/diff1";
 
-	ASSERT(SUCCESS == runit(arguments,result,NULL,COMPLETED,ALLOW_BOTH));
-
 	const char *filename = "templates/0029_006.txt";
-	ASSERT(SUCCESS == get_file_content(filename,pattern));
-	ASSERT(SUCCESS == match_pattern(result,pattern,filename));
+	const struct argument_test_case cases[] = {
+		{arguments,COMPLETED,filename,STDERR_MUST_BE_EMPTY},
+		{0}
+	};
+	ASSERT(SUCCESS == run_and_match_templates(cases,NULL,NULL));
 
 	ASSERT(SUCCESS == db_relative_path_exists(db_filename,ignored_relative_path,&ignored_path_exists));
 	ASSERT(ignored_path_exists == true);
 
-	m_del(pattern);
+	/* The CLI update leaves the database unchanged, so reuse it with the same permissions */
+	ASSERT(SUCCESS == copy_path("tests/templates/0029_006.conf","0029_006.conf"));
+	const struct argument_test_case file_cases[] = {
+		{"--config=0029_006.conf",COMPLETED,filename,STDERR_MUST_BE_EMPTY},
+		{0}
+	};
+	ASSERT(SUCCESS == run_and_match_templates(file_cases,NULL,NULL));
+	ASSERT(SUCCESS == db_relative_path_exists(db_filename,ignored_relative_path,&ignored_path_exists));
+	ASSERT(ignored_path_exists == true);
+	call(delete_path_if_present("0029_006.conf"));
+
 	m_del(result);
 
 	ASSERT(SUCCESS == change_mode("tests/fixtures/diffs/diff1/1/AAA/ZAW/D/e/f/b_file.txt",0666));

@@ -1,4 +1,5 @@
 #include "testitall.h"
+#include "runit_internal.h"
 
 bool show_subheader = false;
 

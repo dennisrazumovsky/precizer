@@ -8,6 +8,9 @@ All notable changes will be documented in this file
 * The application is significantly faster due to a combination of factors, primarily optimizations to database access
 * Embeded SQLite upgraded to the mainstream version
 * Improved file status output
+* The integration of argp-standalone is finally complete. The library is now part of the codebase and will be updated as its author and maintainer, tom42, makes improvements.  
+This was long overdue. As it turned out, there are many incompatible versions in use across different systems, and maintaining compatibility while working around unresolved bugs on each one proved to be quite a challenge.  
+argp is a great tool, and its successful integration with inih, a library for parsing configuration files, has demonstrated that once again. As a result, the program now supports configuration files in addition to parsing CLI arguments.
 
 # Release 0.17.5 2026-10-02
 

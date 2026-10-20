@@ -60,10 +60,6 @@ ifneq ($(GCC),)
 WFLAGS += -Wlogical-op
 endif
 
-# The generator runs on the build machine, independently of the target compiler
-CC_FOR_BUILD ?= cc
-CFLAGS_FOR_BUILD ?= -O2
-
 #
 # Project files
 #
@@ -241,37 +237,22 @@ update:
 # Keep feature detection separate for each build mode and rerun it when flags change
 CONFIG_DIRS = $(DBG_OBJDIR) $(COV_OBJDIR) $(SNTZ_OBJDIR) $(PROD_OBJDIR) $(DIST_OBJDIR) $(PRTB_OBJDIR)
 CONFIG_HEADERS = $(addsuffix /config.h,$(CONFIG_DIRS))
-CONFIG_COMMANDS = $(addsuffix /config.command,$(CONFIG_DIRS))
 CONFIG_GENERATORS = $(addsuffix /configure.exe,$(CONFIG_DIRS))
-# Quote shell arguments without interpreting spaces, quotes, or command substitutions
-shell_quote = '$(subst ','"'"',$(1))'
-
 # Probe executables must reject unresolved symbols; shared-library linker flags
 # such as macOS dynamic_lookup would incorrectly report missing functions as available
-$(DBG_OBJDIR)/config.command: CONFIG_FLAGS = $(CFLAGS) $(DBG_CFLAGS)
-$(COV_OBJDIR)/config.command: CONFIG_FLAGS = $(CFLAGS) $(COV_CFLAGS)
-$(SNTZ_OBJDIR)/config.command: CONFIG_FLAGS = $(CFLAGS) $(SNTZ_CFLAGS)
-$(PROD_OBJDIR)/config.command: CONFIG_FLAGS = $(CFLAGS) $(PROD_CFLAGS)
-$(DIST_OBJDIR)/config.command: CONFIG_FLAGS = $(DIST_CFLAGS) $(CFLAGS)
-$(PRTB_OBJDIR)/config.command: CONFIG_FLAGS = $(CFLAGS) $(PRTB_CFLAGS)
+export CC CPPFLAGS LDFLAGS USE_LLD C_STANDARD MACOSX_DEPLOYMENT_TARGET
 
-.PHONY: force-config-command
-force-config-command:
-
-$(CONFIG_COMMANDS): force-config-command
-	@mkdir -p "$(@D)"
-	@printf '%s\n' $(call shell_quote,cd $(call shell_quote,$(CURDIR)) && $(if $(MACOSX_DEPLOYMENT_TARGET),MACOSX_DEPLOYMENT_TARGET=$(call shell_quote,$(MACOSX_DEPLOYMENT_TARGET))) $(CC) $(CPPFLAGS) $(CONFIG_FLAGS) $(LDFLAGS) $(USE_LLD) $(C_STANDARD) -x c $(call shell_quote,$(abspath $(@D)/conftest.c)) -o $(call shell_quote,$(abspath $(@D)/conftest.exe)) >> $(call shell_quote,$(abspath $(@D)/configure.log)) 2>&1) > "$@.tmp"
-	@test -f "$@" && test "$$(cat "$@.tmp")" = "$$(cat "$@")" && rm "$@.tmp" || mv "$@.tmp" "$@"
+.PHONY: check-config
+check-config:
 
 $(CONFIG_GENERATORS): configure.c Makefile
 	@mkdir -p "$(@D)"
-	@$(CC_FOR_BUILD) $(CFLAGS_FOR_BUILD) -std=gnu2x -Wall -Wextra -Werror -o "$@" "$<"
+	@$(CC) -O2 $(C_STANDARD) -Wall -Wextra -Werror -o "$@" "$<"
 
-$(CONFIG_HEADERS): %/config.h: config.h.in %/configure.exe %/config.command Makefile
-	@cd "$(@D)" && rm -f configure.log && \
-		./configure.exe "$(abspath config.h.in)" "$$(cat config.command)" > config.h.tmp && \
-		mv config.h.tmp config.h
-	@echo "$(call short_path,$@) generated with target compiler probes"
+# The generator checks settings on every invocation. Changed prerequisites
+# force fresh probes, including an explicit rebuild requested with make -B
+$(CONFIG_HEADERS): %/config.h: config.h.in %/configure.exe Makefile check-config
+	@"$(@D)/configure.exe" "$<" "$@" $(if $(filter-out check-config,$?),--force)
 
 #
 # Debug rules
@@ -284,6 +265,8 @@ tests-sanitize tests-debug tests-coverage:
 	@true
 
 debug: $(DBG_SO) $(DBG_STAT)
+
+$(DBG_OBJDIR)/config.h: export CONFIG_FLAGS = $(CFLAGS) $(DBG_CFLAGS)
 
 $(DBG_STAT): $(DBG_OBJS) | $(DBG_LIBDIR)
 	@$(AR) rcs $@ $+
@@ -308,6 +291,8 @@ $(DBG_LIBDIR):
 #
 coverage: $(COV_SO) $(COV_STAT)
 
+$(COV_OBJDIR)/config.h: export CONFIG_FLAGS = $(CFLAGS) $(COV_CFLAGS)
+
 $(COV_STAT): $(COV_OBJS) | $(COV_LIBDIR)
 	@$(AR) rcs $@ $+
 	@echo "$(call short_path,$@) prepared as coverage static library archive"
@@ -330,6 +315,8 @@ $(COV_LIBDIR):
 # Sanitize rules
 #
 sanitize: $(SNTZ_SO) $(SNTZ_STAT)
+
+$(SNTZ_OBJDIR)/config.h: export CONFIG_FLAGS = $(CFLAGS) $(SNTZ_CFLAGS)
 
 $(SNTZ_STAT): $(SNTZ_OBJS) | $(SNTZ_LIBDIR)
 	@$(AR) rcs $@ $+
@@ -355,6 +342,8 @@ $(SNTZ_LIBDIR):
 prod: production
 production: $(PROD_SO) $(PROD_STAT)
 
+$(PROD_OBJDIR)/config.h: export CONFIG_FLAGS = $(CFLAGS) $(PROD_CFLAGS)
+
 $(PROD_STAT): $(PROD_OBJS) | $(PROD_LIBDIR)
 	@$(AR) rcs $@ $+
 	@echo "$(call short_path,$@) prepared as release static library archive"
@@ -378,6 +367,8 @@ $(PROD_LIBDIR):
 #
 distribution: $(DIST_SO) $(DIST_STAT)
 
+$(DIST_OBJDIR)/config.h: export CONFIG_FLAGS = $(DIST_CFLAGS) $(CFLAGS)
+
 $(DIST_STAT): $(DIST_OBJS) | $(DIST_LIBDIR)
 	@$(AR) rcs $@ $+
 	@echo "$(call short_path,$@) prepared as distribution static library archive"
@@ -400,6 +391,8 @@ $(DIST_LIBDIR):
 # Portable rules
 #
 portable: $(PRTB_SO) $(PRTB_STAT)
+
+$(PRTB_OBJDIR)/config.h: export CONFIG_FLAGS = $(CFLAGS) $(PRTB_CFLAGS)
 
 $(PRTB_STAT): $(PRTB_OBJS) | $(PRTB_LIBDIR)
 	@$(AR) rcs $@ $+
@@ -427,8 +420,8 @@ clean-compile-commands:
 	@rm -f $(COMPILE_COMMANDS)
 
 clean: clean-compile-commands
-	@rm -f $(CONFIG_HEADERS) $(CONFIG_COMMANDS) $(CONFIG_GENERATORS) \
-		$(foreach d,$(CONFIG_DIRS),$(d)/config.h.tmp $(d)/config.command.tmp $(d)/configure.log $(d)/conftest.c $(d)/conftest.exe)
+	@rm -f $(CONFIG_HEADERS) $(CONFIG_GENERATORS) \
+		$(foreach d,$(CONFIG_DIRS),$(d)/config.h.tmp $(d)/configure.log $(d)/conftest.c $(d)/conftest.exe)
 	@rm -rf $(PROD_SO) $(PROD_STAT) $(PROD_OBJS)
 	@rm -rf $(DIST_SO) $(DIST_STAT) $(DIST_OBJS)
 	@rm -rf $(PRTB_SO) $(PRTB_STAT) $(PRTB_OBJS)

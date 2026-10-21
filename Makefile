@@ -680,7 +680,8 @@ macos-zip: $(DIST_EXE)
 msys-build: CC = /usr/bin/gcc
 msys-build: WFLAGS =
 msys-build: LDFLAGS = -s
-msys-build: DIST_SHARED_LIBS = -l:libsqlite3.a -l:libpcre2-8.a -l:libargp.a
+msys-build: STATLIBS += argp
+msys-build: DIST_SHARED_LIBS = -l:libsqlite3.a -l:libpcre2-8.a
 msys-build: DIST_LIBRARY_MAKE_ARGS = CC="$(CC)" WFLAGS="$(WFLAGS)" LDFLAGS="$(LDFLAGS)"
 msys-build: $(DIST_EXE)
 

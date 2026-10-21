@@ -663,7 +663,8 @@ Return parse_arguments(
 	 * Stage 1: Preliminary CLI parsing and source selection
 	 *
 	 * Identify the config path, other arguments, and information requests to
-	 * choose a settings source without applying working options
+	 * choose a settings source. Apply the CLI logger mode for early output;
+	 * leave other working options to the main pass
 	 */
 
 	/* Copy the parser descriptor; the option table and help text remain shared.
@@ -676,9 +677,9 @@ Return parse_arguments(
 	preliminary_argp.parser = parse_source_option;
 
 	/* Scan CLI arguments without printing diagnostics or exiting on errors.
-	   The callback updates context and config->config_file_path. The return code lets
-	   source selection discard incomplete results; the main pass reports CLI
-	   errors and handles help, usage, and version output */
+	   The callback updates context, config->config_file_path, and the logger mode.
+	   The return code lets source selection discard incomplete source-selection
+	   results; the main pass reports CLI errors and handles help, usage, and version output */
 	error_t preliminary_error = argp_parse(&preliminary_argp,argc,argv,ARGP_SILENT,0,&context);
 
 	/* A conflict stops before reading. Information requests and preliminary
@@ -699,6 +700,11 @@ Return parse_arguments(
 	{
 		run(read_config_file(config->config_file_path,context.config_required,&context.config_has_entries,&context.diagnostic_state));
 	}
+
+	/* Print program identity before the main CLI pass using the logger mode
+	   selected by CLI or file settings. Silent mode suppresses the message.
+	   Source-selection and file errors may precede this output */
+	about();
 
 	if(CRITICAL & status)
 	{

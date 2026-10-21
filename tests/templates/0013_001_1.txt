@@ -1,4 +1,5 @@
 \ATESTING:Configuration initialization is finished
+TESTING:precizer [0-9]+\.[0-9]+\.[0-9]+
 TESTING:rational_logger_mode=TESTING
 (?:TESTING:argument:config=0013_001_1\.conf\n)?(?x)
 (?-x)TESTING:argument:color=always
@@ -7,7 +8,6 @@ TESTING:argument:database=dry_run_regular\.db
 TESTING:argument:db_file_name=dry_run_regular\.db
 TESTING:argument:dry-run=yes
 TESTING:Argument parsing is finished
-TESTING:precizer [0-9]+\.[0-9]+\.[0-9]+
 TESTING:Checking directory paths provided as arguments
 TESTING:Verify that the path tests/fixtures/diffs/diff1 exists
 TESTING:The path tests/fixtures/diffs/diff1 is exists and it is a directory

@@ -1,11 +1,11 @@
 \ATESTING:Configuration initialization is finished
+TESTING:precizer [0-9]+\.[0-9]+\.[0-9]+
 TESTING:rational_logger_mode=TESTING
 TESTING:argument:color=always
 TESTING:argument:roots=tests/fixtures/diffs/diff1
 TESTING:argument:database=database1\.db
 TESTING:argument:db_file_name=database1\.db
 TESTING:Argument parsing is finished
-TESTING:precizer [0-9]+\.[0-9]+\.[0-9]+
 TESTING:Checking directory paths provided as arguments
 TESTING:Verify that the path tests/fixtures/diffs/diff1 exists
 TESTING:The path tests/fixtures/diffs/diff1 is exists and it is a directory
@@ -66,6 +66,7 @@ TESTING:Hashing rate: (?:n/a|less than 1B/s|[1-9][0-9]*(?:B|KiB|MiB|GiB|TiB|PiB|
 TESTING:Hashed data: [^,\r\n]+
 TESTING:Exit status » SUCCESS
 TESTING:Configuration initialization is finished
+TESTING:precizer [0-9]+\.[0-9]+\.[0-9]+
 TESTING:rational_logger_mode=TESTING
 TESTING:argument:color=always
 TESTING:argument:roots=tests/fixtures/diffs/diff1
@@ -74,7 +75,6 @@ TESTING:argument:db_file_name=database1\.db
 TESTING:argument:check-level=QUICK
 TESTING:argument:update=yes
 TESTING:Argument parsing is finished
-TESTING:precizer [0-9]+\.[0-9]+\.[0-9]+
 TESTING:Checking directory paths provided as arguments
 TESTING:Verify that the path tests/fixtures/diffs/diff1 exists
 TESTING:The path tests/fixtures/diffs/diff1 is exists and it is a directory
@@ -135,6 +135,7 @@ TESTING:Hashing rate: (?:n/a|less than 1B/s|[1-9][0-9]*(?:B|KiB|MiB|GiB|TiB|PiB|
 TESTING:Hashed data: [^,\r\n]+
 TESTING:Exit status » SUCCESS
 TESTING:Configuration initialization is finished
+TESTING:precizer [0-9]+\.[0-9]+\.[0-9]+
 TESTING:rational_logger_mode=TESTING
 TESTING:argument:color=always
 TESTING:argument:db_file_paths=database1\.db, database2\.db
@@ -142,7 +143,6 @@ TESTING:argument:db_file_names=database1\.db, database2\.db
 TESTING:argument:check-level=QUICK
 TESTING:argument:compare=yes
 TESTING:Argument parsing is finished
-TESTING:precizer [0-9]+\.[0-9]+\.[0-9]+
 TESTING:Comparing databases. Directory path verification is not required
 TESTING:Set signal SIGUSR2 OK:pid:\d+
 TESTING:Set signal SIGINT OK:pid:\d+
@@ -188,6 +188,7 @@ TESTING:The database connection has been closed
 TESTING:Comparison mode is enabled. The primary database doesn't require vacuuming
 TESTING:Exit status » SUCCESS
 TESTING:Configuration initialization is finished
+TESTING:precizer [0-9]+\.[0-9]+\.[0-9]+
 TESTING:rational_logger_mode=TESTING
 TESTING:argument:color=always
 TESTING:argument:roots=tests/fixtures/diffs/diff1
@@ -197,7 +198,6 @@ TESTING:argument:check-level=QUICK
 TESTING:argument:watch-timestamps=yes
 TESTING:argument:update=yes
 TESTING:Argument parsing is finished
-TESTING:precizer [0-9]+\.[0-9]+\.[0-9]+
 TESTING:Checking directory paths provided as arguments
 TESTING:Verify that the path tests/fixtures/diffs/diff1 exists
 TESTING:The path tests/fixtures/diffs/diff1 is exists and it is a directory
@@ -258,6 +258,7 @@ TESTING:Hashing rate: (?:n/a|less than 1B/s|[1-9][0-9]*(?:B|KiB|MiB|GiB|TiB|PiB|
 TESTING:Hashed data: [^,\r\n]+
 TESTING:Exit status » SUCCESS
 TESTING:Configuration initialization is finished
+TESTING:precizer [0-9]+\.[0-9]+\.[0-9]+
 TESTING:rational_logger_mode=TESTING
 TESTING:argument:color=always
 TESTING:argument:db_file_paths=database1\.db, database2\.db
@@ -265,7 +266,6 @@ TESTING:argument:db_file_names=database1\.db, database2\.db
 TESTING:argument:check-level=QUICK
 TESTING:argument:compare=yes
 TESTING:Argument parsing is finished
-TESTING:precizer [0-9]+\.[0-9]+\.[0-9]+
 TESTING:Comparing databases. Directory path verification is not required
 TESTING:Set signal SIGUSR2 OK:pid:\d+
 TESTING:Set signal SIGINT OK:pid:\d+

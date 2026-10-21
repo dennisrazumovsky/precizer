@@ -1,4 +1,5 @@
 \ATESTING:Configuration initialization is finished
+TESTING:precizer [0-9]+\.[0-9]+\.[0-9]+
 Usage: precizer \[OPTION\.\.\.\] \[PATH\.\.\.\]
 
 \x1B\[1mprecizer\x1B\[0m: data integrity verification for file systems of any scale
@@ -250,6 +251,5 @@ For example, \x1B\[33m/mnt1/abc/def/aaa\.txt\x1B\[0m is stored as
 See the project README for additional technical details\.
 ERROR:Argument parsing failed with code 22 \(Invalid argument\)
 TESTING:Returned parse_arguments:\d+ status: FAILURE
-TESTING:precizer [0-9]+\.[0-9]+\.[0-9]+
 ERROR:The precizer process terminated unexpectedly due to an error
 TESTING:Exit status » FAILURE\Z

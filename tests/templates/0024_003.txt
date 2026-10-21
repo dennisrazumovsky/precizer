@@ -1,4 +1,5 @@
 \ATESTING:Configuration initialization is finished
+TESTING:precizer [0-9]+\.[0-9]+\.[0-9]+
 TESTING:rational_logger_mode=TESTING
 TESTING:argument:color=always
 TESTING:argument:roots=tests/fixtures/'apostrophe/'apostrophe
@@ -6,7 +7,6 @@ TESTING:argument:database=database1\.db
 TESTING:argument:db_file_name=database1\.db
 TESTING:argument:progress=yes
 TESTING:Argument parsing is finished
-TESTING:precizer [0-9]+\.[0-9]+\.[0-9]+
 TESTING:Checking directory paths provided as arguments
 TESTING:Verify that the path tests/fixtures/'apostrophe/'apostrophe exists
 TESTING:The path tests/fixtures/'apostrophe/'apostrophe is exists and it is a directory
@@ -74,6 +74,7 @@ TESTING:Hashing rate: (?:n/a|less than 1B/s|[1-9][0-9]*(?:B|KiB|MiB|GiB|TiB|PiB|
 TESTING:Hashed data: [^,\r\n]+
 TESTING:Exit status » SUCCESS
 TESTING:Configuration initialization is finished
+TESTING:precizer [0-9]+\.[0-9]+\.[0-9]+
 TESTING:rational_logger_mode=TESTING
 TESTING:argument:color=always
 TESTING:argument:roots=tests/fixtures/apostrophe'/'apostrophe/apostrophe'
@@ -81,7 +82,6 @@ TESTING:argument:database=database2\.db
 TESTING:argument:db_file_name=database2\.db
 TESTING:argument:progress=yes
 TESTING:Argument parsing is finished
-TESTING:precizer [0-9]+\.[0-9]+\.[0-9]+
 TESTING:Checking directory paths provided as arguments
 TESTING:Verify that the path tests/fixtures/apostrophe'/'apostrophe/apostrophe' exists
 TESTING:The path tests/fixtures/apostrophe'/'apostrophe/apostrophe' is exists and it is a directory
@@ -149,6 +149,7 @@ TESTING:Hashing rate: (?:n/a|less than 1B/s|[1-9][0-9]*(?:B|KiB|MiB|GiB|TiB|PiB|
 TESTING:Hashed data: [^,\r\n]+
 TESTING:Exit status » SUCCESS
 TESTING:Configuration initialization is finished
+TESTING:precizer [0-9]+\.[0-9]+\.[0-9]+
 TESTING:rational_logger_mode=TESTING
 TESTING:argument:color=always
 TESTING:argument:db_file_paths=database1\.db, database2\.db
@@ -156,7 +157,6 @@ TESTING:argument:db_file_names=database1\.db, database2\.db
 TESTING:argument:check-level=QUICK
 TESTING:argument:compare=yes
 TESTING:Argument parsing is finished
-TESTING:precizer [0-9]+\.[0-9]+\.[0-9]+
 TESTING:Comparing databases. Directory path verification is not required
 TESTING:Set signal SIGUSR2 OK:pid:\d+
 TESTING:Set signal SIGINT OK:pid:\d+

@@ -1,4 +1,5 @@
 \ATESTING:Configuration initialization is finished
+TESTING:precizer [0-9]+\.[0-9]+\.[0-9]+
 Usage: precizer \[OPTION\.\.\.\] \[PATH\.\.\.\]
 [\s\S]*? Compare databases options:
 [\s\S]*?  -c, --compare[^\n]*
@@ -31,5 +32,4 @@ Usage: precizer \[OPTION\.\.\.\] \[PATH\.\.\.\]
 [\s\S]*?  -v, --verbose[^\n]*
 [\s\S]*?  -V, --version[^\n]*
 [\s\S]*?  -z, --usage[^\n]*
-[\s\S]*?TESTING:precizer [0-9]+\.[0-9]+\.[0-9]+
-TESTING:Exit status » SUCCESS\|HALTED\|INFO\Z
+[\s\S]*?TESTING:Exit status » SUCCESS\|HALTED\|INFO\Z

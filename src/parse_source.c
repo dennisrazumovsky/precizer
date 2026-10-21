@@ -2,12 +2,14 @@
 #include <sysexits.h>
 
 /**
- * @brief Collect the config path and detect other arguments without applying settings
+ * @brief Select the settings source and establish the CLI logger mode
  *
  * The shared option table lets argp distinguish options from their values.
- * Lifecycle events do not count as arguments. Information requests are recorded
- * for source selection; the main parser handles their output. A nonzero quoted
- * value rejects the invocation silently so no file is read and the main parser reports it
+ * Lifecycle events do not count as arguments. Silent and verbose options set
+ * the logger mode immediately, in CLI order. Other working settings remain
+ * unchanged. Information requests are recorded for source selection; the main
+ * parser handles their output. A nonzero quoted value rejects the invocation
+ * silently so no file is read and the main parser reports it
  *
  * @param key Option key or argp event
  * @param arg Option value or positional argument
@@ -26,6 +28,14 @@ error_t parse_source_option(
 		case 'g':
 			/* Repeated selections replace the path; no file has been opened */
 			config->config_file_path = arg;
+			break;
+		case 's':
+			rational_logger_mode = SILENT;
+			context->has_other_arguments = true;
+			break;
+		case 'v':
+			rational_logger_mode = VERBOSE;
+			context->has_other_arguments = true;
 			break;
 		case 'h':
 		case '?':
@@ -73,8 +83,9 @@ error_t parse_source_option(
  * other CLI arguments were found. Information requests discard the path and use
  * CLI only. Otherwise, an explicit path conflicts with any other arguments.
  * Without an explicit path, only an argument-free invocation selects the
- * optional default file. A preliminary parse error discards partial results
- * silently so the main CLI parser can report the error.
+ * optional default file. A preliminary parse error discards source-selection
+ * results silently so the main CLI parser can report the error. Any logger
+ * mode already selected remains active.
  * Paths are borrowed from argv or static storage; this function does not copy
  * or validate them. An empty explicit path still selects a required file
  *
@@ -99,7 +110,7 @@ Return select_settings_source(
 	if(preliminary_error != EX_OK)
 	{
 		/* Preliminary parsing may have collected only part of the arguments.
-		   Discard those results so no file is selected. Leave SUCCESS and print
+		   Discard source-selection results so no file is selected. Leave SUCCESS and print
 		   nothing here; the main CLI parser must diagnose the original arguments */
 		config->config_file_path = NULL;
 		context->has_other_arguments = false;

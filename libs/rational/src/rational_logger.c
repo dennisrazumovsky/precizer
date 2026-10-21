@@ -60,6 +60,7 @@ char *rational_reconvert(LOGMODES mode)
 		{UNDECOR,"UNDECOR"},
 		{REMEMBER,"REMEMBER"},
 		{VISIBLE_IN_SILENT,"VISIBLE_IN_SILENT"},
+		{MACHINE,"MACHINE"},
 		{0,NULL}   /* Terminator element */
 	};
 
@@ -632,7 +633,9 @@ static void logger_line_sanitize_for_terminal(
  *
  * @details A single logger-mode snapshot controls the entire line. The verbose
  *          prefix is appended as one formatted fragment. An append failure
- *          stops assembly, leaving the caller responsible for freeing the line
+ *          stops assembly, leaving the caller responsible for freeing the line.
+ *          SILENT takes priority over MACHINE. MACHINE accepts only MACHINE or
+ *          ERROR messages and retains the ERROR prefix unless UNDECOR is set
  *
  * @param[in,out] line Allocated output line
  * @param[in,out] line_len Current output length
@@ -671,6 +674,19 @@ static bool logger_line(
 	{
 		if(level & VISIBLE_IN_SILENT)
 		{
+			payload_is_visible = true;
+		}
+	} else if(logger_mode & MACHINE){
+		if(level & (MACHINE|ERROR))
+		{
+			if(!(level & UNDECOR) && (level & ERROR))
+			{
+				if(logger_line_append(line,line_len,"ERROR: ") == false)
+				{
+					return(false);
+				}
+			}
+
 			payload_is_visible = true;
 		}
 	} else {

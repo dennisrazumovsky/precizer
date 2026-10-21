@@ -56,6 +56,7 @@ Return prepare(void)
 	ASSERT(SUCCESS == copy_from_origin("tests/fixtures/4","tests/fixtures/4",REQUIRE_SOURCE_EXISTS));
 	ASSERT(SUCCESS == copy_from_origin("tests/fixtures/ignore_include_cases","tests/fixtures/ignore_include_cases",REQUIRE_SOURCE_EXISTS));
 	ASSERT(SUCCESS == copy_from_origin("tests/templates","tests/templates",REQUIRE_SOURCE_EXISTS));
+	ASSERT(SUCCESS == copy_from_origin("libs/rational/tests/templates","tests/templates/librational",REQUIRE_SOURCE_EXISTS));
 	ASSERT(SUCCESS == copy_from_origin("tests/fixtures/long","tests/fixtures/long",ALLOW_MISSING_SOURCE));
 	ASSERT(SUCCESS == m_copy_literal(environment_build_path,".builds/"));
 	ASSERT(SUCCESS == m_concat_string(environment_build_path,environment_name));

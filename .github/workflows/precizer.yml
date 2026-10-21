@@ -449,7 +449,6 @@ jobs:
           install: >-
             gcc
             make
-            libsqlite-devel
             pcre2-devel
             mingw-w64-ucrt-x86_64-binutils
             mingw-w64-ucrt-x86_64-gcc

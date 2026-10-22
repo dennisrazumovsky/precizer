@@ -235,7 +235,7 @@ Return read_config_file(
 	bool              *has_entries,
 	struct argp_state *state)
 {
-	/* Status returned by this function through deliver()
+	/* Status returned by this function through provide()
 	   Default value assumes successful completion */
 	Return status = SUCCESS;
 
@@ -294,5 +294,5 @@ Return read_config_file(
 		}
 	}
 
-	deliver(status);
+	provide(status);
 }

@@ -68,7 +68,13 @@ static Return check_reader(
 	ASSERT(capture.result == expected_result);
 	ASSERT(capture.has_entries == expected_entries);
 	ASSERT(config->config_file_error_line == -1);
-	ASSERT(captured_stdout->length == 0U);
+	if(expected_result & FAILURE)
+	{
+		ASSERT(SUCCESS == get_file_content("templates/0045_034.txt",pattern));
+		ASSERT(SUCCESS == match_pattern(captured_stdout,pattern,"templates/0045_034.txt"));
+	} else {
+		ASSERT(captured_stdout->length == 0U);
+	}
 
 	if(error_template != NULL)
 	{

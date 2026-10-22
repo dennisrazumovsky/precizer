@@ -581,8 +581,8 @@ static Return test0040_8(void)
 	ASSERT(SUCCESS == copy_path("tests/templates/0040_004.conf","0040_004.conf"));
 	ASSERT(SUCCESS == copy_path("tests/templates/0040_005.conf","0040_005.conf"));
 	const struct argument_test_case file_cases[] = {
-		{"--config=0040_004.conf",FAILURE,"templates/0003_013.txt","templates/0040_004_1.txt"},
-		{"--config=0040_005.conf",FAILURE,"templates/0003_013.txt","templates/0040_005_1.txt"},
+		{"--config=0040_004.conf",FAILURE,"templates/0003_013_2.txt","templates/0040_004_1.txt"},
+		{"--config=0040_005.conf",FAILURE,"templates/0003_013_2.txt","templates/0040_005_1.txt"},
 		{0}
 	};
 	ASSERT(SUCCESS == run_and_match_templates(file_cases,NULL,NULL));

@@ -11,7 +11,7 @@
  */
 Return clean(memory *temporary_directory)
 {
-	/* Status returned by this function through deliver()
+	/* Status returned by this function through provide()
 	   Default value assumes successful completion */
 	Return status = SUCCESS;
 
@@ -22,5 +22,5 @@ Return clean(memory *temporary_directory)
 	}
 
 	call(m_del(temporary_directory));
-	deliver(status);
+	provide(status);
 }

@@ -11,7 +11,7 @@ static Return assert_legacy_cli_argument(
 	const char *arguments,
 	const char *canonical_diagnostic)
 {
-	/* Status returned by this function through deliver()
+	/* Status returned by this function through provide()
 	   Default value assumes successful completion */
 	Return status = SUCCESS;
 
@@ -32,7 +32,7 @@ static Return assert_legacy_cli_argument(
 
 	call(m_del(result));
 
-	deliver(status);
+	provide(status);
 }
 
 /**

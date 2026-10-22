@@ -92,7 +92,7 @@ static Return check_logger_output(
 	const char *template_path,
 	void (     *emit_output )(void))
 {
-	/* Status returned by this function through deliver()
+	/* Status returned by this function through provide()
 	   Default value assumes successful completion */
 	Return status = SUCCESS;
 	const LOGMODES initial_logger_mode = atomic_load_explicit(&rational_logger_mode,memory_order_relaxed);
@@ -114,7 +114,7 @@ static Return check_logger_output(
 	call(m_del(captured_stderr));
 	call(m_del(captured_stdout));
 
-	deliver(status);
+	provide(status);
 }
 
 /**

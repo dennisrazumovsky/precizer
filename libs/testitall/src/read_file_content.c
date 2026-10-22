@@ -17,7 +17,7 @@ Return read_file_content(
 	const char *relative_path,
 	memory     *content)
 {
-	/* Status returned by this function through deliver()
+	/* Status returned by this function through provide()
 	   Default value assumes successful completion */
 	Return status = SUCCESS;
 	m_create(char,relative_test_path,MEMORY_STRING);
@@ -50,5 +50,5 @@ Return read_file_content(
 	}
 	call(m_del(absolute_path));
 	call(m_del(relative_test_path));
-	deliver(status);
+	provide(status);
 }

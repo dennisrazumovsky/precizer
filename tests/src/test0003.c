@@ -517,13 +517,13 @@ static Return test0003_13(void)
 {
 	INITTEST;
 	const struct argument_test_case missing_file[] = {
-		{"--config=0003_absent.conf",FAILURE,"templates/0003_013.txt","templates/0003_019.txt"},
-		{"--config=",FAILURE,"templates/0003_013.txt","templates/0003_020.txt"},
+		{"--config=0003_absent.conf",FAILURE,"templates/0003_013_2.txt","templates/0003_019.txt"},
+		{"--config=",FAILURE,"templates/0003_013_2.txt","templates/0003_020.txt"},
 		{0}
 	};
 	const struct argument_test_case invalid_file[] = {
-		{"",FAILURE,"templates/0003_013.txt","templates/0003_021.txt"},
-		{"--config=precizer.conf",FAILURE,"templates/0003_013.txt","templates/0003_021.txt"},
+		{"",FAILURE,"templates/0003_013_2.txt","templates/0003_021.txt"},
+		{"--config=precizer.conf",FAILURE,"templates/0003_013_2.txt","templates/0003_021.txt"},
 		{0}
 	};
 
@@ -537,8 +537,8 @@ static Return test0003_13(void)
 
 	/* A directory opens successfully but causes a read error when inih reads it */
 	const struct argument_test_case unreadable_file[] = {
-		{"",FAILURE,"templates/0003_013.txt","templates/0003_022.txt"},
-		{"--config=precizer.conf",FAILURE,"templates/0003_013.txt","templates/0003_022.txt"},
+		{"",FAILURE,"templates/0003_013_2.txt","templates/0003_022.txt"},
+		{"--config=precizer.conf",FAILURE,"templates/0003_013_2.txt","templates/0003_022.txt"},
 		{"--version",COMPLETED,"templates/0003_006.txt",STDERR_MUST_BE_EMPTY},
 		{0}
 	};
@@ -548,8 +548,8 @@ static Return test0003_13(void)
 
 	/* Permission denial is an open error, unlike a directory's read error */
 	const struct argument_test_case denied_file[] = {
-		{"",FAILURE,"templates/0003_013.txt","templates/0003_013_1.txt"},
-		{"--config=precizer.conf",FAILURE,"templates/0003_013.txt","templates/0003_013_1.txt"},
+		{"",FAILURE,"templates/0003_013_2.txt","templates/0003_013_1.txt"},
+		{"--config=precizer.conf",FAILURE,"templates/0003_013_2.txt","templates/0003_013_1.txt"},
 		{"--version",COMPLETED,"templates/0003_006.txt",STDERR_MUST_BE_EMPTY},
 		{"--config=precizer.conf --version",COMPLETED,"templates/0003_006.txt",STDERR_MUST_BE_EMPTY},
 		{0}

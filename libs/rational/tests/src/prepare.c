@@ -12,7 +12,7 @@
  */
 Return prepare(memory *temporary_directory)
 {
-	/* Status returned by this function through deliver()
+	/* Status returned by this function through provide()
 	   Default value assumes successful completion */
 	Return status = SUCCESS;
 	m_create(char,origin_directory,MEMORY_STRING);
@@ -25,5 +25,5 @@ Return prepare(memory *temporary_directory)
 	run(copy_from_origin("tests/templates","tests/templates/librational",REQUIRE_SOURCE_EXISTS));
 
 	call(m_del(origin_directory));
-	deliver(status);
+	provide(status);
 }

@@ -123,7 +123,7 @@ static Return test0013_3(void)
 
 	ASSERT(SUCCESS == copy_path("tests/templates/0013_001_3.conf","0013_001_3.conf"));
 	const struct argument_test_case file_cases[] = {
-		{"--config=0013_001_3.conf",FAILURE,"templates/0003_013.txt","templates/0013_001_3_1.txt"},
+		{"--config=0013_001_3.conf",FAILURE,"templates/0003_013_2.txt","templates/0013_001_3_1.txt"},
 		{0}
 	};
 	ASSERT(SUCCESS == run_and_match_templates(file_cases,NULL,NULL));

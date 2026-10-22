@@ -75,6 +75,8 @@ static Return test0048_3(void)
 	INITTEST;
 	const struct argument_test_case cases[] = {
 		{"--output=machine " MACHINE_DRY_RUN_ARGUMENTS,COMPLETED,STDOUT_MUST_BE_EMPTY,STDERR_MUST_BE_EMPTY},
+		{"--progress --output=machine " MACHINE_DRY_RUN_ARGUMENTS,COMPLETED,STDOUT_MUST_BE_EMPTY,STDERR_MUST_BE_EMPTY},
+		{"--output=machine --progress --dry-run=with-checksums --color=never --database=0048.db 0048_empty",COMPLETED,STDOUT_MUST_BE_EMPTY,STDERR_MUST_BE_EMPTY},
 		{"-sSNeVeR -oOMaChInE " MACHINE_DRY_RUN_ARGUMENTS,COMPLETED,STDOUT_MUST_BE_EMPTY,STDERR_MUST_BE_EMPTY},
 		{"-vOMaChInE --silent " MACHINE_DRY_RUN_ARGUMENTS,COMPLETED,STDOUT_MUST_BE_EMPTY,STDERR_MUST_BE_EMPTY},
 		{"--verbose --output=MaChInE " MACHINE_DRY_RUN_ARGUMENTS,COMPLETED,STDOUT_MUST_BE_EMPTY,STDERR_MUST_BE_EMPTY},
@@ -181,6 +183,110 @@ static Return test0048_5(void)
 }
 
 /**
+ * @brief Require the machine counting pass to leave traversal state untouched
+ *
+ * A permissive logger exposes unexpected service output. Nonzero counters and
+ * timing detect an executed pass even when it has no configured roots
+ *
+ * @return SUCCESS when the requested progress pass performs no work
+ */
+static Return check_machine_counting_pass(void)
+{
+	/* Status returned by this function through provide()
+	   Default value assumes successful completion */
+	Return status = SUCCESS;
+	Config *initial_config = config;
+	const LOGMODES initial_logger_mode = atomic_load_explicit(&rational_logger_mode,memory_order_relaxed);
+	Config machine_config = {.output = OUTPUT_MACHINE,.progress = true};
+	TraversalSummary summary = {.stats_only_pass = true,.count_files = 1U,.scan_elapsed_ns = 1LL};
+
+	config = &machine_config;
+	rational_logger_mode = REGULAR;
+	run(file_list(&summary));
+	ASSERT(summary.count_files == 1U);
+	ASSERT(summary.scan_elapsed_ns == 1LL);
+	ASSERT(machine_config.progress == true);
+
+	config = initial_config;
+	rational_logger_mode = initial_logger_mode;
+	provide(status);
+}
+
+/**
+ * @brief Skip preliminary counting without diagnostics when machine progress is requested
+ * @return Return status for an unchanged traversal state and empty output streams
+ */
+static Return test0048_6(void)
+{
+	INITTEST;
+	ASSERT(SUCCESS == match_function_output(NULL,NULL,check_machine_counting_pass));
+	RETURN_STATUS;
+}
+
+/**
+ * @brief Preserve file hashing with machine progress from CLI and configuration
+ *
+ * Each run creates a fresh database and verifies its exact file list and final
+ * SHA512 digest. Both output streams must remain free of service diagnostics
+ *
+ * @return Return status for complete scanning without progress output
+ */
+static Return test0048_7(void)
+{
+	INITTEST;
+
+	/* Cover CLI option order, short options, and explicit and default configuration */
+	const struct argument_test_case cases[] = {
+		{"--progress --output=machine --database=0048.db tests/fixtures/diffs/diff1/2",COMPLETED,STDOUT_MUST_BE_EMPTY,STDERR_MUST_BE_EMPTY},
+		{"--output=machine --progress --database=0048.db tests/fixtures/diffs/diff1/2",COMPLETED,STDOUT_MUST_BE_EMPTY,STDERR_MUST_BE_EMPTY},
+		{"-pOmachine --verbose --database=0048.db tests/fixtures/diffs/diff1/2",COMPLETED,STDOUT_MUST_BE_EMPTY,STDERR_MUST_BE_EMPTY},
+		{"--verbose --progress --output=machine --database=0048.db tests/fixtures/diffs/diff1/2",COMPLETED,STDOUT_MUST_BE_EMPTY,STDERR_MUST_BE_EMPTY},
+		{"--config=precizer.conf",COMPLETED,STDOUT_MUST_BE_EMPTY,STDERR_MUST_BE_EMPTY},
+		{"",COMPLETED,STDOUT_MUST_BE_EMPTY,STDERR_MUST_BE_EMPTY},
+		{0}
+	};
+
+	/* Locate the fixture file and define the complete expected database contents */
+	const char *expected_paths[] = {"AAA/BBB/CZC/a.txt"};
+	m_create(char,file_path,MEMORY_STRING);
+	ASSERT(SUCCESS == construct_path("tests/fixtures/diffs/diff1/2/AAA/BBB/CZC/a.txt",file_path));
+
+	/* Prepare the configuration used by both file-based scenarios */
+	ASSERT(SUCCESS == copy_path("tests/templates/0048_014.conf","precizer.conf"));
+
+	/* Disable test diagnostics so both streams must be empty during normal startup */
+	ASSERT(SUCCESS == set_environment_variable("TESTING","false"));
+
+	/* Run each scenario separately so its database can be checked and removed */
+	for(size_t i = 0; cases[i].arguments != NULL && SUCCESS == status; ++i)
+	{
+		/* Pass one scenario and the required terminator to the shared runner */
+		const struct argument_test_case single_case[] = {
+			cases[i],
+			{0}
+		};
+
+		/* Require successful completion with no stdout or stderr */
+		ASSERT(SUCCESS == run_and_match_templates(single_case,NULL,NULL));
+
+		/* Verify that the main traversal stored exactly the expected file */
+		ASSERT(SUCCESS == db_paths_match("0048.db",expected_paths,1));
+
+		/* Compare the completed database checksum with an independent file hash */
+		ASSERT(SUCCESS == db_final_sha512_matches_file("0048.db",expected_paths[0],m_text(file_path)));
+
+		/* Remove the database so the next scenario starts with a fresh scan */
+		call(delete_path_if_present("0048.db"));
+	}
+
+	/* Restore test diagnostics and release the temporary configuration and path */
+	call(set_environment_variable("TESTING","true"));
+	call(delete_path_if_present("precizer.conf"));
+	call(m_del(file_path));
+	RETURN_STATUS;
+}
+
+/**
  * @brief Exercise output format selection through application startup
  * @return Return status for format selection, logger filtering, and parsing diagnostics
  */
@@ -192,5 +298,7 @@ Return test0048(void)
 	TEST(test0048_3,"Machine CLI output hides service messages during dry runs");
 	TEST(test0048_4,"Explicit and default configuration select output priorities before startup");
 	TEST(test0048_5,"Machine errors honor logger priorities and full output can be restored");
+	TEST(test0048_6,"Machine progress skips preliminary counting without changing traversal state");
+	TEST(test0048_7,"Machine progress preserves scanning and checksums through CLI and configuration");
 	RETURN_STATUS;
 }

@@ -30,8 +30,8 @@ static int compare_by_name(
  *
  * `summary->stats_only_pass` controls how much work is done. When it is `true`,
  * traversal only counts directories, files, symlinks, and allocated size, and
- * that pass is skipped unless progress output needs those counters. When it is
- * `false`, regular files can be hashed, compared with existing database rows,
+ * that pass is skipped when progress is disabled or machine output is selected.
+ * When it is `false`, regular files can be hashed, compared with existing database rows,
  * inserted, updated, or reported according to ignore/include and checksum
  * locking settings. File writes are committed by the shared checkpoint interval
  * and before this function returns. A graceful interruption commits pending
@@ -71,9 +71,11 @@ Return file_list(TraversalSummary *summary)
 	}
 #endif
 
-	if(config->progress == false && summary->stats_only_pass == true)
+	/* Skip preliminary counting when progress is disabled or machine output
+	   makes it unnecessary. The main file-processing pass is unaffected */
+	if(summary->stats_only_pass == true
+	   && (config->progress == false || config->output == OUTPUT_MACHINE))
 	{
-		// Don't do anything
 		provide(status);
 	}
 

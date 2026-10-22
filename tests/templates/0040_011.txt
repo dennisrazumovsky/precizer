@@ -1,0 +1,3 @@
+\AWarnings and errors encountered:
+TESTING:always dynamic \\x1B\[1minside\\x1B\[0m\\x1B\[2Jblocked 7
+never 7\n\z

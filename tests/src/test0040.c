@@ -418,7 +418,9 @@ static Return test0040_5(void)
  * copy; the stored row contains plain text. Markup supplied through a formatted
  * argument is also expanded, while raw terminal control bytes become visible
  * hexadecimal escapes. In never mode, the displayed message and stored row
- * must both contain the same plain text
+ * must both contain the same plain text. Final reporting repeats the stored
+ * messages only in full output with remembered reporting enabled. Switching
+ * to machine output suppresses the repeat without discarding stored messages
  *
  * @return Return describing success or failure
  */
@@ -450,6 +452,8 @@ static Return test0040_6(void)
 
 	m_create(char,captured_stdout,MEMORY_STRING);
 	m_create(char,captured_stderr,MEMORY_STRING);
+	m_create(char,repeat_pattern,MEMORY_STRING);
+	ASSERT(SUCCESS == get_file_content("templates/0040_011.txt",repeat_pattern));
 
 	/* Give the real REMEMBER callback an isolated in-memory SQLite table */
 	ASSERT(SQLITE_OK == sqlite3_open(":memory:",&remember_config.db));
@@ -495,6 +499,28 @@ static Return test0040_6(void)
 		expected_plain_output,
 		sizeof(expected_plain_output) - 1U));
 
+	/* Full output repeats the saved messages in their original order */
+	remember_config.output = OUTPUT_FULL;
+	remember_config.show_remembered_messages_at_exit = true;
+	ASSERT(SUCCESS == match_function_output(m_text(repeat_pattern),NULL,show_remembered_messages));
+
+	/* Keep REGULAR to verify the format guard independently of logger filtering */
+	remember_config.output = OUTPUT_MACHINE;
+	ASSERT(SUCCESS == match_function_output(NULL,NULL,show_remembered_messages));
+
+	/* The selected machine logger mode must also leave both streams empty */
+	rational_logger_mode = MACHINE;
+	ASSERT(SUCCESS == match_function_output(NULL,NULL,show_remembered_messages));
+
+	/* Returning to full output retains the complete remembered history */
+	rational_logger_mode = REGULAR;
+	remember_config.output = OUTPUT_FULL;
+	ASSERT(SUCCESS == match_function_output(m_text(repeat_pattern),NULL,show_remembered_messages));
+
+	/* The existing reporting switch still suppresses the full-output repeat */
+	remember_config.show_remembered_messages_at_exit = false;
+	ASSERT(SUCCESS == match_function_output(NULL,NULL,show_remembered_messages));
+
 	/* Restore shared state and close the isolated database after any result */
 	rational_logger_mode = initial_logger_mode;
 	rational_color_mode = initial_color_mode;
@@ -505,7 +531,8 @@ static Return test0040_6(void)
 	const int close_result = sqlite3_close(remember_config.db);
 	ASSERT(close_result == SQLITE_OK);
 
-	/* Release both captured output streams */
+	/* Release the complete repeat template and both captured output streams */
+	call(m_del(repeat_pattern));
 	call(m_del(captured_stdout));
 	call(m_del(captured_stderr));
 
@@ -680,7 +707,8 @@ static Return test0040_10(void)
  *
  * A separate logger case stores messages in a real temporary SQLite table.
  * Displayed messages may contain styling, while stored messages must remain
- * plain text with raw terminal control bytes escaped
+ * plain text with raw terminal control bytes escaped. Final reporting repeats
+ * stored messages in full output and remains silent in machine output
  *
  * @return SUCCESS when all color output and message-storage scenarios pass
  */
@@ -696,7 +724,7 @@ Return test0040(void)
 	TEST(test0040_5,"Forced color output is preserved with TERM=dumb");
 
 	/* Compare immediate message formatting with the bytes stored in SQLite */
-	TEST(test0040_6,"REMEMBER stores plain text while immediate output uses color markup");
+	TEST(test0040_6,"REMEMBER stores plain text and repeats messages only in full output");
 
 	/* Check the application default without the runner override */
 	TEST(test0040_7,"Default auto mode omits color from captured output without the test override");

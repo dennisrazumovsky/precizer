@@ -4,15 +4,15 @@
  * @brief Print delayed warning and error messages saved during the run
  *
  * Prints rows from the temporary `remember_history` table only when final
- * remembered output is enabled. If the database is not open or no remembered
- * messages exist, the function returns without output
+ * remembered output is enabled and the output format is full. If the database
+ * is not open or no remembered messages exist, the function returns without output
  *
  * @return SUCCESS when delayed reporting is complete, otherwise FAILURE
  */
 Return show_remembered_messages(void)
 {
-	// Show only when the final remembered output is enabled
-	if(config->show_remembered_messages_at_exit == false)
+	// Show only when the final remembered output is enabled in full format
+	if(config->output == OUTPUT_MACHINE || config->show_remembered_messages_at_exit == false)
 	{
 		// Do nothing
 		provide(SUCCESS);

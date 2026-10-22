@@ -70,7 +70,9 @@ Return test0003_2(void)
  *
  * Run each command first without a default configuration file, then with an
  * invalid default file. Both runs must produce the same output and status.
- * Explicit file selections are also ignored for missing and malformed files
+ * Explicit file selections are also ignored for missing and malformed files.
+ * Help uses a complete structural golden template that checks options and the
+ * final status while allowing descriptions to change
  *
  * @return Return status for help, usage, and version output
  */

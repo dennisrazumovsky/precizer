@@ -134,6 +134,7 @@ const struct argp_option options[] = {
 	{"silent",'s',0,0,"Don't produce any output. With " BOLD "--compare" RESET ", only paths with differences are shown, and category headings remain visible when multiple compare categories are active.",0 },
 	{"quiet-ignored",'q',0,0,"Suppress per-file log lines for paths filtered by " BOLD "--ignore/--include" RESET ". This helps keep program logs free of extra messages once ignore regular expressions are tuned and stable in use. Other warnings and errors remain visible.",0 },
 	{"verbose",'v',0,0,"Produce verbose output.",0 },
+	{"output",'O',"full|machine",0,"Select the output format (default: full)",-1},
 	{"progress",'p',0,0,"Enabling this option displays progress information but requires an initial count of files and the space they occupy to estimate execution time. The program first traverses all specified directories, counting files, folders, and symlinks before proceeding with file analysis. This initial traversal may take a significant amount of time. It is strongly recommended not to use this option when calling the program from a script.",0 },
 	{"color",'S',"auto|always|never",0,"Choose when to apply color and text styling (-S means style). Use auto for terminal output, always to preserve styling in files and pipes, or never to disable it. The default is auto",-1},
 	{"config",'g',"FILE",0,"Read settings from FILE. Help, usage, and version requests ignore FILE. Otherwise, cannot be combined with other CLI arguments. With no CLI arguments, read " APP_NAME ".conf in the current directory if present",-1},
@@ -192,6 +193,7 @@ static void report_option_error(
 	va_end(args);
 
 	const char *message_text = "Cannot format option diagnostic";
+
 	if(message_length >= 0)
 	{
 		message_text = message;
@@ -247,7 +249,7 @@ error_t parse_opt(
 	        such as --dry-run=MODE, are still validated in their switch branch.
 	     2. A configuration call with arg == NULL enables the flag.
 	     3. Otherwise, the normalized string "false" disables the flag.
-	   Short-circuit evaluation prevents strcmp() from receiving a NULL pointer.
+	   Short-circuit evaluation prevents strcasecmp() from receiving a NULL pointer.
 
 	   dry-run also accepts the named mode "with-checksums", which reaches this
 	   handler unchanged and enables the flag. Its branch validates the mode
@@ -257,7 +259,7 @@ error_t parse_opt(
 	   Flag branches below assign this boolean to Config fields, so a later
 	   false record can turn off a previously enabled flag. Options with ordinary
 	   string or numeric arguments do not use this value */
-	const bool value = config->config_file_error_line < 0 || arg == NULL || strcmp(arg,"false") != 0;
+	const bool value = config->config_file_error_line < 0 || arg == NULL || strcasecmp(arg,"false") != 0;
 
 	/* Reject argp-marked -- before accepting operands or checking required paths.
 	   Error and cleanup events must not repeat the diagnostic */
@@ -348,12 +350,12 @@ error_t parse_opt(
 			config->compare = value;
 			break;
 		case 'F':
-			if(arg != NULL && 0 == strcmp(arg,"checksum-mismatch"))
+			if(arg != NULL && 0 == strcasecmp(arg,"checksum-mismatch"))
 			{
 				config->compare_filter |= CF_CHECKSUM_MISMATCH;
-			} else if(arg != NULL && 0 == strcmp(arg,"first-source")){
+			} else if(arg != NULL && 0 == strcasecmp(arg,"first-source")){
 				config->compare_filter |= CF_FIRST_SOURCE;
-			} else if(arg != NULL && 0 == strcmp(arg,"second-source")){
+			} else if(arg != NULL && 0 == strcasecmp(arg,"second-source")){
 				config->compare_filter |= CF_SECOND_SOURCE;
 			} else {
 				report_option_error(state,0,"Unsupported --compare-filter value '%s'. Supported values: checksum-mismatch, first-source, second-source. See --help for more information",arg);
@@ -412,55 +414,36 @@ error_t parse_opt(
 			}
 			break;
 		case 's':
-			// Set global logger mode
-			if(value == true)
-			{
-				rational_logger_mode = SILENT;
-			} else if(rational_logger_mode == SILENT){
-				/* Restore the startup mode only when disabling the active output mode */
-				rational_logger_mode = REGULAR;
-
-#ifdef TESTITALL_TEST_HOOKS
-				const char *testing = getenv("TESTING");
-
-				if(testing != NULL && strcasecmp(testing,"true") == 0)
-				{
-					rational_logger_mode = TESTING;
-				}
-#endif
-			}
+			config->silent = value;
+			(void)update_logger_mode();
 			break;
 		case 'q':
 			config->quiet_ignored = value;
 			break;
 		case 'v':
 			config->verbose = value;
-
-			// Set global logger mode
-			if(value == true)
+			(void)update_logger_mode();
+			break;
+		case 'O':
+			if(strcasecmp(arg,"full") == 0)
 			{
-				rational_logger_mode = VERBOSE;
-			} else if(rational_logger_mode == VERBOSE){
-				/* Restore the startup mode only when disabling the active output mode */
-				rational_logger_mode = REGULAR;
-
-#ifdef TESTITALL_TEST_HOOKS
-				const char *testing = getenv("TESTING");
-
-				if(testing != NULL && strcasecmp(testing,"true") == 0)
-				{
-					rational_logger_mode = TESTING;
-				}
-#endif
+				config->output = OUTPUT_FULL;
+			} else if(strcasecmp(arg,"machine") == 0){
+				config->output = OUTPUT_MACHINE;
+			} else {
+				report_option_error(state,0,"Unsupported --output value '%s'. Supported values: full or machine",arg);
+				return(EINVAL);
 			}
+
+			(void)update_logger_mode();
 			break;
 		case 'S':
-			if(0 == strcmp(arg,"auto"))
+			if(0 == strcasecmp(arg,"auto"))
 			{
 				rational_color_mode = COLOR_MODE_AUTO;
-			} else if(0 == strcmp(arg,"always")){
+			} else if(0 == strcasecmp(arg,"always")){
 				rational_color_mode = COLOR_MODE_ALWAYS;
-			} else if(0 == strcmp(arg,"never")){
+			} else if(0 == strcasecmp(arg,"never")){
 				rational_color_mode = COLOR_MODE_NEVER;
 			} else {
 				report_option_error(state,0,"Unsupported --color value '%s'. Supported values: auto, always, or never",arg);
@@ -497,7 +480,7 @@ error_t parse_opt(
 			   ARGP_KEY_END checks that comparison has exactly two database paths.
 			   Scan roots cannot satisfy the comparison path requirement */
 			if((config->compare == false && config->roots.length != 0) ||
-			   (config->compare == true && config->db_file_paths.length != 0))
+			        (config->compare == true && config->db_file_paths.length != 0))
 			{
 				break;
 			}
@@ -516,6 +499,7 @@ error_t parse_opt(
 			{
 				/* Explain how to supply scan roots in the selected settings source */
 				const char *path_hint = "Specify a directory as a positional argument or with --path=PATH";
+
 				if(config->config_file_path != NULL)
 				{
 					path_hint = "Add 'path = /path/to/directory' to the configuration file";

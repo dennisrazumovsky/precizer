@@ -660,7 +660,7 @@ When no arguments are supplied and `precizer.conf` is absent or contains no sett
 
 ### Settings format
 
-Setting names match long CLI option names without the leading `--`, such as `database`, `progress`, and `ignore`. Names retain their case and hyphens. The name and value are separated by `=`; `:` is also accepted. The `help`, `usage`, `version`, and `config` options are available only on the command line
+Setting names match long CLI option names without the leading `--`, such as `database`, `progress`, and `ignore`. CLI option names and configuration keys are case-sensitive; hyphens are required. Named values (`full`, `machine`, `always`, and others) are case-insensitive. Paths, file names, and regular expressions retain their case. The name and value are separated by `=`; `:` is also accepted. The `help`, `usage`, `version`, and `config` options are available only on the command line
 
 Boolean settings accept all of the following values, regardless of letter case:
 

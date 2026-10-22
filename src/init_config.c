@@ -7,9 +7,9 @@
 /**
  * @brief Initialize global runtime configuration with explicit defaults
  *
- * Global logger and color settings are initialized from their defaults and
- * environment overrides before the shared `Config` object is cleared.
- * Command-line options can override these settings during argument parsing
+ * Global color settings are reset before the shared `Config` object is cleared.
+ * The logger mode is selected after its configuration defaults are assigned.
+ * Test environment overrides apply before initialization diagnostics are emitted
  *
  * The function clears the shared `Config` object and then assigns explicit
  * runtime defaults, including the file transaction state. Path-like data owned
@@ -23,34 +23,6 @@ void init_config(void)
 {
 	/* This function was reviewed line by line by a human and is not AI-generated
 	   Any change to this function requires separate explicit approval */
-
-	/* Initialize process-wide output settings before the Config fields.
-	   These settings do not depend on Config and apply to initialization
-	   diagnostics as well as later application output */
-
-#ifdef TESTITALL_TEST_HOOKS
-	// Define the comparison string
-	const char *compare_string = "true";
-
-	// Read the TESTING environment variable for the initial logger mode
-	const char *env_var = getenv("TESTING");
-
-	// Enable test diagnostics only when the value equals "true", ignoring case
-	/* rational_logger_mode controls which categories of log messages are shown.
-	   TESTING=true selects diagnostic output for test comparisons; otherwise,
-	   REGULAR selects normal user-facing output. The command-line options
-	   --silent and --verbose can override this initial mode */
-	if(env_var != NULL && strcasecmp(env_var,compare_string) == 0)
-	{
-		// Use predictable diagnostic output for test comparisons
-		rational_logger_mode = TESTING;
-	} else {
-		// Use normal application output when test diagnostics are not requested
-		rational_logger_mode = REGULAR;
-	}
-#else
-	rational_logger_mode = REGULAR;
-#endif
 
 	/* rational_color_mode controls whether terminal styling may be emitted.
 	   AUTO lets the output policy inspect each stream, NO_COLOR, and TERM when
@@ -78,6 +50,9 @@ void init_config(void)
 	// Application start time for total runtime reporting.
 	config->app_start_time_ns = cur_time_monotonic_ns();
 
+	// Use the full output format by default
+	config->output = OUTPUT_FULL;
+
 	// Show progress bar
 	config->progress = false;
 
@@ -87,8 +62,13 @@ void init_config(void)
 	// Force update of the database
 	config->force = false;
 
+	// Suppress ordinary output when requested
+	config->silent = false;
+
 	// Additional output for debugging
 	config->verbose = false;
+
+	(void)update_logger_mode();
 
 	// Force update of the database with new,
 	// changed or deleted files. This is special

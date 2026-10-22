@@ -5,8 +5,10 @@
  * @brief Select the settings source and establish the CLI logger mode
  *
  * The shared option table lets argp distinguish options from their values.
- * Lifecycle events do not count as arguments. Silent and verbose options set
- * the logger mode immediately, in CLI order. Other working settings remain
+ * Lifecycle events do not count as arguments. Output format, silent, and
+ * verbose options use the shared handler to select the logger mode by priority
+ * from the requested settings before startup messages. Invalid output values
+ * are left to the main pass for diagnostics. Other working settings remain
  * unchanged. Information requests are recorded for source selection; the main
  * parser handles their output. A nonzero quoted value rejects the invocation
  * silently so no file is read and the main parser reports it
@@ -30,12 +32,17 @@ error_t parse_source_option(
 			config->config_file_path = arg;
 			break;
 		case 's':
-			rational_logger_mode = SILENT;
-			context->has_other_arguments = true;
-			break;
 		case 'v':
-			rational_logger_mode = VERBOSE;
 			context->has_other_arguments = true;
+			return(parse_opt(key,arg,state));
+		case 'O':
+			context->has_other_arguments = true;
+
+			/* Only valid values reach the shared handler during this silent pass */
+			if(strcasecmp(arg,"full") == 0 || strcasecmp(arg,"machine") == 0)
+			{
+				return(parse_opt(key,arg,state));
+			}
 			break;
 		case 'h':
 		case '?':

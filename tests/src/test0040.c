@@ -224,6 +224,12 @@ static Return test0040_2(void)
 		"always",
 		true));
 
+	ASSERT(SUCCESS == assert_output(
+		"--color=ALWAYS " DRY_RUN_ARGUMENTS,
+		"templates/0040_001.txt",
+		"always",
+		true));
+
 	ASSERT(SUCCESS == copy_path("tests/templates/0040_001.conf","0040_001.conf"));
 	ASSERT(SUCCESS == assert_output(
 		"--config=0040_001.conf",
@@ -239,6 +245,12 @@ static Return test0040_2(void)
 		"never",
 		false));
 
+	ASSERT(SUCCESS == assert_output(
+		"--color=NEVER " DRY_RUN_ARGUMENTS,
+		"templates/0040_002.txt",
+		"never",
+		false));
+
 	ASSERT(SUCCESS == copy_path("tests/templates/0040_002.conf","0040_002.conf"));
 	ASSERT(SUCCESS == assert_output(
 		"--config=0040_002.conf",
@@ -250,6 +262,12 @@ static Return test0040_2(void)
 	/* Auto must select its own mode while keeping redirected output plain */
 	ASSERT(SUCCESS == assert_output(
 		"--color=auto " DRY_RUN_ARGUMENTS,
+		"templates/0040_002.txt",
+		"auto",
+		false));
+
+	ASSERT(SUCCESS == assert_output(
+		"--color=AUTO " DRY_RUN_ARGUMENTS,
 		"templates/0040_002.txt",
 		"auto",
 		false));

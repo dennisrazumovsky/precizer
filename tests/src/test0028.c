@@ -474,9 +474,12 @@ static Return test0028_6(void)
 		// Valid combinations with --compare for equal databases
 		{"--check-level=QUICK --compare database1.db database2.db",COMPLETED,"templates/0028_005.txt",STDERR_MUST_BE_EMPTY},
 		{"--check-level=QUICK --compare --compare-filter=checksum-mismatch database1.db database2.db",COMPLETED,"templates/0028_006_1.txt",STDERR_MUST_BE_EMPTY},
+		{"--check-level=qUiCk --compare --compare-filter=CHECKSUM-MISMATCH database1.db database2.db",COMPLETED,"templates/0028_006_1.txt",STDERR_MUST_BE_EMPTY},
 		{"--check-level=QUICK --compare database1.db database2.db --compare-filter=checksum-mismatch",COMPLETED,"templates/0028_006_1.txt",STDERR_MUST_BE_EMPTY},
 		{"--check-level=QUICK --compare --compare-filter=first-source database1.db database2.db",COMPLETED,"templates/0028_006_2.txt",STDERR_MUST_BE_EMPTY},
+		{"--check-level=qUiCk --compare --compare-filter=FIRST-SOURCE database1.db database2.db",COMPLETED,"templates/0028_006_2.txt",STDERR_MUST_BE_EMPTY},
 		{"--check-level=QUICK --compare --compare-filter=second-source database1.db database2.db",COMPLETED,"templates/0028_006_3.txt",STDERR_MUST_BE_EMPTY},
+		{"--check-level=qUiCk --compare --compare-filter=SECOND-SOURCE database1.db database2.db",COMPLETED,"templates/0028_006_3.txt",STDERR_MUST_BE_EMPTY},
 		{"--check-level=QUICK --compare --compare-filter=first-source --compare-filter=second-source database1.db database2.db",COMPLETED,"templates/0028_006_4.txt",STDERR_MUST_BE_EMPTY},
 		{"--check-level=QUICK --compare --compare-filter=checksum-mismatch --compare-filter=first-source database1.db database2.db",COMPLETED,"templates/0028_006_5.txt",STDERR_MUST_BE_EMPTY},
 		{"--check-level=QUICK --compare --compare-filter=checksum-mismatch --compare-filter=second-source database1.db database2.db",COMPLETED,"templates/0028_006_6.txt",STDERR_MUST_BE_EMPTY},

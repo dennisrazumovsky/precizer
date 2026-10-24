@@ -7,7 +7,7 @@ Usage: precizer \[OPTION\.\.\.\] \[PATH\.\.\.\]
 (?:(?!(?:ERROR|TESTING):)[^\r\n]*\n)*? Build database options:
 (?:(?!(?:ERROR|TESTING):)[^\r\n]*\n)*?  -d, --database=FILE[^\n]*
 (?:(?!(?:ERROR|TESTING):)[^\r\n]*\n)*?  -f, --force[^\n]*
-(?:(?!(?:ERROR|TESTING):)[^\r\n]*\n)*?  -l, --check-level=FULL\|QUICK[^\n]*
+(?:(?!(?:ERROR|TESTING):)[^\r\n]*\n)*?  -l, --check-level=full\|quick[^\n]*
 (?:(?!(?:ERROR|TESTING):)[^\r\n]*\n)*?  -m, --maxdepth=NUMBER[^\n]*
 (?:(?!(?:ERROR|TESTING):)[^\r\n]*\n)*?  -n, --dry-run\[=MODE\][^\n]*
 (?:(?!(?:ERROR|TESTING):)[^\r\n]*\n)*?  -P, --path=PATH[^\n]*
@@ -25,7 +25,7 @@ Usage: precizer \[OPTION\.\.\.\] \[PATH\.\.\.\]
 (?:(?!(?:ERROR|TESTING):)[^\r\n]*\n)*? Visualizations options:
 (?:(?!(?:ERROR|TESTING):)[^\r\n]*\n)*?  -g, --config=FILE[^\n]*
 (?:(?!(?:ERROR|TESTING):)[^\r\n]*\n)*?  -h, -\?, --help[^\n]*
-(?:(?!(?:ERROR|TESTING):)[^\r\n]*\n)*?  -O, --output=full\|machine[^\n]*
+(?:(?!(?:ERROR|TESTING):)[^\r\n]*\n)*?  -O, --output=full\|compact\|machine[^\n]*
 (?:(?!(?:ERROR|TESTING):)[^\r\n]*\n)*?  -p, --progress[^\n]*
 (?:(?!(?:ERROR|TESTING):)[^\r\n]*\n)*?  -q, --quiet-ignored[^\n]*
 (?:(?!(?:ERROR|TESTING):)[^\r\n]*\n)*?  -s, --silent[^\n]*

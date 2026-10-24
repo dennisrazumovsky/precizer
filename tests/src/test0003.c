@@ -216,7 +216,8 @@ static Return test0003_5(void)
  *
  * Named options are processed before positional arguments by argp. The full
  * output must match the equivalent positional root array, including duplicates.
- * A file repeat must normalize trailing slashes without removing repeated roots
+ * Relative and absolute configuration paths must load the same roots,
+ * with trailing slashes normalized and duplicates preserved
  *
  * @return Return status for repeated, mixed, and normalized root spellings
  */
@@ -240,13 +241,14 @@ static Return test0003_6(void)
 	ASSERT(SUCCESS == run_and_match_templates(cases,NULL,NULL));
 
 	/* Reuse the dry-run state and full output for the same roots from a file */
-	ASSERT(SUCCESS == copy_path("tests/templates/0003_006.conf","0003_006.conf"));
 	const struct argument_test_case file_cases[] = {
-		{"--config=0003_006.conf",COMPLETED,"templates/0003_007.txt",STDERR_MUST_BE_EMPTY},
+		{"--config=tests/templates/0003_006.conf",COMPLETED,"templates/0003_007.txt",STDERR_MUST_BE_EMPTY},
+		/* Both selectors must read the same file through its absolute path */
+		{"--config=\"${TMPDIR}/tests/templates/0003_006.conf\"",COMPLETED,"templates/0003_025.txt",STDERR_MUST_BE_EMPTY},
+		{"-g \"${TMPDIR}/tests/templates/0003_006.conf\"",COMPLETED,"templates/0003_025.txt",STDERR_MUST_BE_EMPTY},
 		{0}
 	};
 	ASSERT(SUCCESS == run_and_match_templates(file_cases,NULL,NULL));
-	call(delete_path_if_present("0003_006.conf"));
 
 	RETURN_STATUS;
 }
@@ -351,13 +353,11 @@ static Return test0003_9(void)
 	ASSERT(SUCCESS == set_environment_variable("TESTING","true"));
 	ASSERT(SUCCESS == copy_from_origin("tests/templates/0003_003.conf",
 		"precizer.conf",REQUIRE_SOURCE_EXISTS));
-	ASSERT(SUCCESS == copy_from_origin("tests/templates/0003_012.conf","tests/templates/0003_012.conf",REQUIRE_SOURCE_EXISTS));
 	/* A root relative to the config directory would incorrectly find this directory */
 	ASSERT(SUCCESS == create_directory("tests/templates/0003_missing_root"));
 	ASSERT(SUCCESS == run_and_match_templates(cases,"%CONFIG_PATH%","tests/templates/0003_012[.]conf"));
 
 	call(delete_path_if_present("tests/templates/0003_missing_root"));
-	call(delete_path_if_present("tests/templates/0003_012.conf"));
 	call(delete_path_if_present("precizer.conf"));
 	RETURN_STATUS;
 }
@@ -578,9 +578,7 @@ static Return test0003_14(void)
 	};
 
 	ASSERT(SUCCESS == set_environment_variable("TESTING","true"));
-	ASSERT(SUCCESS == copy_from_origin("tests/templates/0003_014.conf","tests/templates/0003_014.conf",REQUIRE_SOURCE_EXISTS));
 	ASSERT(SUCCESS == run_and_match_templates(cases,NULL,NULL));
-	call(delete_path_if_present("tests/templates/0003_014.conf"));
 	RETURN_STATUS;
 }
 
@@ -597,22 +595,16 @@ static Return test0003_15(void)
 	INITTEST;
 	const struct argument_test_case cases[] = {
 		{"--ignore='(' tests/fixtures/diffs/diff1",FAILURE,"templates/0003_015_1.txt",STDERR_MUST_BE_EMPTY},
-		{"--config=0003_015_1.conf",FAILURE,"templates/0003_015_1.txt",STDERR_MUST_BE_EMPTY},
+		{"--config=tests/templates/0003_015_1.conf",FAILURE,"templates/0003_015_1.txt",STDERR_MUST_BE_EMPTY},
 		{"--include='(' tests/fixtures/diffs/diff1",FAILURE,"templates/0003_015_2.txt",STDERR_MUST_BE_EMPTY},
-		{"--config=0003_015_2.conf",FAILURE,"templates/0003_015_2.txt",STDERR_MUST_BE_EMPTY},
+		{"--config=tests/templates/0003_015_2.conf",FAILURE,"templates/0003_015_2.txt",STDERR_MUST_BE_EMPTY},
 		{"--lock-checksum='(' tests/fixtures/diffs/diff1",FAILURE,"templates/0003_015_3.txt",STDERR_MUST_BE_EMPTY},
-		{"--config=0003_015_3.conf",FAILURE,"templates/0003_015_3.txt",STDERR_MUST_BE_EMPTY},
+		{"--config=tests/templates/0003_015_3.conf",FAILURE,"templates/0003_015_3.txt",STDERR_MUST_BE_EMPTY},
 		{0}
 	};
 
 	ASSERT(SUCCESS == set_environment_variable("TESTING","true"));
-	ASSERT(SUCCESS == copy_path("tests/templates/0003_015_1.conf","0003_015_1.conf"));
-	ASSERT(SUCCESS == copy_path("tests/templates/0003_015_2.conf","0003_015_2.conf"));
-	ASSERT(SUCCESS == copy_path("tests/templates/0003_015_3.conf","0003_015_3.conf"));
 	ASSERT(SUCCESS == run_and_match_templates(cases,NULL,NULL));
-	call(delete_path_if_present("0003_015_1.conf"));
-	call(delete_path_if_present("0003_015_2.conf"));
-	call(delete_path_if_present("0003_015_3.conf"));
 
 	RETURN_STATUS;
 }

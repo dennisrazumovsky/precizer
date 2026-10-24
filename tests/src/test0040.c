@@ -230,13 +230,11 @@ static Return test0040_2(void)
 		"always",
 		true));
 
-	ASSERT(SUCCESS == copy_path("tests/templates/0040_001.conf","0040_001.conf"));
 	ASSERT(SUCCESS == assert_output(
-		"--config=0040_001.conf",
+		"--config=tests/templates/0040_001.conf",
 		"templates/0040_001.txt",
 		"always",
 		true));
-	call(delete_path_if_present("0040_001.conf"));
 
 	/* Explicitly disabling styling must produce plain text */
 	ASSERT(SUCCESS == assert_output(
@@ -251,13 +249,11 @@ static Return test0040_2(void)
 		"never",
 		false));
 
-	ASSERT(SUCCESS == copy_path("tests/templates/0040_002.conf","0040_002.conf"));
 	ASSERT(SUCCESS == assert_output(
-		"--config=0040_002.conf",
+		"--config=tests/templates/0040_002.conf",
 		"templates/0040_002.txt",
 		"never",
 		false));
-	call(delete_path_if_present("0040_002.conf"));
 
 	/* Auto must select its own mode while keeping redirected output plain */
 	ASSERT(SUCCESS == assert_output(
@@ -272,13 +268,11 @@ static Return test0040_2(void)
 		"auto",
 		false));
 
-	ASSERT(SUCCESS == copy_path("tests/templates/0040_010.conf","0040_010.conf"));
 	ASSERT(SUCCESS == assert_output(
-		"--config=0040_010.conf",
+		"--config=tests/templates/0040_010.conf",
 		"templates/0040_002.txt",
 		"auto",
 		false));
-	call(delete_path_if_present("0040_010.conf"));
 
 	/* The last value replaces the earlier choice in either source */
 	ASSERT(SUCCESS == assert_output(
@@ -286,13 +280,11 @@ static Return test0040_2(void)
 		"templates/0040_002.txt",
 		"never",
 		false));
-	ASSERT(SUCCESS == copy_path("tests/templates/0040_002_1.conf","0040_002_1.conf"));
 	ASSERT(SUCCESS == assert_output(
-		"--config=0040_002_1.conf",
+		"--config=tests/templates/0040_002_1.conf",
 		"templates/0040_002.txt",
 		"never",
 		false));
-	call(delete_path_if_present("0040_002_1.conf"));
 
 	RETURN_STATUS;
 }
@@ -623,16 +615,12 @@ static Return test0040_8(void)
 
 	ASSERT(SUCCESS == run_and_match_templates(cases,NULL,NULL));
 
-	ASSERT(SUCCESS == copy_path("tests/templates/0040_004.conf","0040_004.conf"));
-	ASSERT(SUCCESS == copy_path("tests/templates/0040_005.conf","0040_005.conf"));
 	const struct argument_test_case file_cases[] = {
-		{"--config=0040_004.conf",FAILURE,"templates/0003_013_2.txt","templates/0040_004_1.txt"},
-		{"--config=0040_005.conf",FAILURE,"templates/0003_013_2.txt","templates/0040_005_1.txt"},
+		{"--config=tests/templates/0040_004.conf",FAILURE,"templates/0003_013_2.txt","templates/0040_004_1.txt"},
+		{"--config=tests/templates/0040_005.conf",FAILURE,"templates/0003_013_2.txt","templates/0040_005_1.txt"},
 		{0}
 	};
 	ASSERT(SUCCESS == run_and_match_templates(file_cases,NULL,NULL));
-	call(delete_path_if_present("0040_004.conf"));
-	call(delete_path_if_present("0040_005.conf"));
 
 	RETURN_STATUS;
 }

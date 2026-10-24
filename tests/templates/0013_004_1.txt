@@ -1,4 +1,4 @@
-\A-\Q(?:TESTING:argument:config=0013_002_1\.conf\n)?(?x)\E
+\A-\Q(?:TESTING:argument:config=tests/templates/0013_002_1\.conf\n)?(?x)\E
 -\Q(?-x)TESTING:argument:color=always\E
 \+TESTING:argument:color=always
 -TESTING:argument:dry-run=yes

@@ -99,13 +99,11 @@ static Return test0029_2(void)
 
 	/* Restore only the database; access restrictions remain for the configuration run */
 	ASSERT(SUCCESS == copy_path(db_backup_filename,"database2.db"));
-	ASSERT(SUCCESS == copy_path("tests/templates/0029_002.conf","0029_002.conf"));
 	const struct argument_test_case file_cases[] = {
-		{"--config=0029_002.conf",COMPLETED,filename,STDERR_MUST_BE_EMPTY},
+		{"--config=tests/templates/0029_002.conf",COMPLETED,filename,STDERR_MUST_BE_EMPTY},
 		{0}
 	};
 	ASSERT(SUCCESS == run_and_match_templates(file_cases,NULL,NULL));
-	call(delete_path_if_present("0029_002.conf"));
 	call(delete_path_if_present(db_backup_filename));
 
 	m_del(result);
@@ -295,17 +293,14 @@ static Return test0029_5(void)
 
 	/* Preserve the unavailable-root condition for the configuration-file repeat */
 	ASSERT(SUCCESS == delete_path(db_filename));
-	ASSERT(SUCCESS == copy_from_origin("tests/templates/0029_005.conf",
-		"0029_005.conf",REQUIRE_SOURCE_EXISTS));
 	const struct argument_test_case file_cases[] = {
-		{"--config=0029_005.conf",COMPLETED,filename,STDERR_MUST_BE_EMPTY},
+		{"--config=tests/templates/0029_005.conf",COMPLETED,filename,STDERR_MUST_BE_EMPTY},
 		{0}
 	};
 	ASSERT(SUCCESS == run_and_match_templates(file_cases,NULL,NULL));
 	available_path_exists = false;
 	ASSERT(SUCCESS == db_relative_path_exists(db_filename,available_relative_path,&available_path_exists));
 	ASSERT(available_path_exists == true);
-	call(delete_path_if_present("0029_005.conf"));
 
 	ASSERT(SUCCESS == set_environment_variable("TESTITALL_TEST_ENV_FILE_ACCESS_SUFFIX",""));
 	ASSERT(SUCCESS == set_environment_variable("TESTITALL_TEST_ENV_FILE_ACCESS_STATUS",""));
@@ -359,15 +354,13 @@ static Return test0029_6(void)
 	ASSERT(ignored_path_exists == true);
 
 	/* The CLI update leaves the database unchanged, so reuse it with the same permissions */
-	ASSERT(SUCCESS == copy_path("tests/templates/0029_006.conf","0029_006.conf"));
 	const struct argument_test_case file_cases[] = {
-		{"--config=0029_006.conf",COMPLETED,filename,STDERR_MUST_BE_EMPTY},
+		{"--config=tests/templates/0029_006.conf",COMPLETED,filename,STDERR_MUST_BE_EMPTY},
 		{0}
 	};
 	ASSERT(SUCCESS == run_and_match_templates(file_cases,NULL,NULL));
 	ASSERT(SUCCESS == db_relative_path_exists(db_filename,ignored_relative_path,&ignored_path_exists));
 	ASSERT(ignored_path_exists == true);
-	call(delete_path_if_present("0029_006.conf"));
 
 	m_del(result);
 

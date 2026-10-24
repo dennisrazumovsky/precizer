@@ -125,13 +125,11 @@ static Return test0011_2(void)
 	ASSERT(SUCCESS == run_and_match_templates(cases,NULL,NULL));
 
 	/* The rejected update leaves the same database ready for the configuration run */
-	ASSERT(SUCCESS == copy_path("tests/templates/0011_002_2.conf","0011_002_2.conf"));
 	const struct argument_test_case file_cases[] = {
-		{"--config=0011_002_2.conf",WARNING,filename,STDERR_MUST_BE_EMPTY},
+		{"--config=tests/templates/0011_002_2.conf",WARNING,filename,STDERR_MUST_BE_EMPTY},
 		{0}
 	};
 	ASSERT(SUCCESS == run_and_match_templates(file_cases,NULL,NULL));
-	call(delete_path_if_present("0011_002_2.conf"));
 
 	m_create(char,chunk,MEMORY_STRING);
 
@@ -211,13 +209,11 @@ static Return test0011_3(void)
 	ASSERT(SUCCESS == run_and_match_templates(testing_cases,NULL,NULL));
 
 	/* The unchanged database and fixtures are ready for the configuration repeat */
-	ASSERT(SUCCESS == copy_path("tests/templates/0011_003.conf","0011_003.conf"));
 	const struct argument_test_case file_cases[] = {
-		{"--config=0011_003.conf",COMPLETED,"templates/0011_003.txt",STDERR_MUST_BE_EMPTY},
+		{"--config=tests/templates/0011_003.conf",COMPLETED,"templates/0011_003.txt",STDERR_MUST_BE_EMPTY},
 		{0}
 	};
 	ASSERT(SUCCESS == run_and_match_templates(file_cases,NULL,NULL));
-	call(delete_path_if_present("0011_003.conf"));
 
 	RETURN_STATUS;
 }
@@ -246,13 +242,11 @@ static Return test0011_4(void)
 	ASSERT(SUCCESS == run_and_match_templates(cases,NULL,NULL));
 
 	/* Repeat the same unchanged update before the shared database is removed */
-	ASSERT(SUCCESS == copy_path("tests/templates/0011_004_1.conf","0011_004_1.conf"));
 	const struct argument_test_case file_cases[] = {
-		{"--config=0011_004_1.conf",COMPLETED,"templates/0011_004_1.txt",STDERR_MUST_BE_EMPTY},
+		{"--config=tests/templates/0011_004_1.conf",COMPLETED,"templates/0011_004_1.txt",STDERR_MUST_BE_EMPTY},
 		{0}
 	};
 	ASSERT(SUCCESS == run_and_match_templates(file_cases,NULL,NULL));
-	call(delete_path_if_present("0011_004_1.conf"));
 
 	// Clean up test results
 	ASSERT(SUCCESS == delete_path("database1.db"));
@@ -291,13 +285,11 @@ static Return test0011_5(void)
 
 	/* Repeat the initial scan without a database, then retain its result for the update */
 	ASSERT(SUCCESS == delete_path(replacement));
-	ASSERT(SUCCESS == copy_path("tests/templates/0011_005_1.conf","0011_005_1.conf"));
 	const struct argument_test_case file_cases[] = {
-		{"--config=0011_005_1.conf",COMPLETED,"templates/0011_005_1.txt",STDERR_MUST_BE_EMPTY},
+		{"--config=tests/templates/0011_005_1.conf",COMPLETED,"templates/0011_005_1.txt",STDERR_MUST_BE_EMPTY},
 		{0}
 	};
 	ASSERT(SUCCESS == run_and_match_templates(file_cases,template,replacement));
-	call(delete_path_if_present("0011_005_1.conf"));
 
 	const struct argument_test_case update_cases[] = {
 		/* At the second stage, the --maxdepth=0 option is not used.
@@ -430,13 +422,11 @@ static Return test0011_8(void)
 
 	/* Repeat the same cleanup with all filtering rules supplied by configuration */
 	ASSERT(SUCCESS == copy_path("0011_008_1.db",replacement));
-	ASSERT(SUCCESS == copy_path("tests/templates/0011_008_1.conf","0011_008_1.conf"));
 	const struct argument_test_case file_cases[] = {
-		{"--config=0011_008_1.conf",COMPLETED,filename,STDERR_MUST_BE_EMPTY},
+		{"--config=tests/templates/0011_008_1.conf",COMPLETED,filename,STDERR_MUST_BE_EMPTY},
 		{0}
 	};
 	ASSERT(SUCCESS == run_and_match_templates(file_cases,template,replacement));
-	call(delete_path_if_present("0011_008_1.conf"));
 	call(delete_path_if_present("0011_008_1.db"));
 
 	ASSERT(SUCCESS == delete_path(replacement));

@@ -77,11 +77,9 @@ static Return test0013_2(void)
 	m_del(path);
 
 	/* Repeat both modes without creating databases or changing the fixtures */
-	ASSERT(SUCCESS == copy_path("tests/templates/0013_001_1.conf","0013_001_1.conf"));
-	ASSERT(SUCCESS == copy_path("tests/templates/0013_001_2.conf","0013_001_2.conf"));
 	const struct argument_test_case file_cases[] = {
-		{"--config=0013_001_1.conf",COMPLETED,"templates/0013_001_1.txt",STDERR_MUST_BE_EMPTY},
-		{"--config=0013_001_2.conf",COMPLETED,"templates/0013_001_2.txt",STDERR_MUST_BE_EMPTY},
+		{"--config=tests/templates/0013_001_1.conf",COMPLETED,"templates/0013_001_1.txt",STDERR_MUST_BE_EMPTY},
+		{"--config=tests/templates/0013_001_2.conf",COMPLETED,"templates/0013_001_2.txt",STDERR_MUST_BE_EMPTY},
 		{0}
 	};
 	ASSERT(SUCCESS == run_and_match_templates(file_cases,NULL,NULL));
@@ -96,8 +94,6 @@ static Return test0013_2(void)
 	ASSERT(file_exists == false);
 
 	m_del(path);
-	call(delete_path_if_present("0013_001_1.conf"));
-	call(delete_path_if_present("0013_001_2.conf"));
 
 	RETURN_STATUS;
 }
@@ -122,13 +118,11 @@ static Return test0013_3(void)
 
 	ASSERT(SUCCESS == run_and_match_templates(cases,NULL,NULL));
 
-	ASSERT(SUCCESS == copy_path("tests/templates/0013_001_3.conf","0013_001_3.conf"));
 	const struct argument_test_case file_cases[] = {
-		{"--config=0013_001_3.conf",FAILURE,"templates/0003_013_2.txt","templates/0013_001_3_1.txt"},
+		{"--config=tests/templates/0013_001_3.conf",FAILURE,"templates/0003_013_2.txt","templates/0013_001_3_1.txt"},
 		{0}
 	};
 	ASSERT(SUCCESS == run_and_match_templates(file_cases,NULL,NULL));
-	call(delete_path_if_present("0013_001_3.conf"));
 
 	RETURN_STATUS;
 }
@@ -214,15 +208,13 @@ static Return test0013_4(void)
 	ASSERT(SUCCESS == check_file_identity(&stat1,&stat2));
 
 	/* Dry-run preserves the database, so the same state is ready for the file run */
-	ASSERT(SUCCESS == copy_path("tests/templates/0013_002_1.conf","0013_002_1.conf"));
 	const struct argument_test_case file_cases[] = {
-		{"--config=0013_002_1.conf",COMPLETED,"templates/0013_002_1.txt",STDERR_MUST_BE_EMPTY},
+		{"--config=tests/templates/0013_002_1.conf",COMPLETED,"templates/0013_002_1.txt",STDERR_MUST_BE_EMPTY},
 		{0}
 	};
 	ASSERT(SUCCESS == run_and_match_templates(file_cases,NULL,NULL));
 	ASSERT(SUCCESS == get_file_stat(m_text(path),&stat2));
 	ASSERT(SUCCESS == check_file_identity(&stat1,&stat2));
-	call(delete_path_if_present("0013_002_1.conf"));
 
 	// Dry Run mode permanent deletion of all ignored file
 	// references from the database

@@ -13,13 +13,11 @@ static Return test0046_1(void)
 {
 	INITTEST;
 	const struct argument_test_case cases[] = {
-		{"--config=0046_001.conf",FAILURE,"templates/0003_013_2.txt","templates/0046_001.txt"},
+		{"--config=tests/templates/0046_001.conf",FAILURE,"templates/0003_013_2.txt","templates/0046_001.txt"},
 		{0}
 	};
 
 	ASSERT(SUCCESS == set_environment_variable("TESTING","true"));
-	ASSERT(SUCCESS == copy_from_origin("tests/templates/0046_001.conf",
-		"0046_001.conf",REQUIRE_SOURCE_EXISTS));
 	ASSERT(SUCCESS == expect_file_access_from_root(".","0046_001.db",F_OK,FILE_NOT_FOUND));
 
 	mocks_ferror_reset();
@@ -30,7 +28,6 @@ static Return test0046_1(void)
 
 	ASSERT(SUCCESS == expect_file_access_from_root(".","0046_001.db",F_OK,FILE_NOT_FOUND));
 	call(delete_path_if_present("0046_001.db"));
-	call(delete_path_if_present("0046_001.conf"));
 	RETURN_STATUS;
 }
 
@@ -46,7 +43,7 @@ static Return check_settings_after_read_error(void)
 	bool has_entries = false;
 	m_create(char,path,MEMORY_STRING);
 
-	ASSERT(SUCCESS == construct_path("0046_002.conf",path));
+	ASSERT(SUCCESS == construct_path("tests/templates/0046_002.conf",path));
 	ASSERT(FAILURE == read_config_file(m_text(path),true,&has_entries,&state));
 	ASSERT(has_entries == true);
 	ASSERT(config->config_file_error_line == -1);
@@ -75,8 +72,6 @@ static Return test0046_2(void)
 	m_create(char,pattern,MEMORY_STRING);
 	m_create(char,stdout_pattern,MEMORY_STRING);
 
-	ASSERT(SUCCESS == copy_from_origin("tests/templates/0046_002.conf",
-		"0046_002.conf",REQUIRE_SOURCE_EXISTS));
 	ASSERT(SUCCESS == get_file_content("templates/0046_002.txt",pattern));
 	ASSERT(SUCCESS == get_file_content("templates/0045_034.txt",stdout_pattern));
 	mocks_ferror_reset();
@@ -90,7 +85,6 @@ static Return test0046_2(void)
 	config = initial_config;
 	rational_logger_mode = initial_logger_mode;
 	rational_color_mode = initial_color_mode;
-	call(delete_path_if_present("0046_002.conf"));
 	call(m_del(stdout_pattern));
 	call(m_del(pattern));
 	RETURN_STATUS;

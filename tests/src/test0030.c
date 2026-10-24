@@ -701,9 +701,8 @@ static Return test0030_5(void)
 	/* Restore only the database, then repeat the update and every row check.
 	   The file retains the same timestamp drift for the configuration run */
 	ASSERT(SUCCESS == copy_path(db_backup_filename,db_filename));
-	ASSERT(SUCCESS == copy_path("tests/templates/0030_005_2.conf","0030_005_2.conf"));
 	const struct argument_test_case file_cases[] = {
-		{"--config=0030_005_2.conf",COMPLETED,filename,STDERR_MUST_BE_EMPTY},
+		{"--config=tests/templates/0030_005_2.conf",COMPLETED,filename,STDERR_MUST_BE_EMPTY},
 		{0}
 	};
 	ASSERT(SUCCESS == run_and_match_templates(file_cases,NULL,NULL));
@@ -717,7 +716,6 @@ static Return test0030_5(void)
 	ASSERT(db_stat_before.st_ino == db_stat_after.st_ino);
 	ASSERT(offset_before == offset_after);
 	ASSERT(0 == memcmp(sha512_before,sha512_after,(size_t)SHA512_DIGEST_LENGTH));
-	call(delete_path_if_present("0030_005_2.conf"));
 	call(delete_path_if_present(db_backup_filename));
 
 	/*
@@ -1074,9 +1072,8 @@ static Return test0030_7(void)
 	/* Restore only the database, then repeat the warning and protected-row checks.
 	   The same corrupted contents remain in place for the configuration run */
 	ASSERT(SUCCESS == copy_path(db_backup_filename,db_filename));
-	ASSERT(SUCCESS == copy_path("tests/templates/0030_007_2.conf","0030_007_2.conf"));
 	const struct argument_test_case file_cases[] = {
-		{"--config=0030_007_2.conf",WARNING,filename,STDERR_MUST_BE_EMPTY},
+		{"--config=tests/templates/0030_007_2.conf",WARNING,filename,STDERR_MUST_BE_EMPTY},
 		{0}
 	};
 	ASSERT(SUCCESS == run_and_match_templates(file_cases,NULL,NULL));
@@ -1086,7 +1083,6 @@ static Return test0030_7(void)
 	ASSERT(offset_before == offset_after);
 	ASSERT(0 == memcmp(db_sha512_before,db_sha512_after,(size_t)SHA512_DIGEST_LENGTH));
 	ASSERT(0 != memcmp(db_sha512_after,file_sha512_after_tamper,(size_t)SHA512_DIGEST_LENGTH));
-	call(delete_path_if_present("0030_007_2.conf"));
 	call(delete_path_if_present(db_backup_filename));
 
 	/*

@@ -206,9 +206,8 @@ static Return test0016_2(void)
 	/* Restore only the database so the configuration run processes the same
 	   changed content and timestamps, then repeat all result checks */
 	ASSERT(SUCCESS == copy_path(db_backup_filename,db_filename));
-	ASSERT(SUCCESS == copy_path("tests/templates/0016_002_1.conf","0016_002_1.conf"));
 	const struct argument_test_case file_cases[] = {
-		{"--config=0016_002_1.conf",COMPLETED,filename,STDERR_MUST_BE_EMPTY},
+		{"--config=tests/templates/0016_002_1.conf",COMPLETED,filename,STDERR_MUST_BE_EMPTY},
 		{0}
 	};
 	ASSERT(SUCCESS == run_and_match_templates(file_cases,NULL,NULL));
@@ -220,7 +219,6 @@ static Return test0016_2(void)
 	ASSERT(cmpctstat_matches_stat_timestamps(&saved_stat,&stat_after));
 
 	// Remove the temporary DB and files, then release the test buffers
-	call(delete_path_if_present("0016_002_1.conf"));
 	call(delete_path_if_present(db_backup_filename));
 	call(delete_path_if_present(db_filename));
 	call(delete_path_if_present(fixture_path));
@@ -366,9 +364,8 @@ static Return test0016_4(void)
 	/* Restore only the database so the configuration run sees the same permission
 	   change, then repeat the checksum and timestamp checks */
 	ASSERT(SUCCESS == copy_path(db_backup_filename,db_filename));
-	ASSERT(SUCCESS == copy_path("tests/templates/0016_002_3.conf","0016_002_3.conf"));
 	const struct argument_test_case file_cases[] = {
-		{"--config=0016_002_3.conf",COMPLETED,filename,STDERR_MUST_BE_EMPTY},
+		{"--config=tests/templates/0016_002_3.conf",COMPLETED,filename,STDERR_MUST_BE_EMPTY},
 		{0}
 	};
 	ASSERT(SUCCESS == run_and_match_templates(file_cases,NULL,NULL));
@@ -379,7 +376,6 @@ static Return test0016_4(void)
 	ASSERT(SUCCESS == db_read_cmpctstat_by_relative_path(db_filename,"file.txt",&saved_stat));
 	ASSERT(cmpctstat_matches_stat_timestamps(&saved_stat,&stat_after));
 
-	call(delete_path_if_present("0016_002_3.conf"));
 	call(delete_path_if_present(db_backup_filename));
 	call(delete_path_if_present(db_filename));
 	call(delete_path_if_present(fixture_path));

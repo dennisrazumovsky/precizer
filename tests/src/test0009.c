@@ -41,15 +41,13 @@ Return test0009_1(void)
 	ASSERT(SUCCESS == delete_path(db_filename));
 
 	/* Repeat the initial scan from an empty database with the same ignore rule */
-	ASSERT(SUCCESS == copy_path("tests/templates/0009_001_1.conf","0009_001_1.conf"));
 	const struct argument_test_case file_cases[] = {
-		{"--config=0009_001_1.conf",COMPLETED,"templates/0009_001_1.txt",STDERR_MUST_BE_EMPTY},
+		{"--config=tests/templates/0009_001_1.conf",COMPLETED,"templates/0009_001_1.txt",STDERR_MUST_BE_EMPTY},
 		{0}
 	};
 	ASSERT(SUCCESS == run_and_match_templates(file_cases,NULL,NULL));
 	ASSERT(SUCCESS == db_paths_match(db_filename,expected_paths,(int)(sizeof(expected_paths) / sizeof(expected_paths[0]))));
 	ASSERT(SUCCESS == delete_path(db_filename));
-	call(delete_path_if_present("0009_001_1.conf"));
 
 	ASSERT(SUCCESS == set_environment_variable("TESTING","true"));
 
@@ -108,15 +106,13 @@ static Return test0009_2(void)
 	ASSERT(SUCCESS == delete_path(db_filename));
 
 	/* Repeat the scan with the same ignore and include rules from configuration */
-	ASSERT(SUCCESS == copy_path("tests/templates/0009_002.conf","0009_002.conf"));
 	const struct argument_test_case file_cases[] = {
-		{"--config=0009_002.conf",COMPLETED,"templates/0009_002.txt",STDERR_MUST_BE_EMPTY},
+		{"--config=tests/templates/0009_002.conf",COMPLETED,"templates/0009_002.txt",STDERR_MUST_BE_EMPTY},
 		{0}
 	};
 	ASSERT(SUCCESS == run_and_match_templates(file_cases,NULL,NULL));
 	ASSERT(SUCCESS == db_paths_match(db_filename,expected_paths,(int)(sizeof(expected_paths) / sizeof(expected_paths[0]))));
 	ASSERT(SUCCESS == delete_path(db_filename));
-	call(delete_path_if_present("0009_002.conf"));
 
 	RETURN_STATUS;
 }
@@ -380,15 +376,13 @@ static Return test0009_7(void)
 
 	/* Restore only the database; the file remains deleted for the configuration run */
 	ASSERT(SUCCESS == copy_path(db_backup_file_name,db_file_name));
-	ASSERT(SUCCESS == copy_path("tests/templates/0009_007.conf","0009_007.conf"));
 	const struct argument_test_case file_cases[] = {
-		{"--config=0009_007.conf",COMPLETED,"templates/0009_007.txt",STDERR_MUST_BE_EMPTY},
+		{"--config=tests/templates/0009_007.conf",COMPLETED,"templates/0009_007.txt",STDERR_MUST_BE_EMPTY},
 		{0}
 	};
 	ASSERT(SUCCESS == run_and_match_templates(file_cases,NULL,NULL));
 	ASSERT(SUCCESS == db_relative_path_exists(db_file_name,ignored_relative_path,&ignored_row_exists));
 	ASSERT(ignored_row_exists == false);
-	call(delete_path_if_present("0009_007.conf"));
 	call(delete_path_if_present(db_backup_file_name));
 
 	ASSERT(SUCCESS == delete_path(db_file_name));
@@ -478,15 +472,13 @@ static Return test0009_9(void)
 	ASSERT(SUCCESS == delete_path(db_filename));
 
 	/* Repeat the scan with the same quiet setting and ignore rule from configuration */
-	ASSERT(SUCCESS == copy_path("tests/templates/0009_009.conf","0009_009.conf"));
 	const struct argument_test_case file_cases[] = {
-		{"--config=0009_009.conf",COMPLETED,"templates/0009_009.txt",STDERR_MUST_BE_EMPTY},
+		{"--config=tests/templates/0009_009.conf",COMPLETED,"templates/0009_009.txt",STDERR_MUST_BE_EMPTY},
 		{0}
 	};
 	ASSERT(SUCCESS == run_and_match_templates(file_cases,NULL,NULL));
 	ASSERT(SUCCESS == db_paths_match(db_filename,expected_paths,(int)(sizeof(expected_paths) / sizeof(expected_paths[0]))));
 	ASSERT(SUCCESS == delete_path(db_filename));
-	call(delete_path_if_present("0009_009.conf"));
 
 	RETURN_STATUS;
 }

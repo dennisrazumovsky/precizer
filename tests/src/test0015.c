@@ -117,13 +117,11 @@ Return test0015_1(void)
 	ASSERT(SUCCESS == run_and_match_templates(cases,NULL,NULL));
 
 	/* The rejected upgrade leaves the same database ready for the configuration run */
-	ASSERT(SUCCESS == copy_path("tests/templates/0015_001.conf","0015_001.conf"));
 	const struct argument_test_case file_cases[] = {
-		{"--config=0015_001.conf",WARNING,filename,STDERR_MUST_BE_EMPTY},
+		{"--config=tests/templates/0015_001.conf",WARNING,filename,STDERR_MUST_BE_EMPTY},
 		{0}
 	};
 	ASSERT(SUCCESS == run_and_match_templates(file_cases,NULL,NULL));
-	call(delete_path_if_present("0015_001.conf"));
 
 	// Clean up test results
 	ASSERT(SUCCESS == delete_path("0015_database_v0.db"));
@@ -272,14 +270,11 @@ Return test0015_5(void)
 	/* Repeat the target creation from the same initial state. The resulting
 	   database remains available to the following comparison tests */
 	ASSERT(SUCCESS == delete_path(replacement));
-	ASSERT(SUCCESS == copy_from_origin("tests/templates/0015_004.conf",
-		"tests/templates/0015_004.conf",REQUIRE_SOURCE_EXISTS));
 	const struct argument_test_case file_cases[] = {
 		{"--config=tests/templates/0015_004.conf",COMPLETED,filename,STDERR_MUST_BE_EMPTY},
 		{0}
 	};
 	ASSERT(SUCCESS == run_and_match_templates(file_cases,template,replacement));
-	call(delete_path_if_present("tests/templates/0015_004.conf"));
 
 	RETURN_STATUS;
 }
@@ -574,15 +569,13 @@ Return test0015_13(void)
 
 	/* Restore the original v3 database before repeating the upgrade through configuration */
 	ASSERT(SUCCESS == copy_path("tests/templates/0015_database_v3 это база данных с пробелами и символами UTF-8.db","0015_database_v3 это база данных с пробелами и символами UTF-8.db"));
-	ASSERT(SUCCESS == copy_path("tests/templates/0015_013.conf","0015_013.conf"));
 	const struct argument_test_case file_cases[] = {
-		{"--config=0015_013.conf",COMPLETED,filename,STDERR_MUST_BE_EMPTY},
+		{"--config=tests/templates/0015_013.conf",COMPLETED,filename,STDERR_MUST_BE_EMPTY},
 		{0}
 	};
 	ASSERT(SUCCESS == run_and_match_templates(file_cases,NULL,NULL));
 
 	// Clean up test results
-	call(delete_path_if_present("0015_013.conf"));
 	ASSERT(SUCCESS == delete_path("0015_database_v3 это база данных с пробелами и символами UTF-8.db"));
 
 	RETURN_STATUS;

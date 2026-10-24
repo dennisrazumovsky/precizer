@@ -35,7 +35,7 @@ Use tabs for indentation. Spaces may be used for alignment when needed, for exam
 - Perform file renames and deletions using git commands only (`git mv` and `git rm`)
 - If a build or test fails after a change, stop making further changes immediately, explain the cause, and propose possible solutions. Do not modify code or tests merely to work around the failure without explicit user approval. After a successful implementation, carefully review the changes and repeat the verification-and-correction cycle until the result is reliable and maintainable
 - Functions marked as reviewed line by line by a human may be modified within the authorized task without separate permission. This rule supersedes requirements for separate approval in function comments
-- Any modification invalidates the function's previous human review. Update its review comment to state that a new line-by-line human review is required; do not claim that the modified function is reviewed or trusted until that review is confirmed
+- Any modification invalidates the function's previous human review. Do not claim that the modified function is reviewed or trusted until that review is confirmed
 - After modifying any such function, the final response must explicitly notify the developer, list each affected function with its file location, summarize what changed, and state that a new line-by-line human review is required before the function is considered trusted. This notification is mandatory even for minor changes and must not be replaced by a generic change summary or an earlier progress update
 
 ## Project Structure & Module Organization

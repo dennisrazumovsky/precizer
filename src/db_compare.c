@@ -461,9 +461,9 @@ Return db_compare(void)
 		run(db_report_category(compare_A_sql,
 			&second_source_differences_found,
 			show_headings_in_silent,
-			"@{bold}These files are no longer in the %s but still exist in the %s@{reset}\n",
-			config->db_file_names[0],
+			"@{bold}These files are present in %s but absent from %s@{reset}\n",
 			config->db_file_names[1],
+			config->db_file_names[0],
 			"@{green}added@{reset}"));
 	}
 

@@ -176,11 +176,9 @@ static Return test0011_2(void)
  * The Example 3 from README
  * Using the --silent mode. When this mode is enabled, the program suppresses
  * normal output after command execution. This makes sense when using the
- * program inside scripts. An exception is --compare: with --silent, compare
- * results remain
- * visible. Paths with differences are printed directly, and category headings
- * are kept only when more than one compare category is active
- * Let's add the --silent option to the previous example:
+ * program inside scripts. An exception is --compare: with --silent, paths with
+ * differences remain visible with deleted, added, or mismatch prefixes, without
+ * category headings. The --silent option is applied to the previous example:
  *
  * precizer --silent --update --check-level=QUICK --progress --database=database1.db tests/fixtures/diffs/diff1
  *

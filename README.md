@@ -807,7 +807,7 @@ Any new, deleted, or modified files between application runs will be processed a
 
 Using the `--silent` mode. When this mode is enabled, the program does not produce any output on the screen. This is useful when **precizer** is used in scripts.
 
-An exception is `--compare`: with `--silent`, only compare results remain visible. Paths with differences are printed directly, and category headings are kept only when more than one compare category is active.
+An exception is `--compare`: with `--silent`, only comparison results remain visible. Paths with differences are shown with `deleted`, `added`, or `mismatch` prefixes, without category headings
 
 Add the **--silent** parameter to the previous example:
 
@@ -1292,7 +1292,7 @@ In `--compare` mode, `--ignore` and `--include` limit the relative-path scope us
 
 - `--verbose`, `-v` — Print detailed diagnostic messages to help understand what the program is doing
 
-- `--silent`, `-s` — Suppress ordinary output. In `--compare` mode, comparison results remain visible; category headings are retained when more than one category is active
+- `--silent`, `-s` — Suppress ordinary output. In `--compare` mode, only `deleted PATH`, `added PATH`, and `mismatch PATH` records are shown, without category headings
 
 ### Color and text styling
 

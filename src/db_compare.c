@@ -157,7 +157,9 @@ static Return db_detach(const char *db_alias)
  * Only visible paths contribute to category state, so compare summaries and
  * equality messages are evaluated against the filtered scope. The category
  * heading is emitted only before the first visible path and stays visible in
- * `--silent` only when `show_headings_in_silent` enables it
+ * `--silent` only when `show_headings_in_silent` enables it. Both output modes
+ * report a styled action and path. Machine output omits headings, including
+ * in silent mode
  *
  * @param[in] compare_sql SQL query that returns relative paths for one compare category
  * @param[out] differences_found Set to `true` after the first visible path is printed
@@ -166,6 +168,7 @@ static Return db_detach(const char *db_alias)
  * @param[in] heading_format Heading format string with two `%s` database-name slots
  * @param[in] db_A_name First database name for the heading
  * @param[in] db_B_name Second database name for the heading
+ * @param[in] action Styled action word for each path in either output mode
  * @return Return structure indicating the operation status
  */
 static Return db_report_category(
@@ -174,7 +177,8 @@ static Return db_report_category(
 	const bool show_headings_in_silent,
 	const char *heading_format,
 	const char *db_A_name,
-	const char *db_B_name)
+	const char *db_B_name,
+	const char *action)
 {
 	/* This function was reviewed line by line by a human and is not AI-generated
 	   Any change to this function requires separate explicit approval */
@@ -246,16 +250,18 @@ static Return db_report_category(
 			{
 				first_visible_path = false;
 
-				// Outside --silent the heading is always shown
-				// In --silent it stays only when multiple compare categories can mix together in one output
-				if((rational_logger_mode & SILENT) == 0 || show_headings_in_silent == true)
+				// Full output shows headings outside --silent
+				// In --silent they stay only when multiple full-output categories can mix together
+				if(config->output == OUTPUT_FULL
+				        && ((rational_logger_mode & SILENT) == 0
+				        || show_headings_in_silent == true))
 				{
 					slog(EVERY|VISIBLE_IN_SILENT,heading_format,db_A_name,db_B_name);
 				}
 			}
 
 			*differences_found = true;
-			slog(EVERY|UNDECOR|VISIBLE_IN_SILENT,"%s\n",m_text(relative_path));
+			slog(EVERY|MACHINE|UNDECOR|VISIBLE_IN_SILENT,"%s %s\n",action,m_text(relative_path));
 		}
 
 		m_del(relative_path);
@@ -446,7 +452,8 @@ Return db_compare(void)
 			show_headings_in_silent,
 			"@{bold}These files are no longer in the %s but still exist in the %s@{reset}\n",
 			config->db_file_names[1],
-			config->db_file_names[0]));
+			config->db_file_names[0],
+			"@{blue}deleted@{reset}"));
 	}
 
 	if(check_second_source == true)
@@ -456,7 +463,8 @@ Return db_compare(void)
 			show_headings_in_silent,
 			"@{bold}These files are no longer in the %s but still exist in the %s@{reset}\n",
 			config->db_file_names[0],
-			config->db_file_names[1]));
+			config->db_file_names[1],
+			"@{green}added@{reset}"));
 	}
 
 #if 0
@@ -489,7 +497,8 @@ Return db_compare(void)
 			show_headings_in_silent,
 			"@{bold}The SHA512 checksums of these files do not match between %s and %s@{reset}\n",
 			config->db_file_names[0],
-			config->db_file_names[1]));
+			config->db_file_names[1],
+			"@{orange}mismatch@{reset}"));
 	}
 
 	/* Cleanup */

@@ -134,7 +134,7 @@ const struct argp_option options[] = {
 	{"silent",'s',0,0,"Don't produce any output. With " BOLD "--compare" RESET ", only paths with differences are shown, and category headings remain visible when multiple compare categories are active.",0 },
 	{"quiet-ignored",'q',0,0,"Suppress per-file log lines for paths filtered by " BOLD "--ignore/--include" RESET ". This helps keep program logs free of extra messages once ignore regular expressions are tuned and stable in use. Other warnings and errors remain visible.",0 },
 	{"verbose",'v',0,0,"Produce verbose output.",0 },
-	{"output",'O',"full|machine",0,"Select the output format (default: full)",-1},
+	{"output",'O',"full|compact|machine",0,"Output formats include full for detailed output, compact for concise output, and machine for output designed to be parsed by scripts. The default is full",-1},
 	{"progress",'p',0,0,"Enabling this option displays progress information but requires an initial count of files and the space they occupy to estimate execution time. The program first traverses all specified directories, counting files, folders, and symlinks before proceeding with file analysis. This initial traversal may take a significant amount of time. It is strongly recommended not to use this option when calling the program from a script.",0 },
 	{"color",'S',"auto|always|never",0,"Choose when to apply color and text styling (-S means style). Use auto for terminal output, always to preserve styling in files and pipes, or never to disable it. The default is auto",-1},
 	{"config",'g',"FILE",0,"Read settings from FILE. Help, usage, and version requests ignore FILE. Otherwise, cannot be combined with other CLI arguments. With no CLI arguments, read " APP_NAME ".conf in the current directory if present",-1},
@@ -428,10 +428,18 @@ error_t parse_opt(
 			if(strcasecmp(arg,"full") == 0)
 			{
 				config->output = OUTPUT_FULL;
+
+			} else if(strcasecmp(arg,"compact") == 0){
+
+				config->output = OUTPUT_COMPACT;
+
 			} else if(strcasecmp(arg,"machine") == 0){
+
 				config->output = OUTPUT_MACHINE;
+
 			} else {
-				report_option_error(state,0,"Unsupported --output value '%s'. Supported values: full or machine",arg);
+
+				report_option_error(state,0,"Unsupported --output value '%s'. Supported values: full, compact, or machine",arg);
 				return(EINVAL);
 			}
 
@@ -440,15 +448,24 @@ error_t parse_opt(
 		case 'S':
 			if(0 == strcasecmp(arg,"auto"))
 			{
-				rational_color_mode = COLOR_MODE_AUTO;
+				config->color_mode = COLOR_MODE_AUTO;
+
 			} else if(0 == strcasecmp(arg,"always")){
-				rational_color_mode = COLOR_MODE_ALWAYS;
+
+				config->color_mode = COLOR_MODE_ALWAYS;
+
 			} else if(0 == strcasecmp(arg,"never")){
-				rational_color_mode = COLOR_MODE_NEVER;
+
+				config->color_mode = COLOR_MODE_NEVER;
+
 			} else {
 				report_option_error(state,0,"Unsupported --color value '%s'. Supported values: auto, always, or never",arg);
 				return(EINVAL);
 			}
+
+			config->color_specified = true;
+
+			(void)update_logger_mode();
 			break;
 		case 'h':
 		case '?':
@@ -647,7 +664,7 @@ Return parse_arguments(
 	 * Stage 1: Preliminary CLI parsing and source selection
 	 *
 	 * Identify the config path, other arguments, and information requests to
-	 * choose a settings source. Apply the CLI logger mode for early output;
+	 * choose a settings source. Apply the CLI logger mode and color for early output;
 	 * leave other working options to the main pass
 	 */
 
@@ -661,7 +678,7 @@ Return parse_arguments(
 	preliminary_argp.parser = parse_source_option;
 
 	/* Scan CLI arguments without printing diagnostics or exiting on errors.
-	   The callback updates context, config->config_file_path, and the logger mode.
+	   The callback updates context, config->config_file_path, logger mode, and color.
 	   The return code lets source selection discard incomplete source-selection
 	   results; the main pass reports CLI errors and handles help, usage, and version output */
 	error_t preliminary_error = argp_parse(&preliminary_argp,argc,argv,ARGP_SILENT,0,&context);

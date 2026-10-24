@@ -3,8 +3,9 @@
 /**
  * @brief Store a formatted log line in the TEMP remember_history table
  *
- * @details The table is created in db_init(). Empty messages are ignored. When
- * the previous remembered row does not end with a newline, the new message is
+ * @details The table is created in db_init(). Empty messages and messages in
+ * compact or machine output mode are ignored. Existing history is preserved.
+ * When the previous remembered row does not end with a newline, the new message is
  * appended to that row so multi-part log output remains one remembered message
  *
  * @param[in] message Message bytes to remember
@@ -23,6 +24,11 @@ void rational_remember(
 	}
 
 	if(line_len <= 0)
+	{
+		return;
+	}
+
+	if(config->output != OUTPUT_FULL)
 	{
 		return;
 	}

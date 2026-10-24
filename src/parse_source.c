@@ -2,13 +2,13 @@
 #include <sysexits.h>
 
 /**
- * @brief Select the settings source and establish the CLI logger mode
+ * @brief Select the settings source and establish CLI logger mode and color
  *
  * The shared option table lets argp distinguish options from their values.
- * Lifecycle events do not count as arguments. Output format, silent, and
- * verbose options use the shared handler to select the logger mode by priority
- * from the requested settings before startup messages. Invalid output values
- * are left to the main pass for diagnostics. Other working settings remain
+ * Lifecycle events do not count as arguments. Output format, color, silent,
+ * and verbose options use the shared handler to select logger mode and color
+ * from the requested settings before startup messages. Invalid output and color
+ * values are left to the main pass for diagnostics. Other working settings remain
  * unchanged. Information requests are recorded for source selection; the main
  * parser handles their output. A nonzero quoted value rejects the invocation
  * silently so no file is read and the main parser reports it
@@ -39,7 +39,16 @@ error_t parse_source_option(
 			context->has_other_arguments = true;
 
 			/* Only valid values reach the shared handler during this silent pass */
-			if(strcasecmp(arg,"full") == 0 || strcasecmp(arg,"machine") == 0)
+			if(strcasecmp(arg,"full") == 0 || strcasecmp(arg,"compact") == 0 || strcasecmp(arg,"machine") == 0)
+			{
+				return(parse_opt(key,arg,state));
+			}
+			break;
+		case 'S':
+			context->has_other_arguments = true;
+
+			/* Apply valid explicit colors before any startup output */
+			if(strcasecmp(arg,"auto") == 0 || strcasecmp(arg,"always") == 0 || strcasecmp(arg,"never") == 0)
 			{
 				return(parse_opt(key,arg,state));
 			}

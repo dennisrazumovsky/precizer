@@ -182,7 +182,8 @@ typedef enum DB_CHECK_LEVEL : unsigned int
 typedef enum OutputMode : unsigned int
 {
 	OUTPUT_FULL = 0u,
-	OUTPUT_MACHINE = 1u
+	OUTPUT_MACHINE = 1u,
+	OUTPUT_COMPACT = 2u
 
 } OutputMode;
 
@@ -321,6 +322,14 @@ typedef struct {
 
 	/// Output format, initialized to OUTPUT_FULL
 	OutputMode output;
+
+	/// Color policy requested through CLI or configuration; defaults to AUTO or the test override.
+	/// Retained separately from the effective rational_color_mode when the output format changes
+	RATIONAL_COLOR_MODE color_mode;
+
+	/// True when a color option was explicitly supplied through CLI or configuration.
+	/// When true, color_mode applies in every format; otherwise machine uses NEVER
+	bool color_specified;
 
 	/// Show progress bar
 	bool progress;

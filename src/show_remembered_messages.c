@@ -12,7 +12,7 @@
 Return show_remembered_messages(void)
 {
 	// Show only when the final remembered output is enabled in full format
-	if(config->output == OUTPUT_MACHINE || config->show_remembered_messages_at_exit == false)
+	if(config->output != OUTPUT_FULL || config->show_remembered_messages_at_exit == false)
 	{
 		// Do nothing
 		provide(SUCCESS);

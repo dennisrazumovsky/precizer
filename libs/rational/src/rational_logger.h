@@ -23,8 +23,8 @@ typedef enum LOGMODES : unsigned int
 	REGULAR = 0x01u,           //   0000001
 	VERBOSE = 0x02u,           //   0000010
 	TESTING = 0x04u,           //   0000100
-	TRACE = VERBOSE | TESTING,             // Hex: 0x06. Dec: 6. Bin: 0000110
-	EVERY = REGULAR | VERBOSE | TESTING,   // Hex: 0x07. Dec: 7. Bin: 0000111
+	TRACE = VERBOSE | TESTING,           // Hex: 0x06. Dec: 6. Bin: 0000110
+	EVERY = REGULAR | VERBOSE | TESTING, // Hex: 0x07. Dec: 7. Bin: 0000111
 	ERROR = 0x08u,             //   0001000
 	SILENT = 0x10u,            //   0010000
 	UNDECOR = 0x20u,           //   0100000

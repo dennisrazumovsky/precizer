@@ -8,7 +8,8 @@
  * @brief Initialize global runtime configuration with explicit defaults
  *
  * Global color settings are reset before the shared `Config` object is cleared.
- * The logger mode is selected after its configuration defaults are assigned.
+ * Logger mode and effective color are selected after their configuration
+ * defaults are assigned.
  * Test environment overrides apply before initialization diagnostics are emitted
  *
  * The function clears the shared `Config` object and then assigns explicit
@@ -28,7 +29,8 @@ void init_config(void)
 	   AUTO lets the output policy inspect each stream, NO_COLOR, and TERM when
 	   a message is written. Resetting the mode prevents a previous in-process
 	   run from leaving its color setting active. An explicit --color option
-	   parsed later takes priority over this default and the test override */
+	   parsed later takes priority over this default and the test override.
+	   Machine output defaults to no color unless a color option is explicit */
 	rational_color_mode = COLOR_MODE_AUTO;
 
 	/* Test runners use ANSI-decorated golden output by default.
@@ -52,6 +54,14 @@ void init_config(void)
 
 	// Use the full output format by default
 	config->output = OUTPUT_FULL;
+
+	/* Keep AUTO or the test override as the initial requested color policy.
+	   This value is retained when the output format changes the effective color */
+	config->color_mode = rational_color_mode;
+
+	/* No color option has been supplied yet, so the output format selects its default.
+	   An explicit CLI or configuration value will take priority in every format */
+	config->color_specified = false;
 
 	// Show progress bar
 	config->progress = false;

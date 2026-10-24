@@ -16,19 +16,19 @@ static Return test0048_1(void)
 		{"-OFULL " OUTPUT_DRY_RUN_ARGUMENTS,COMPLETED,"templates/0040_002.txt",STDERR_MUST_BE_EMPTY},
 		{"--output FuLl " OUTPUT_DRY_RUN_ARGUMENTS,COMPLETED,"templates/0040_002.txt",STDERR_MUST_BE_EMPTY},
 		{"--output full " OUTPUT_DRY_RUN_ARGUMENTS,COMPLETED,"templates/0040_002.txt",STDERR_MUST_BE_EMPTY},
-		{"--output=machine " OUTPUT_DRY_RUN_ARGUMENTS,COMPLETED,"templates/0045_033.txt",STDERR_MUST_BE_EMPTY},
-		{"--output=MACHINE " OUTPUT_DRY_RUN_ARGUMENTS,COMPLETED,"templates/0045_033.txt",STDERR_MUST_BE_EMPTY},
-		{"-OMaChInE " OUTPUT_DRY_RUN_ARGUMENTS,COMPLETED,"templates/0045_033.txt",STDERR_MUST_BE_EMPTY},
-		{"--output MaChInE " OUTPUT_DRY_RUN_ARGUMENTS,COMPLETED,"templates/0045_033.txt",STDERR_MUST_BE_EMPTY},
-		{"--output machine " OUTPUT_DRY_RUN_ARGUMENTS,COMPLETED,"templates/0045_033.txt",STDERR_MUST_BE_EMPTY},
+		{"--output=machine " OUTPUT_DRY_RUN_ARGUMENTS,COMPLETED,"templates/0048_015.txt",STDERR_MUST_BE_EMPTY},
+		{"--output=MACHINE " OUTPUT_DRY_RUN_ARGUMENTS,COMPLETED,"templates/0048_015.txt",STDERR_MUST_BE_EMPTY},
+		{"-OMaChInE " OUTPUT_DRY_RUN_ARGUMENTS,COMPLETED,"templates/0048_015.txt",STDERR_MUST_BE_EMPTY},
+		{"--output MaChInE " OUTPUT_DRY_RUN_ARGUMENTS,COMPLETED,"templates/0048_015.txt",STDERR_MUST_BE_EMPTY},
+		{"--output machine " OUTPUT_DRY_RUN_ARGUMENTS,COMPLETED,"templates/0048_015.txt",STDERR_MUST_BE_EMPTY},
 		{"--output=machine --output=full " OUTPUT_DRY_RUN_ARGUMENTS,COMPLETED,"templates/0040_002.txt",STDERR_MUST_BE_EMPTY},
-		{"--output=full --output=machine " OUTPUT_DRY_RUN_ARGUMENTS,COMPLETED,"templates/0045_033.txt",STDERR_MUST_BE_EMPTY},
+		{"--output=full --output=machine " OUTPUT_DRY_RUN_ARGUMENTS,COMPLETED,"templates/0048_015.txt",STDERR_MUST_BE_EMPTY},
 		{"-O full " OUTPUT_DRY_RUN_ARGUMENTS,COMPLETED,"templates/0040_002.txt",STDERR_MUST_BE_EMPTY},
 		{"-Ofull " OUTPUT_DRY_RUN_ARGUMENTS,COMPLETED,"templates/0040_002.txt",STDERR_MUST_BE_EMPTY},
-		{"-O machine " OUTPUT_DRY_RUN_ARGUMENTS,COMPLETED,"templates/0045_033.txt",STDERR_MUST_BE_EMPTY},
-		{"-Omachine " OUTPUT_DRY_RUN_ARGUMENTS,COMPLETED,"templates/0045_033.txt",STDERR_MUST_BE_EMPTY},
+		{"-O machine " OUTPUT_DRY_RUN_ARGUMENTS,COMPLETED,"templates/0048_015.txt",STDERR_MUST_BE_EMPTY},
+		{"-Omachine " OUTPUT_DRY_RUN_ARGUMENTS,COMPLETED,"templates/0048_015.txt",STDERR_MUST_BE_EMPTY},
 		{"-Omachine --output=full " OUTPUT_DRY_RUN_ARGUMENTS,COMPLETED,"templates/0040_002.txt",STDERR_MUST_BE_EMPTY},
-		{"--output=full -Omachine " OUTPUT_DRY_RUN_ARGUMENTS,COMPLETED,"templates/0045_033.txt",STDERR_MUST_BE_EMPTY},
+		{"--output=full -Omachine " OUTPUT_DRY_RUN_ARGUMENTS,COMPLETED,"templates/0048_015.txt",STDERR_MUST_BE_EMPTY},
 		{0}
 	};
 
@@ -237,12 +237,12 @@ static Return test0048_7(void)
 
 	/* Cover CLI option order, short options, and explicit and default configuration */
 	const struct argument_test_case cases[] = {
-		{"--progress --output=machine --database=0048.db tests/fixtures/diffs/diff1/2",COMPLETED,STDOUT_MUST_BE_EMPTY,STDERR_MUST_BE_EMPTY},
-		{"--output=machine --progress --database=0048.db tests/fixtures/diffs/diff1/2",COMPLETED,STDOUT_MUST_BE_EMPTY,STDERR_MUST_BE_EMPTY},
-		{"-pOmachine --verbose --database=0048.db tests/fixtures/diffs/diff1/2",COMPLETED,STDOUT_MUST_BE_EMPTY,STDERR_MUST_BE_EMPTY},
-		{"--verbose --progress --output=machine --database=0048.db tests/fixtures/diffs/diff1/2",COMPLETED,STDOUT_MUST_BE_EMPTY,STDERR_MUST_BE_EMPTY},
-		{"--config=precizer.conf",COMPLETED,STDOUT_MUST_BE_EMPTY,STDERR_MUST_BE_EMPTY},
-		{"",COMPLETED,STDOUT_MUST_BE_EMPTY,STDERR_MUST_BE_EMPTY},
+		{"--progress --output=machine --database=0048.db tests/fixtures/diffs/diff1/2",COMPLETED,"templates/0048_016.txt",STDERR_MUST_BE_EMPTY},
+		{"--output=machine --progress --database=0048.db tests/fixtures/diffs/diff1/2",COMPLETED,"templates/0048_016.txt",STDERR_MUST_BE_EMPTY},
+		{"-pOmachine --verbose --database=0048.db tests/fixtures/diffs/diff1/2",COMPLETED,"templates/0048_016.txt",STDERR_MUST_BE_EMPTY},
+		{"--verbose --progress --output=machine --database=0048.db tests/fixtures/diffs/diff1/2",COMPLETED,"templates/0048_016.txt",STDERR_MUST_BE_EMPTY},
+		{"--config=precizer.conf",COMPLETED,"templates/0048_016.txt",STDERR_MUST_BE_EMPTY},
+		{"",COMPLETED,"templates/0048_016.txt",STDERR_MUST_BE_EMPTY},
 		{0}
 	};
 
@@ -254,7 +254,7 @@ static Return test0048_7(void)
 	/* Prepare the configuration used by both file-based scenarios */
 	ASSERT(SUCCESS == copy_path("tests/templates/0048_014.conf","precizer.conf"));
 
-	/* Disable test diagnostics so both streams must be empty during normal startup */
+	/* Disable test diagnostics so only machine file events remain visible */
 	ASSERT(SUCCESS == set_environment_variable("TESTING","false"));
 
 	/* Run each scenario separately so its database can be checked and removed */
@@ -266,7 +266,7 @@ static Return test0048_7(void)
 			{0}
 		};
 
-		/* Require successful completion with no stdout or stderr */
+		/* Require the complete added record and empty stderr */
 		ASSERT(SUCCESS == run_and_match_templates(single_case,NULL,NULL));
 
 		/* Verify that the main traversal stored exactly the expected file */
@@ -287,6 +287,73 @@ static Return test0048_7(void)
 }
 
 /**
+ * @brief Report new ordinary and empty files as complete machine records
+ *
+ * Plain and colored templates require one record per file, with styling limited
+ * to the action word. Real scans verify database contents, while both dry-run
+ * variants must report the same events without creating a database file
+ *
+ * @return Return status for added events, output controls, and database contents
+ */
+static Return test0048_8(void)
+{
+	INITTEST;
+
+	/* Cover plain and colored records, retained verbose settings, and suppression */
+	const struct argument_test_case cases[] = {
+		{"--output=machine --color=never --database=0048.db 0048_added",COMPLETED,"templates/0048_017.txt",STDERR_MUST_BE_EMPTY},
+		{"--output=machine --color=always --database=0048.db 0048_added",COMPLETED,"templates/0048_018.txt",STDERR_MUST_BE_EMPTY},
+		{"--verbose --progress --output=machine --color=never --database=0048.db 0048_added",COMPLETED,"templates/0048_017.txt",STDERR_MUST_BE_EMPTY},
+		{"--output=machine --quiet-ignored --color=never --database=0048.db 0048_added",COMPLETED,"templates/0048_017.txt",STDERR_MUST_BE_EMPTY},
+		{"--output=machine --silent --database=0048.db 0048_added",COMPLETED,STDOUT_MUST_BE_EMPTY,STDERR_MUST_BE_EMPTY},
+		{0}
+	};
+
+	/* Both dry-run variants must retain the same machine event format */
+	const struct argument_test_case dry_run_cases[] = {
+		{"--output=machine --dry-run --color=never --database=0048.db 0048_added",COMPLETED,"templates/0048_017.txt",STDERR_MUST_BE_EMPTY},
+		{"--output=machine --dry-run=with-checksums --progress --color=never --database=0048.db 0048_added",COMPLETED,"templates/0048_017.txt",STDERR_MUST_BE_EMPTY},
+		{0}
+	};
+
+	/* Create empty and nonempty files with deterministic traversal order */
+	ASSERT(SUCCESS == create_directory("0048_added"));
+	ASSERT(SUCCESS == write_string_to_file("","0048_added/001.txt",FILE_WRITE_REPLACE));
+	ASSERT(SUCCESS == write_string_to_file("content","0048_added/002.txt",FILE_WRITE_REPLACE));
+	const char *expected_paths[] = {"001.txt","002.txt"};
+	m_create(char,file_path,MEMORY_STRING);
+	ASSERT(SUCCESS == construct_path("0048_added/002.txt",file_path));
+
+	/* Capture normal startup without test diagnostics */
+	ASSERT(SUCCESS == set_environment_variable("TESTING","false"));
+
+	/* Simulated scans must leave no database on disk */
+	ASSERT(SUCCESS == run_and_match_templates(dry_run_cases,NULL,NULL));
+	ASSERT(SUCCESS == expect_file_access_from_root(".","0048.db",F_OK,FILE_NOT_FOUND));
+
+	/* Verify each real scan against a fresh database */
+	for(size_t i = 0; cases[i].arguments != NULL && SUCCESS == status; ++i)
+	{
+		/* Compare both complete output streams for this scenario */
+		const struct argument_test_case single_case[] = {cases[i],{0}};
+		ASSERT(SUCCESS == run_and_match_templates(single_case,NULL,NULL));
+
+		/* Require both file records and the completed checksum of the nonempty file */
+		ASSERT(SUCCESS == db_paths_match("0048.db",expected_paths,2));
+		ASSERT(SUCCESS == db_final_sha512_matches_file("0048.db",expected_paths[1],m_text(file_path)));
+
+		/* Prevent an existing database from affecting the next creation scenario */
+		call(delete_path_if_present("0048.db"));
+	}
+
+	/* Restore test diagnostics and remove the isolated files */
+	call(set_environment_variable("TESTING","true"));
+	call(delete_path_if_present("0048_added"));
+	call(m_del(file_path));
+	RETURN_STATUS;
+}
+
+/**
  * @brief Exercise output format selection through application startup
  * @return Return status for format selection, logger filtering, and parsing diagnostics
  */
@@ -300,5 +367,6 @@ Return test0048(void)
 	TEST(test0048_5,"Machine errors honor logger priorities and full output can be restored");
 	TEST(test0048_6,"Machine progress skips preliminary counting without changing traversal state");
 	TEST(test0048_7,"Machine progress preserves scanning and checksums through CLI and configuration");
+	TEST(test0048_8,"Machine added records distinguish ordinary and empty files with keyword-only color");
 	RETURN_STATUS;
 }

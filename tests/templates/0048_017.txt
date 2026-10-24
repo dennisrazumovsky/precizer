@@ -1,0 +1,2 @@
+\Aadded \[as empty\] 001\.txt
+added \[as new\] 002\.txt\n\z

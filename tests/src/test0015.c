@@ -633,8 +633,6 @@ Return test0015_15(void)
 
 	ASSERT(SUCCESS == set_environment_variable("TESTING","true"));
 
-	ASSERT(SUCCESS == copy_path("tests/templates/0015_database_v4 это база данных с пробелами и символами UTF-8.db","0015_database_v4 это база данных с пробелами и символами UTF-8.db"));
-
 	m_create(char,pattern,MEMORY_STRING);
 	m_create(char,result,MEMORY_STRING);
 	m_create(char,chunk,MEMORY_STRING);
@@ -646,7 +644,7 @@ Return test0015_15(void)
 	ASSERT(SUCCESS == m_copy(result,chunk));
 
 	arguments = "--check-level=QUICK --compare \"Это новая база данных.db\" "
-	        "\"0015_database_v4 это база данных с пробелами и символами UTF-8.db\"";
+	        "\"tests/templates/0015_database_v4 это база данных с пробелами и символами UTF-8.db\"";
 
 	ASSERT(SUCCESS == runit(arguments,chunk,NULL,COMPLETED,ALLOW_BOTH));
 	ASSERT(SUCCESS == m_concat_strings(result,chunk));
@@ -665,7 +663,6 @@ Return test0015_15(void)
 
 	// Clean up test results
 	ASSERT(SUCCESS == delete_path("Это новая база данных.db"));
-	ASSERT(SUCCESS == delete_path("0015_database_v4 это база данных с пробелами и символами UTF-8.db"));
 
 	RETURN_STATUS;
 }
@@ -684,6 +681,8 @@ Return test0015_16(void)
 
 	ASSERT(SUCCESS == set_environment_variable("TESTING","true"));
 	ASSERT(SUCCESS == copy_path("tests/templates/0015_database_v0.db",corrupted_db_filename));
+	/* If CURRENT_DB_VERSION exceeds 4, --update can upgrade this reference too.
+	   A separate copy preserves the shared v4 fixture for subsequent tests */
 	ASSERT(SUCCESS == copy_path("tests/templates/0015_database_v4 это база данных с пробелами и символами UTF-8.db",reference_db_filename));
 
 	sqlite3_int64 row_id = 0;
@@ -731,6 +730,8 @@ Return test0015_17(void)
 
 	ASSERT(SUCCESS == set_environment_variable("TESTING","true"));
 	ASSERT(SUCCESS == copy_path("tests/templates/0015_database_v3 это база данных с пробелами и символами UTF-8.db",corrupted_db_filename));
+	/* If CURRENT_DB_VERSION exceeds 4, --update can upgrade this reference too.
+	   A separate copy preserves the shared v4 fixture for subsequent tests */
 	ASSERT(SUCCESS == copy_path("tests/templates/0015_database_v4 это база данных с пробелами и символами UTF-8.db",reference_db_filename));
 
 	sqlite3_int64 row_id = 0;
@@ -776,6 +777,8 @@ Return test0015_18(void)
 
 	ASSERT(SUCCESS == set_environment_variable("TESTING","true"));
 	ASSERT(SUCCESS == copy_path("tests/templates/0015_database_v3 это база данных с пробелами и символами UTF-8.db",rollback_db_filename));
+	/* If CURRENT_DB_VERSION exceeds 4, --update can upgrade this reference too.
+	   A separate copy preserves the shared v4 fixture for subsequent tests */
 	ASSERT(SUCCESS == copy_path("tests/templates/0015_database_v4 это база данных с пробелами и символами UTF-8.db",reference_db_filename));
 
 	int files_count = 0;
